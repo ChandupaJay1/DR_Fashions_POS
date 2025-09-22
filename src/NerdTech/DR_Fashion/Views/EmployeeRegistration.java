@@ -4,15 +4,7 @@
  */
 package NerdTech.DR_Fashion.Views;
 
-import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.Validation.InputValidator;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
-import com.sun.jdi.connect.spi.Connection;
-import java.sql.PreparedStatement;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import javax.swing.JOptionPane;
-import com.toedter.calendar.JDateChooser;
 
 /**
  *
@@ -25,12 +17,62 @@ public class EmployeeRegistration extends javax.swing.JPanel {
      */
     public EmployeeRegistration() {
         initComponents();
-        DoB.setDateFormatString("yyyy-MM-dd");
-        DoB.setFont(new java.awt.Font("JetBrains Mono", 0, 18));
-        ((javax.swing.JTextField) DoB.getDateEditor().getUiComponent()).setEditable(false);
+        refreshTable();
 
-        loadRoles();
+        javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter = new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) model.getModel());
+        model.setRowSorter(rowSorter);
 
+        searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String searchText = searchTextField.getText();
+                if (searchText.trim().length() == 0) {
+                    rowSorter.setRowFilter(null); // show all
+                } else {
+                    rowSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + searchText)); // case-insensitive
+                }
+            }
+        });
+
+    }
+
+    public void refreshTable() {
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
+        tableModel.setRowCount(0); // clear table rows first
+
+        String query = "SELECT e.fname, e.lname, e.email, e.dob, e.nic, e.mobile, r.position FROM employee e JOIN role r ON e.role_id = r.id";
+
+        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.sql.PreparedStatement stmt = conn.prepareStatement(query); java.sql.ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                String fname = rs.getString("fname");
+                String lname = rs.getString("lname");
+                String email = rs.getString("email");
+                String dob = rs.getString("dob");
+                String nic = rs.getString("nic");
+                String mobile = rs.getString("mobile");
+                String role = rs.getString("position");
+
+                tableModel.addRow(new Object[]{fname, lname, email, dob, nic, mobile, role});
+            }
+
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Failed to load employee data: " + e.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -45,63 +87,72 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel7 = new javax.swing.JLabel();
-        Nic = new javax.swing.JTextField();
-        fName = new javax.swing.JTextField();
-        lName = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        model = new javax.swing.JTable();
         jButton1 = new javax.swing.JButton();
-        Email = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
-        Phone = new javax.swing.JTextField();
-        jLabel8 = new javax.swing.JLabel();
-        DoB = new com.toedter.calendar.JDateChooser();
-        Role = new javax.swing.JComboBox<>();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        searchTextField = new javax.swing.JTextField();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Employee Registration");
 
-        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel2.setText("First Name");
+        model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        model.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
 
-        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel3.setText("Last Name");
+            },
+            new String [] {
+                "First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false
+            };
 
-        jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel7.setText("NIC");
-
-        Nic.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        fName.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        lName.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane1.setViewportView(model);
+        if (model.getColumnModel().getColumnCount() > 0) {
+            model.getColumnModel().getColumn(0).setResizable(false);
+            model.getColumnModel().getColumn(1).setResizable(false);
+            model.getColumnModel().getColumn(2).setResizable(false);
+            model.getColumnModel().getColumn(2).setPreferredWidth(150);
+            model.getColumnModel().getColumn(3).setResizable(false);
+            model.getColumnModel().getColumn(4).setResizable(false);
+            model.getColumnModel().getColumn(5).setResizable(false);
+            model.getColumnModel().getColumn(6).setResizable(false);
+        }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton1.setText("Register ");
+        jButton1.setText("Delete Employee");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
 
-        Email.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton2.setText("Add Employee");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
-        jLabel4.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel4.setText("Email");
+        jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton3.setText("Update Employee");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
-        jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel5.setText("Date of Birth");
-
-        jLabel6.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel6.setText("Phone");
-
-        Phone.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        jLabel8.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel8.setText("Role");
+        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel2.setText("Search");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -110,83 +161,49 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel2)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(262, 262, 262)
-                        .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel4)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(Email, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel7)
-                            .addComponent(jLabel8))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(Nic)
-                            .addComponent(Role, 0, 238, Short.MAX_VALUE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 122, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel6)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane1)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel5)
-                                .addGap(78, 78, 78)))
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(29, 29, 29))
+                                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(208, 208, 208)
+                                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 279, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 219, Short.MAX_VALUE)
+                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap())
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addGap(18, 18, 18)
+                        .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(80, 80, 80))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 104, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel1))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel2)
-                            .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3)
-                            .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(28, 28, 28)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel5)
-                            .addComponent(jLabel4)
-                            .addComponent(Email, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(DoB, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(26, 26, 26)
+                            .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 475, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7)
-                    .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel6)
-                    .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(26, 26, 26)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel8)
-                    .addComponent(Role, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(64, 64, 64)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(124, 124, 124))
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(16, 16, 16))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
@@ -203,132 +220,87 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    public class RoleItem {
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        AddEmployeeFrame frame = new AddEmployeeFrame(this); // pass this panel as reference
+        frame.setVisible(true);
+    }//GEN-LAST:event_jButton2ActionPerformed
 
-        private int id;
-        private String name;
-
-        public RoleItem(int id, String name) {
-            this.id = id;
-            this.name = name;
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Please select a row to update.", "No Selection", javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
         }
 
-        public int getId() {
-            return id;
-        }
+        // Get selected row data
+        String fname = model.getValueAt(selectedRow, 0).toString();
+        String lname = model.getValueAt(selectedRow, 1).toString();
+        String email = model.getValueAt(selectedRow, 2).toString();
+        String dob = model.getValueAt(selectedRow, 3).toString();
+        String nic = model.getValueAt(selectedRow, 4).toString();
+        String mobile = model.getValueAt(selectedRow, 5).toString();
+        String roleName = model.getValueAt(selectedRow, 6).toString();
+        NerdTech.DR_Fashion.RoleItems.RoleItem selectedRoleItem = null;
 
-        @Override
-        public String toString() {
-            return name;  // This is what will be displayed in the ComboBox
-        }
-    }
+// Fetch RoleItem object from DB using role name
+        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
+            String sql = "SELECT id, position FROM role WHERE position = ?";
+            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, roleName);
+            java.sql.ResultSet rs = ps.executeQuery();
 
-    private void loadRoles() {
-        String query = "SELECT id, position FROM role";
-
-        try (java.sql.Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); java.sql.ResultSet rs = stmt.executeQuery()) {
-
-            Role.removeAllItems();
-
-            while (rs.next()) {
-                int id = rs.getInt("id");           
-                String name = rs.getString("position");  
-                Role.addItem(new RoleItem(id, name));
+            if (rs.next()) {
+                selectedRoleItem = new NerdTech.DR_Fashion.RoleItems.RoleItem(rs.getInt("id"), rs.getString("position"));
             }
-
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to load roles: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this, "Error fetching role data: " + e.getMessage());
         }
-    }
 
+// Show update frame if role is valid
+        if (selectedRoleItem != null) {
+            UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
+                    EmployeeRegistration.this, fname, lname, email, dob, nic, mobile, selectedRoleItem);
+            updateFrame.setVisible(true);
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this, "Role not found in database.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
-        // Validation
-        if (InputValidator.isFieldEmpty(fName, "First Name")) {
-            return;
-        }
-        if (InputValidator.isFieldEmpty(lName, "Last Name")) {
-            return;
-        }
-        if (InputValidator.isFieldEmpty(Nic, "NIC")) {
-            return;
-        }
-        if (DoB.getDate() == null) {
-            JOptionPane.showMessageDialog(this, "Please select a valid Date of Birth.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Please select a row to delete.", "No Selection", javax.swing.JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        if (InputValidator.isFieldEmpty(Phone, "Phone")) {
-            return;
-        }
-        if (!InputValidator.isValidPhoneNumber(Phone)) {
-            return;
-        }
-        if (InputValidator.isFieldEmpty(Email, "Email")) {
-            return;
-        }
-        if (!InputValidator.isValidEmail(Email)) {
-            return;
-        }
-        if (InputValidator.isFieldEmpty(Role, "Role")) {
+        // Get NIC or unique identifier of selected employee (assuming NIC is unique)
+        String nic = model.getValueAt(selectedRow, 4).toString();
+
+        int confirm = javax.swing.JOptionPane.showConfirmDialog(EmployeeRegistration.this, "Are you sure you want to delete this employee?", "Confirm Delete", javax.swing.JOptionPane.YES_NO_OPTION);
+        if (confirm != javax.swing.JOptionPane.YES_OPTION) {
             return;
         }
 
-        // Data extraction
-        String firstName = fName.getText().trim();
-        String lastName = lName.getText().trim();
-        String nic = Nic.getText().trim();
+        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
+            String deleteSQL = "DELETE FROM employee WHERE nic = ?";
+            java.sql.PreparedStatement ps = conn.prepareStatement(deleteSQL);
+            ps.setString(1, nic);
 
-        String dateOfBirth = new SimpleDateFormat("yyyy-MM-dd").format(DoB.getDate());
-
-        String phone = Phone.getText().trim();
-        String email = Email.getText().trim();
-        RoleItem selectedRole = (RoleItem) Role.getSelectedItem();
-        if (selectedRole == null) {
-            JOptionPane.showMessageDialog(this, "Please select a Role", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        int roleId = selectedRole.getId();
-
-        // SQL query
-        String query = "INSERT INTO employee (fname, lname, email, dob, nic, mobile, role_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (java.sql.Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, firstName);
-            stmt.setString(2, lastName);
-            stmt.setString(3, email);
-            stmt.setString(4, dateOfBirth);
-            stmt.setString(5, nic);
-            stmt.setString(6, phone);
-            stmt.setInt(7, roleId);  // use roleId
-
-            int rows = stmt.executeUpdate();
-
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(this, "Employee registered successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                clearFields();
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows > 0) {
+                javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Employee deleted successfully.");
+                refreshTable();  // refresh table to reflect changes
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to register employee.", "Error", JOptionPane.ERROR_MESSAGE);
+                javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Failed to delete employee.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Error deleting employee: " + e.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
-
     }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void clearFields() {
-        fName.setText("");
-        lName.setText("");
-        Nic.setText("");
-        Role.setSelectedIndex(-1);
-        Email.setText("");
-        DoB.setDate(null);
-        DoB.setDate(null);
-        Phone.setText("");
-    }
 
     public static void main(String args[]) {
 
@@ -341,27 +313,22 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         });
     }
 
-
+    public void addEmployeeToTable(String fName, String lName, String email, String dob, String nic, String mobile, String role) {
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
+        tableModel.addRow(new Object[]{fName, lName, email, dob, nic, mobile, role});
+    }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.toedter.calendar.JDateChooser DoB;
-    private javax.swing.JTextField Email;
-    private javax.swing.JTextField Nic;
-    private javax.swing.JTextField Phone;
-    private javax.swing.JComboBox<RoleItem> Role;
-    private javax.swing.JTextField fName;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField lName;
+    private javax.swing.JTable model;
+    private javax.swing.JTextField searchTextField;
     // End of variables declaration//GEN-END:variables
 }
