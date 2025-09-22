@@ -183,13 +183,13 @@ public class LoginForm extends javax.swing.JFrame {
     }//GEN-LAST:event_usernameFieldActionPerformed
 
     private String authenticateUser(String username, String password) {
-        String sql = "SELECT `role` FROM user WHERE `name` = ? AND password = ?";
+        String sql = "SELECT `full_name` FROM user WHERE `name` = ? AND password = ?";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, password);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getString("role");
+                return rs.getString("full_name");
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
@@ -206,29 +206,15 @@ public class LoginForm extends javax.swing.JFrame {
             return;
         }
 
-        String role = authenticateUser(username, password);
-        if (role != null) {
-            JOptionPane.showMessageDialog(this, "Login successful as " + role + "!");
+        String fullName = authenticateUser(username, password);
+
+        if (fullName != null) {
+            JOptionPane.showMessageDialog(this, "Login successful as " + fullName + "!");
             this.dispose();
-            if ("admin".equalsIgnoreCase(role)) {
-                try {
-                    new Dashboard().setVisible(true);
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Admin screen not available, opening Home screen. Error: " + e.getMessage());
-                    new Dashboard().setVisible(true);
-                }
-            } else if ("manager".equalsIgnoreCase(role)) {
 
-                try {
-                    new Billing().setVisible(true);
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Admin screen not available, opening Home screen. Error: " + e.getMessage());
-                    new Billing().setVisible(true);
-                }
+            // Open Dashboard with the full name
+            new Dashboard(fullName).setVisible(true); // ✅ fixed line
 
-            } else {
-                new Dashboard().setVisible(true);
-            }
         } else {
             JOptionPane.showMessageDialog(this, "Invalid username or password. Please check your credentials or database connection.");
         }
