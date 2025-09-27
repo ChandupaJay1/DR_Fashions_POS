@@ -4,6 +4,7 @@
  */
 package NerdTech.DR_Fashion.Views;
 
+import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -88,7 +89,7 @@ public class Dashboard extends javax.swing.JFrame {
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(26, 26, 26)
                         .addComponent(DisplayLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 419, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(Date, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(219, 219, 219)
                 .addComponent(Time, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -112,7 +113,12 @@ public class Dashboard extends javax.swing.JFrame {
         jPanel3.setLayout(new java.awt.GridLayout(8, 1, 5, 10));
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
-        jButton1.setText("jButton1");
+        jButton1.setText("Attendence");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
         jPanel3.add(jButton1);
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
@@ -152,7 +158,7 @@ public class Dashboard extends javax.swing.JFrame {
         LoaderPanel.setLayout(LoaderPanelLayout);
         LoaderPanelLayout.setHorizontalGroup(
             LoaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 1237, Short.MAX_VALUE)
         );
         LoaderPanelLayout.setVerticalGroup(
             LoaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -167,7 +173,7 @@ public class Dashboard extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(LoaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(LoaderPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
@@ -211,6 +217,18 @@ public class Dashboard extends javax.swing.JFrame {
         LoaderPanel.revalidate();
         LoaderPanel.repaint();
     }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        LoaderPanel.removeAll();
+
+        AttendencePanel attendencePanel = new AttendencePanel();
+
+        LoaderPanel.setLayout(new java.awt.BorderLayout());
+        LoaderPanel.add(attendencePanel, java.awt.BorderLayout.CENTER);
+
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments
