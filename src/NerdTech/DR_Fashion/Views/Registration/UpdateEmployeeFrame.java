@@ -5,6 +5,8 @@
 package NerdTech.DR_Fashion.Views.Registration;
 
 import NerdTech.DR_Fashion.RoleItems.RoleItem;
+import javax.swing.JOptionPane;
+import java.sql.PreparedStatement;
 
 /**
  *
@@ -265,28 +267,21 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         String updatedEmail = Email.getText();
         String updatedNic = Nic.getText();
         String updatedMobile = Phone.getText();
-        String updatedRole = Role.getSelectedItem().toString();
+        RoleItem roleItem = (RoleItem) Role.getSelectedItem();
+        int roleId = roleItem.getId();
+
         java.util.Date date = DoB.getDate();
         String updatedDOB = new java.text.SimpleDateFormat("yyyy-MM-dd").format(date);
 
         try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
 
             // Get role_id for updatedRole
-            int roleId = 0;
-            String roleQuery = "SELECT id FROM role WHERE position = ?";
-            try (java.sql.PreparedStatement roleStmt = conn.prepareStatement(roleQuery)) {
-                roleStmt.setString(1, updatedRole);
-                java.sql.ResultSet rs = roleStmt.executeQuery();
-                if (rs.next()) {
-                    roleId = rs.getInt("id");
-                } else {
-                    throw new Exception("Invalid role.");
-                }
-            }
+           
+           
 
-            // Update employee by NIC
+// Update employee by NIC
             String sql = "UPDATE employee SET fname=?, lname=?, email=?, dob=?, nic=?, mobile=?, role_id=? WHERE nic=?";
-            try (java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, updatedFname);
                 stmt.setString(2, updatedLname);
                 stmt.setString(3, updatedEmail);
@@ -298,24 +293,29 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
                 int result = stmt.executeUpdate();
                 if (result > 0) {
-                    javax.swing.JOptionPane.showMessageDialog(this, "Employee updated successfully!");
-                    employeeRegistrationPanel.refreshTable(); // Refresh table in panel
-                    this.dispose(); // Close frame
+                    JOptionPane.showMessageDialog(this, "Employee updated successfully!");
+                    employeeRegistrationPanel.refreshTable(); // Refresh only once
+                    this.dispose();
                 } else {
-                    javax.swing.JOptionPane.showMessageDialog(this, "Update failed. Please try again.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Update failed.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            }
-
-        } catch (Exception ex) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Database Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+            
         }
+
+    }
+    catch (Exception ex
+
+    
+        ) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Database Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+        ex.printStackTrace();
+    }
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
+/**
+ * @param args the command line arguments
+ */
+public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -326,16 +326,28 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
-                }
+
+}
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class  
+
+.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
+} catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class  
+
+.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
+} catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class  
+
+.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+
+} catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class  
+
+.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
         //</editor-fold>
