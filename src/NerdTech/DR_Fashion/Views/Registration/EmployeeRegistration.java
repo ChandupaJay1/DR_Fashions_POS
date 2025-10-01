@@ -271,34 +271,26 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         int selectedRow = model.getSelectedRow();
         if (selectedRow == -1) {
-            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Please select a row to delete.", "No Selection", javax.swing.JOptionPane.WARNING_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(
+                    EmployeeRegistration.this,
+                    "Please select a row to remove from the table.",
+                    "No Selection",
+                    javax.swing.JOptionPane.WARNING_MESSAGE
+            );
             return;
         }
 
-        // Get NIC or unique identifier of selected employee (assuming NIC is unique)
-        String nic = model.getValueAt(selectedRow, 4).toString();
+        int confirm = javax.swing.JOptionPane.showConfirmDialog(
+                EmployeeRegistration.this,
+                "Do you want to remove this employee from the table view only? (This will not delete from the database.)",
+                "Confirm Removal",
+                javax.swing.JOptionPane.YES_NO_OPTION
+        );
 
-        int confirm = javax.swing.JOptionPane.showConfirmDialog(EmployeeRegistration.this, "Are you sure you want to delete this employee?", "Confirm Delete", javax.swing.JOptionPane.YES_NO_OPTION);
-        if (confirm != javax.swing.JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            String deleteSQL = "DELETE FROM employee WHERE nic = ?";
-            java.sql.PreparedStatement ps = conn.prepareStatement(deleteSQL);
-            ps.setString(1, nic);
-
-            int affectedRows = ps.executeUpdate();
-            if (affectedRows > 0) {
-                javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Employee deleted successfully.");
-                refreshTable();  // refresh table to reflect changes
-            } else {
-                javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Failed to delete employee.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this, "Error deleting employee: " + e.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+        if (confirm == javax.swing.JOptionPane.YES_OPTION) {
+            // Just remove from table (UI)
+            javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
+            tableModel.removeRow(selectedRow);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
