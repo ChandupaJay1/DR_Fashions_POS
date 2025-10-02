@@ -1,0 +1,10 @@
+﻿# Database Configuration Template
+# Copy this file to config.properties and fill in your credentials
+
+db.online.url=your_online_db_url
+db.online.user=your_username
+db.online.password=your_password
+
+db.local.url=jdbc:mysql://localhost:3306/dr_fashions
+db.local.user=root
+db.local.password=your_local_password
