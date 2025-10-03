@@ -18,6 +18,11 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
     public AddAccesoriesDFrame(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+
+        // Load types from database
+        loadTypes();
+
+        // Document listeners for auto-calculation
         jTextField5.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
                 updateAvailableQuantity();
@@ -48,6 +53,47 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
 
     }
 
+    // Add this method to AddAccesoriesDFrame class
+    private void loadTypes() {
+        try {
+            Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
+            String sql = "SELECT type_id, type_name FROM type ORDER BY type_name";
+            java.sql.Statement stmt = con.createStatement();
+            java.sql.ResultSet rs = stmt.executeQuery(sql);
+
+            jComboBox1.removeAllItems();
+
+            while (rs.next()) {
+                jComboBox1.addItem(rs.getString("type_name"));
+            }
+
+            con.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this, "Error loading types: " + e.getMessage());
+        }
+    }
+
+    private int getTypeIdByName(String typeName) {
+        try {
+            Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
+            String sql = "SELECT type_id FROM type WHERE type_name = ?";
+            java.sql.PreparedStatement pst = con.prepareStatement(sql);
+            pst.setString(1, typeName);
+            java.sql.ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                int typeId = rs.getInt("type_id");
+                con.close();
+                return typeId;
+            }
+            con.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     private void updateAvailableQuantity() {
         try {
             int stockQty = Integer.parseInt(jTextField5.getText());
@@ -59,7 +105,6 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                 int availableQty = stockQty - totalIssued;
                 jTextField8.setText(String.valueOf(availableQty));
             }
-
         } catch (NumberFormatException e) {
             jTextField8.setText("");
         }
@@ -88,6 +133,8 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jTextField7 = new javax.swing.JTextField();
         jTextField8 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jLabel12 = new javax.swing.JLabel();
+        jComboBox1 = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -169,11 +216,27 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
             }
         });
 
+        jLabel12.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel12.setText("Type");
+
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1)
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(322, 322, 322)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(332, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
                 .addGap(95, 95, 95)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2)
@@ -183,8 +246,9 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                     .addComponent(jLabel6)
                     .addComponent(jLabel9)
                     .addComponent(jLabel10)
-                    .addComponent(jLabel11))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 157, Short.MAX_VALUE)
+                    .addComponent(jLabel11)
+                    .addComponent(jLabel12))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jTextField1)
                     .addComponent(jTextField3)
@@ -193,19 +257,9 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                     .addComponent(jTextField5)
                     .addComponent(jTextField7)
                     .addComponent(jTextField8)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
+                    .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(44, 44, 44))
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(320, 320, 320)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -246,9 +300,13 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel11))
-                .addGap(40, 40, 40)
+                .addGap(27, 27, 27)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel12)
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(28, Short.MAX_VALUE))
+                .addGap(31, 31, 31))
         );
 
         pack();
@@ -273,23 +331,52 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
 
     private void addAccessoryToDatabase() {
         try {
-            // Validate numeric inputs
-            String orderNum = jTextField2.getText(); // Order Number
-            String colourName = jTextField3.getText(); // Colour Name
-            String size = jTextField4.getText(); // Size
-            int stockQty = Integer.parseInt(jTextField5.getText()); // Stock Quantity
-            String uom = jTextField6.getText(); // UOM
-            int totalIssued = Integer.parseInt(jTextField7.getText()); // Total Issued
-            int availableQty = Integer.parseInt(jTextField8.getText()); // Available Quantity
-            double unitPrice = Double.parseDouble(jTextField1.getText()); // Unit Price
+            // Validate inputs
+            String orderNum = jTextField2.getText().trim();
+            String colourName = jTextField3.getText().trim();
+            String size = jTextField4.getText().trim();
+            String stockQtyText = jTextField5.getText().trim();
+            String uom = jTextField6.getText().trim();
+            String totalIssuedText = jTextField7.getText().trim();
+            String availableQtyText = jTextField8.getText().trim();
+            String unitPriceText = jTextField1.getText().trim();
+
+            // Check if fields are empty
+            if (orderNum.isEmpty() || colourName.isEmpty() || size.isEmpty()
+                    || stockQtyText.isEmpty() || uom.isEmpty() || totalIssuedText.isEmpty()
+                    || availableQtyText.isEmpty() || unitPriceText.isEmpty()) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Please fill all fields!");
+                return;
+            }
+
+            // Check if type is selected
+            if (jComboBox1.getSelectedItem() == null) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Please select a type!");
+                return;
+            }
+
+            // Parse numeric values
+            int stockQty = Integer.parseInt(stockQtyText);
+            int totalIssued = Integer.parseInt(totalIssuedText);
+            int availableQty = Integer.parseInt(availableQtyText);
+            double unitPrice = Double.parseDouble(unitPriceText);
+
+            // Get type_id from selected type name
+            String selectedTypeName = (String) jComboBox1.getSelectedItem();
+            int typeId = getTypeIdByName(selectedTypeName);
+
+            if (typeId == -1) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Invalid type selected!");
+                return;
+            }
 
             // Set today's date as receive & issue date
             java.sql.Date receiveDate = new java.sql.Date(System.currentTimeMillis());
             java.sql.Date issuedDate = new java.sql.Date(System.currentTimeMillis());
 
-            // DB insert
+            // DB insert with type_id
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
-            String sql = "INSERT INTO accesories (order_no, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO accesories (order_no, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price, type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             java.sql.PreparedStatement pst = con.prepareStatement(sql);
             pst.setString(1, orderNum);
             pst.setString(2, colourName);
@@ -301,13 +388,15 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
             pst.setInt(8, totalIssued);
             pst.setInt(9, availableQty);
             pst.setDouble(10, unitPrice);
+            pst.setInt(11, typeId); // Add type_id here
 
             int rowAffected = pst.executeUpdate();
             if (rowAffected > 0) {
                 javax.swing.JOptionPane.showMessageDialog(this, "Accessory added successfully!");
+                clearFields();
                 this.dispose();
             } else {
-                javax.swing.JOptionPane.showMessageDialog(this, "Failed to add accessory.");
+                javax.swing.JOptionPane.showMessageDialog(this, "Failed to add accessory!");
             }
 
             con.close();
@@ -337,6 +426,9 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jTextField6.setText("");
         jTextField7.setText("");
         jTextField8.setText("");
+        if (jComboBox1.getItemCount() > 0) {
+            jComboBox1.setSelectedIndex(0);
+        }
     }
 
     /**
@@ -365,6 +457,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
             java.util.logging.Logger.getLogger(AddAccesoriesDFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+        //</editor-fold>
 
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -383,9 +476,11 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;

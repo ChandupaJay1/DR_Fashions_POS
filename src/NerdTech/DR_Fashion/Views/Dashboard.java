@@ -13,6 +13,10 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 
 /**
@@ -21,9 +25,8 @@ import javax.swing.Timer;
  */
 public class Dashboard extends javax.swing.JFrame {
 
-    /**
-     * Creates new form Dashboard
-     */
+    private LoadingPanel loadingPanel;
+
     public Dashboard(String full_name) {
         initComponents();
         startClock();
@@ -32,15 +35,58 @@ public class Dashboard extends javax.swing.JFrame {
         loadDashboardPanelByDefault();
     }
 
-    private void loadDashboardPanelByDefault() {
+    /**
+     * Shows loading indicator and loads panel in background
+     */
+    private void loadPanelWithLoading(String panelName, PanelLoader loader) {
+        // Show loading immediately
         LoaderPanel.removeAll();
-
-        DashboardPanel dash = new DashboardPanel();
+        loadingPanel = new LoadingPanel("Loading " + panelName);
         LoaderPanel.setLayout(new BorderLayout());
-        LoaderPanel.add(dash, BorderLayout.CENTER);
-
+        LoaderPanel.add(loadingPanel, BorderLayout.CENTER);
         LoaderPanel.revalidate();
         LoaderPanel.repaint();
+
+        // Load actual panel in background
+        SwingWorker<JPanel, Void> worker = new SwingWorker<JPanel, Void>() {
+            @Override
+            protected JPanel doInBackground() throws Exception {
+                // Simulate minimum loading time for smooth UX
+                Thread.sleep(300);
+                return loader.loadPanel();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    JPanel panel = get();
+                    LoaderPanel.removeAll();
+                    LoaderPanel.setLayout(new BorderLayout());
+                    LoaderPanel.add(panel, BorderLayout.CENTER);
+                    LoaderPanel.revalidate();
+                    LoaderPanel.repaint();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showErrorPanel("Failed to load " + panelName);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void showErrorPanel(String message) {
+        LoaderPanel.removeAll();
+        JPanel errorPanel = new JPanel(new BorderLayout());
+        JLabel errorLabel = new JLabel(message, SwingConstants.CENTER);
+        errorLabel.setFont(new java.awt.Font("JetBrains Mono", 1, 18));
+        errorPanel.add(errorLabel, BorderLayout.CENTER);
+        LoaderPanel.add(errorPanel, BorderLayout.CENTER);
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
+    }
+
+    private void loadDashboardPanelByDefault() {
+        loadPanelWithLoading("Dashboard", () -> new DashboardPanel());
     }
 
     private void startClock() {
@@ -224,78 +270,38 @@ public class Dashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        LoaderPanel.removeAll();
-
-        EmployeeRegistration registrationForm = new EmployeeRegistration();
-
-        LoaderPanel.setLayout(new java.awt.BorderLayout());
-        LoaderPanel.add(registrationForm, java.awt.BorderLayout.CENTER);
-
-        LoaderPanel.revalidate();
-        LoaderPanel.repaint();
+        loadPanelWithLoading("Registration", () -> new EmployeeRegistration());
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        LoaderPanel.removeAll();
-
-        AttendencePanel attendencePanel = new AttendencePanel();
-
-        LoaderPanel.setLayout(new java.awt.BorderLayout());
-        LoaderPanel.add(attendencePanel, java.awt.BorderLayout.CENTER);
-
-        LoaderPanel.revalidate();
-        LoaderPanel.repaint();
+        loadPanelWithLoading("Attendance", () -> new AttendencePanel());
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
-        LoaderPanel.removeAll();
-
-        AccesoriesPanel accesoriesPanel = new AccesoriesPanel();
-
-        LoaderPanel.setLayout(new java.awt.BorderLayout());
-        LoaderPanel.add(accesoriesPanel, java.awt.BorderLayout.CENTER);
-
-        LoaderPanel.revalidate();
-        LoaderPanel.repaint();
+        loadPanelWithLoading("Accessories", () -> new AccesoriesPanel());
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        LoaderPanel.removeAll();
-
-        BackupPanel backup = new BackupPanel();
-
-        LoaderPanel.setLayout(new java.awt.BorderLayout());
-        LoaderPanel.add(backup, java.awt.BorderLayout.CENTER);
-
-        LoaderPanel.revalidate();
-        LoaderPanel.repaint();
+        loadPanelWithLoading("Backup", () -> new BackupPanel());
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        LoaderPanel.removeAll();
-
-        DashboardPanel dash = new DashboardPanel();
-        LoaderPanel.setLayout(new BorderLayout());
-        LoaderPanel.add(dash, BorderLayout.CENTER);
-
-        LoaderPanel.revalidate();
-        LoaderPanel.repaint();
+        loadPanelWithLoading("Dashboard", () -> new DashboardPanel());
     }//GEN-LAST:event_jButton2ActionPerformed
 
     /**
      * @param args the command line arguments
      */
+    @FunctionalInterface
+    private interface PanelLoader {
+
+        JPanel loadPanel() throws Exception;
+    }
+
     public static void main(String args[]) {
-
         FlatMacLightLaf.setup();
-
-        String name = "John Doe"; // or fetch from login/session, etc.
-
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Dashboard(name).setVisible(true);
-            }
-        });
+        String name = "John Doe";
+        java.awt.EventQueue.invokeLater(() -> new Dashboard(name).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
