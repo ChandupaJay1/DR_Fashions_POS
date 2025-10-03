@@ -12,8 +12,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -201,6 +204,8 @@ public class LoginForm extends javax.swing.JFrame {
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+        } catch (Exception ex) {
+            Logger.getLogger(LoginForm.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -232,14 +237,56 @@ public class LoginForm extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-
         FlatMacLightLaf.setup();
 
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new LoginForm().setVisible(true);
+        // Show splash screen
+        SplashScreen splash = new SplashScreen();
+        splash.showSplash();
+
+        // Set callback for database status updates
+        DatabaseConnection.setStatusCallback(status -> splash.setStatus(status));
+
+        // Run database connection in background thread
+        new Thread(() -> {
+            try {
+                splash.setStatus("Initializing...");
+                Thread.sleep(300);
+
+                // Test database connection (status updates will come from DatabaseConnection)
+                Connection conn = DatabaseConnection.getConnection();
+
+                if (conn != null && !conn.isClosed()) {
+                    Thread.sleep(500);
+                    splash.setStatus("Starting application...");
+                    Thread.sleep(300);
+
+                    // Close splash and show login form
+                    SwingUtilities.invokeLater(() -> {
+                        splash.closeSplash();
+                        new LoginForm().setVisible(true);
+                    });
+                }
+            } catch (Exception ex) {
+                splash.setStatus("Connection failed!");
+                ex.printStackTrace();
+
+                // Show error and continue to login
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null,
+                            "⚠️ Database Connection Failed!\n\n"
+                            + "Error: " + ex.getMessage() + "\n\n"
+                            + "Possible solutions:\n"
+                            + "• Check your internet connection\n"
+                            + "• Verify database credentials in config.properties\n"
+                            + "• Ensure local MySQL server is running\n\n"
+                            + "The application will continue in offline mode.",
+                            "Connection Error",
+                            JOptionPane.WARNING_MESSAGE);
+                    splash.closeSplash();
+                    new LoginForm().setVisible(true);
+                });
             }
-        });
+        }).start();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -9,7 +9,6 @@ import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
-import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel1;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
@@ -29,6 +28,19 @@ public class Dashboard extends javax.swing.JFrame {
         initComponents();
         startClock();
         DisplayLabel.setText("Hi, " + full_name);
+
+        loadDashboardPanelByDefault();
+    }
+
+    private void loadDashboardPanelByDefault() {
+        LoaderPanel.removeAll();
+
+        DashboardPanel dash = new DashboardPanel();
+        LoaderPanel.setLayout(new BorderLayout());
+        LoaderPanel.add(dash, BorderLayout.CENTER);
+
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
     }
 
     private void startClock() {
@@ -262,7 +274,7 @@ public class Dashboard extends javax.swing.JFrame {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         LoaderPanel.removeAll();
 
-        DashboardPanel1 dash = new DashboardPanel1();
+        DashboardPanel dash = new DashboardPanel();
         LoaderPanel.setLayout(new BorderLayout());
         LoaderPanel.add(dash, BorderLayout.CENTER);
 

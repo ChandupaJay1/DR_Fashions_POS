@@ -24,145 +24,143 @@ public class DashboardPanel extends javax.swing.JPanel {
     private Timer refreshTimer;
 
     public DashboardPanel() {
-        setPreferredSize(new Dimension(1374, 686)); // fixed size
-        setBackground(Color.WHITE);
+        setPreferredSize(new Dimension(1257, 686));
+        setBackground(new Color(245, 247, 250));
         setLayout(new BorderLayout());
 
-        // 🔹 Top "Dashboard" label
-        JLabel dashboardTitle = new JLabel("Dashboard");
-        dashboardTitle.setFont(new Font("JetBrains Mono", Font.BOLD, 28));
-        dashboardTitle.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 10));
+        createDashboardUI();
+        loadDashboardData();
 
-        // 🔹 Card holder panel - center area
-        JPanel cardHolder = new JPanel();
-        cardHolder.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 30));
-        cardHolder.setOpaque(false);
-
-        // Card 1: Total Employees
-        CardPanel totalCard = new CardPanel(new Color(66, 133, 244)); // blue
-        setupCard(totalCard, "👥", "Total Employees", "8");
-
-        // Card 2: Present Today
-        CardPanel presentCard = new CardPanel(new Color(15, 157, 88)); // green
-        setupCard(presentCard, "✅", "Present Today", "1");
-
-        // Card 3: Absent Today
-        CardPanel absentCard = new CardPanel(new Color(219, 68, 55)); // red
-        setupCard(absentCard, "❌", "Absent Today", "1");
-
-        // Add cards to cardHolder
-        cardHolder.add(totalCard);
-        cardHolder.add(presentCard);
-        cardHolder.add(absentCard);
-
-        // 🔹 Add to this panel
-        add(dashboardTitle, BorderLayout.NORTH);
-        add(cardHolder, BorderLayout.CENTER);
-
+        // ✅ Auto-refresh every 5 seconds (more responsive)
+        refreshTimer = new Timer(2000, e -> loadDashboardData());
+        refreshTimer.start();
     }
 
-    private void setupCard(CardPanel card, String icon, String title, String count) {
-        card.setLayout(new BorderLayout(5, 5));
-
-        JLabel iconLabel = new JLabel(icon, SwingConstants.CENTER);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
-
-        JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 16));
-        titleLabel.setForeground(Color.WHITE);
-
-        JLabel countLabel = new JLabel(count, SwingConstants.CENTER);
-        countLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 40));
-        countLabel.setForeground(Color.WHITE);
-
-        card.add(iconLabel, BorderLayout.NORTH);
-        card.add(titleLabel, BorderLayout.CENTER);
-        card.add(countLabel, BorderLayout.SOUTH);
+    // ✅ NEW: Public method to manually refresh from other panels
+    public void refreshData() {
+        loadDashboardData();
     }
 
-    private void setupCard(JPanel card, String title, String iconText, Color bgColor, JLabel countLabel) {
-        // Clear existing content
-        card.removeAll();
+    private void createDashboardUI() {
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 20, 40));
+
+        JLabel titleLabel = new JLabel("Dashboard");
+        titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 48));
+        titleLabel.setForeground(new Color(30, 41, 59));
+
+        JSeparator separator = new JSeparator();
+        separator.setForeground(new Color(203, 213, 225));
+
+        topPanel.add(titleLabel, BorderLayout.NORTH);
+        topPanel.add(separator, BorderLayout.SOUTH);
+
+        JPanel cardsPanel = new JPanel();
+        cardsPanel.setOpaque(false);
+        cardsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 60));
+
+        employeeCountLabel = new JLabel("0");
+        attendanceCountLabel = new JLabel("0");
+        absenceCountLabel = new JLabel("0");
+
+        JPanel employeeCard = createModernCard("Total Employees", "👥",
+                new Color(59, 130, 246), employeeCountLabel);
+        JPanel presentCard = createModernCard("Present Today", "✓",
+                new Color(34, 197, 94), attendanceCountLabel);
+        JPanel absentCard = createModernCard("Absent Today", "✗",
+                new Color(239, 68, 68), absenceCountLabel);
+
+        cardsPanel.add(employeeCard);
+        cardsPanel.add(presentCard);
+        cardsPanel.add(absentCard);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(cardsPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createModernCard(String title, String icon, Color bgColor, JLabel countLabel) {
+        JPanel card = new JPanel();
+        card.setPreferredSize(new Dimension(350, 220));
         card.setLayout(new BorderLayout(15, 15));
         card.setBackground(bgColor);
-
-        // Rounded border with shadow effect
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(bgColor.darker(), 2),
-                BorderFactory.createEmptyBorder(35, 30, 35, 30)
+                BorderFactory.createEmptyBorder(30, 30, 30, 30)
         ));
 
-        // Top section - Icon and Title
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        // Icon
-        JLabel iconLabel = new JLabel(iconText);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 45));
-        iconLabel.setForeground(new Color(255, 255, 255, 200));
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+        iconLabel.setForeground(new Color(255, 255, 255, 180));
 
-        // Title
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 17));
-        titleLabel.setForeground(new Color(255, 255, 255, 240));
+        titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(255, 255, 255, 230));
 
         topPanel.add(iconLabel, BorderLayout.WEST);
         topPanel.add(titleLabel, BorderLayout.CENTER);
 
-        // Center section - Count (large number)
-        countLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 75));
+        countLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 72));
         countLabel.setForeground(Color.WHITE);
         countLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Bottom section - Context label
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.setOpaque(false);
+
         JLabel contextLabel = new JLabel("Total Count");
         contextLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 12));
-        contextLabel.setForeground(new Color(255, 255, 255, 200));
+        contextLabel.setForeground(new Color(255, 255, 255, 180));
         bottomPanel.add(contextLabel);
 
-        // Add all sections to card
         card.add(topPanel, BorderLayout.NORTH);
         card.add(countLabel, BorderLayout.CENTER);
         card.add(bottomPanel, BorderLayout.SOUTH);
 
-        // Refresh the card
-        card.revalidate();
-        card.repaint();
+        return card;
     }
 
     private void loadDashboardData() {
-        try {
-            // Get counts from database
-            int totalEmployees = getTotalEmployees();
-            int presentToday = getPresentToday();
-            int absentToday = getAbsentToday();
+        // ✅ Run on background thread to avoid UI freezing
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            private int totalEmp = 0;
+            private int present = 0;
+            private int absent = 0;
 
-            // Update labels with null checks
-            if (employeeCountLabel != null) {
-                employeeCountLabel.setText(String.valueOf(totalEmployees));
-            }
-            if (attendanceCountLabel != null) {
-                attendanceCountLabel.setText(String.valueOf(presentToday));
-            }
-            if (absenceCountLabel != null) {
-                absenceCountLabel.setText(String.valueOf(absentToday));
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    totalEmp = getTotalEmployees();
+                    present = getPresentToday();
+                    absent = getAbsentToday();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                return null;
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Error loading dashboard data: " + e.getMessage(),
-                    "Database Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+            @Override
+            protected void done() {
+                // ✅ Update UI on EDT
+                if (employeeCountLabel != null) {
+                    employeeCountLabel.setText(String.valueOf(totalEmp));
+                }
+                if (attendanceCountLabel != null) {
+                    attendanceCountLabel.setText(String.valueOf(present));
+                }
+                if (absenceCountLabel != null) {
+                    absenceCountLabel.setText(String.valueOf(absent));
+                }
+            }
+        };
+        worker.execute();
     }
 
     private int getTotalEmployees() throws SQLException {
         String query = "SELECT COUNT(*) as total FROM employee";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
-
             if (rs.next()) {
                 return rs.getInt("total");
             }
@@ -174,10 +172,9 @@ public class DashboardPanel extends javax.swing.JPanel {
 
     private int getPresentToday() throws SQLException {
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
-        String query = "SELECT COUNT(*) as total FROM attendence WHERE attendance_date = ? AND status = 'Present'";
-
+        String query = "SELECT COUNT(*) as total FROM attendence "
+                + "WHERE attendance_date = ? AND status = 'Present'";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
-
             ps.setDate(1, today);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -192,10 +189,9 @@ public class DashboardPanel extends javax.swing.JPanel {
 
     private int getAbsentToday() throws SQLException {
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
-        String query = "SELECT COUNT(*) as total FROM attendence WHERE attendance_date = ? AND status = 'Absent'";
-
+        String query = "SELECT COUNT(*) as total FROM attendence "
+                + "WHERE attendance_date = ? AND status = 'Absent'";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
-
             ps.setDate(1, today);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -206,6 +202,15 @@ public class DashboardPanel extends javax.swing.JPanel {
             Logger.getLogger(DashboardPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         return 0;
+    }
+
+    // ✅ Clean up timer when panel is removed
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        if (refreshTimer != null) {
+            refreshTimer.stop();
+        }
     }
 
     @SuppressWarnings("unchecked")

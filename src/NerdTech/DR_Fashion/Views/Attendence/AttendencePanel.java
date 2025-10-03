@@ -11,6 +11,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.RowFilter;
 import javax.swing.table.TableRowSorter;
 
@@ -68,6 +70,8 @@ public class AttendencePanel extends javax.swing.JPanel {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception ex) {
+            Logger.getLogger(AttendencePanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         return -1;
     }
@@ -85,6 +89,7 @@ public class AttendencePanel extends javax.swing.JPanel {
         return true; // No need to confirm if status is empty or same
     }
 
+    // AttendencePanel.java - Complete Fixed Version
     private void loadNamesFromDatabase() {
         DefaultTableModel model = (DefaultTableModel) AttendenceTable.getModel();
         model.setRowCount(0); // clear table rows
@@ -93,26 +98,21 @@ public class AttendencePanel extends javax.swing.JPanel {
         java.sql.Date sqlDate = new java.sql.Date(today.getTime());
 
         String query = """
-        SELECT 
-            e.fname, 
-            a.status, 
-            a.attendance_date, 
-            a.come_in, 
-            a.come_off
-        FROM 
-            employee e
-        LEFT JOIN 
-            attendence a 
-        ON 
-            e.id = a.employee_id AND a.attendance_date = ?
-        ORDER BY 
-            e.fname
-    """;
+        SELECT e.fname, a.status, a.attendance_date, a.come_in, a.come_off 
+        FROM employee e 
+        LEFT JOIN attendence a ON e.id = a.employee_id AND a.attendance_date = ? 
+        ORDER BY e.fname
+        """;
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
 
+        try {
+            conn = DatabaseConnection.getConnection(); // ✅ throws Exception
+            ps = conn.prepareStatement(query);
             ps.setDate(1, sqlDate);
-            ResultSet rs = ps.executeQuery();
+            rs = ps.executeQuery();
 
             SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
@@ -121,7 +121,7 @@ public class AttendencePanel extends javax.swing.JPanel {
                 java.sql.Date date = rs.getDate("attendance_date");
 
                 if (date == null) {
-                    // 🔁 No attendance record for today -> show only name
+                    // No attendance record for today -> show only name
                     model.addRow(new Object[]{
                         fname,
                         "", // status
@@ -130,14 +130,23 @@ public class AttendencePanel extends javax.swing.JPanel {
                         "" // come off
                     });
                 } else {
-                    // 🔁 Existing attendance record
+                    // Existing attendance record
                     String status = rs.getString("status");
                     java.sql.Time comeIn = rs.getTime("come_in");
                     java.sql.Time comeOff = rs.getTime("come_off");
-
                     String formattedDate = date.toString();
-                    String formattedComeIn = (comeIn != null && !comeIn.toString().equals("00:00:00")) ? timeFormat.format(comeIn) : "";
-                    String formattedComeOff = (comeOff != null) ? timeFormat.format(comeOff) : "";
+
+                    // ✅ If status is Absent and time is NULL, show "Absent" in table
+                    String formattedComeIn, formattedComeOff;
+
+                    if ("Absent".equalsIgnoreCase(status)) {
+                        formattedComeIn = (comeIn == null) ? "Absent" : timeFormat.format(comeIn);
+                        formattedComeOff = (comeOff == null) ? "Absent" : timeFormat.format(comeOff);
+                    } else {
+                        formattedComeIn = (comeIn != null && !comeIn.toString().equals("00:00:00"))
+                                ? timeFormat.format(comeIn) : "";
+                        formattedComeOff = (comeOff != null) ? timeFormat.format(comeOff) : "";
+                    }
 
                     model.addRow(new Object[]{
                         fname,
@@ -148,10 +157,25 @@ public class AttendencePanel extends javax.swing.JPanel {
                     });
                 }
             }
-
-        } catch (SQLException e) {
+        } catch (Exception e) {  // ✅ Changed from SQLException to Exception
             e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Error loading attendance data: " + e.getMessage());
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error loading attendance data: " + e.getMessage());
+        } finally {
+            // ✅ Properly close resources in reverse order
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -300,7 +324,9 @@ public class AttendencePanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void saveOrUpdateAttendance(int employeeId, String status, java.sql.Date date, java.sql.Time comeIn, java.sql.Time comeOff) {
+    private void saveOrUpdateAttendance(int employeeId, String status, java.sql.Date date,
+            java.sql.Time comeIn, java.sql.Time comeOff,
+            boolean forceNullTimes) {
         String selectSql = "SELECT id, status, come_in, come_off FROM attendence WHERE employee_id = ? AND attendance_date = ?";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
 
@@ -309,37 +335,50 @@ public class AttendencePanel extends javax.swing.JPanel {
             ResultSet rs = selectPs.executeQuery();
 
             if (rs.next()) {
-                // Record exists -> merge and update
+                // Record exists -> update
                 int attendId = rs.getInt("id");
 
                 String existingStatus = rs.getString("status");
                 java.sql.Time existingComeIn = rs.getTime("come_in");
                 java.sql.Time existingComeOff = rs.getTime("come_off");
 
-                // Merge values: keep old if new is null
+                // ✅ NEW LOGIC: If forceNullTimes is true, set times to null regardless of existing values
                 String finalStatus = (status != null) ? status : existingStatus;
-                java.sql.Time finalComeIn = (comeIn != null) ? comeIn : existingComeIn;
-                java.sql.Time finalComeOff = (comeOff != null) ? comeOff : existingComeOff;
+                java.sql.Time finalComeIn;
+                java.sql.Time finalComeOff;
+
+                if (forceNullTimes) {
+                    // Force NULL for Absent status
+                    finalComeIn = null;
+                    finalComeOff = null;
+                } else {
+                    // Normal merge logic
+                    finalComeIn = (comeIn != null) ? comeIn : existingComeIn;
+                    finalComeOff = (comeOff != null) ? comeOff : existingComeOff;
+                }
 
                 String updateSql = "UPDATE attendence SET status = ?, come_in = ?, come_off = ? WHERE id = ?";
                 try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
                     updatePs.setString(1, finalStatus);
+
                     if (finalComeIn != null) {
                         updatePs.setTime(2, finalComeIn);
                     } else {
                         updatePs.setNull(2, java.sql.Types.TIME);
                     }
+
                     if (finalComeOff != null) {
                         updatePs.setTime(3, finalComeOff);
                     } else {
                         updatePs.setNull(3, java.sql.Types.TIME);
                     }
+
                     updatePs.setInt(4, attendId);
                     updatePs.executeUpdate();
                 }
 
             } else {
-                // Insert new
+                // Insert new record
                 String insertSql = "INSERT INTO attendence (employee_id, status, attendance_date, come_in, come_off) VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
                     insertPs.setInt(1, employeeId);
@@ -364,7 +403,9 @@ public class AttendencePanel extends javax.swing.JPanel {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "DB error: " + e.getMessage());
+            javax.swing.JOptionPane.showMessageDialog(null, "DB error: " + e.getMessage());
+        } catch (Exception ex) {
+            Logger.getLogger(AttendencePanel.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -375,6 +416,7 @@ public class AttendencePanel extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Please select a row.");
             return;
         }
+
         String name = (String) AttendenceTable.getValueAt(selectedRow, 0);
         int empId = getEmployeeIdByName(name);
         if (empId == -1) {
@@ -384,13 +426,14 @@ public class AttendencePanel extends javax.swing.JPanel {
 
         String currentStatus = (String) AttendenceTable.getValueAt(selectedRow, 1);
         if ("Absent".equalsIgnoreCase(currentStatus)) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Cannot mark as Present. This employee is already marked Absent.");
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Cannot mark as Present. This employee is already marked Absent.");
             return;
         }
 
         java.util.Date now = new java.util.Date();
         java.sql.Date sqlDate = new java.sql.Date(now.getTime());
-        java.sql.Time sqlTime = new java.sql.Time(now.getTime()); // come_in
+        java.sql.Time sqlTime = new java.sql.Time(now.getTime());
 
         SimpleDateFormat fmt = new SimpleDateFormat("HH:mm");
         String timeStr = fmt.format(now);
@@ -400,8 +443,7 @@ public class AttendencePanel extends javax.swing.JPanel {
         AttendenceTable.setValueAt(timeStr, selectedRow, 3);
         AttendenceTable.setValueAt("", selectedRow, 4);
 
-        // use update/insert logic
-        saveOrUpdateAttendance(empId, "Present", sqlDate, sqlTime, null);
+        saveOrUpdateAttendance(empId, "Present", sqlDate, sqlTime, null, false);
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
@@ -413,27 +455,17 @@ public class AttendencePanel extends javax.swing.JPanel {
 
         String name = (String) AttendenceTable.getValueAt(selectedRow, 0);
         int empId = getEmployeeIdByName(name);
-        if (empId == -1) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Employee not found.");
-            return;
-        }
-
-        String currentStatus = (String) AttendenceTable.getValueAt(selectedRow, 1);
-        if (!confirmOverwriteIfNeeded(currentStatus, "Absent")) {
-            return;
-        }
 
         java.util.Date now = new java.util.Date();
         java.sql.Date sqlDate = new java.sql.Date(now.getTime());
 
-        // ✅ UI Table Update: Show "Absent" in all relevant columns
-        AttendenceTable.setValueAt("Absent", selectedRow, 1); // Status
-        AttendenceTable.setValueAt(sqlDate.toString(), selectedRow, 2); // Date
-        AttendenceTable.setValueAt("Absent", selectedRow, 3); // Come In
-        AttendenceTable.setValueAt("Absent", selectedRow, 4); // Come Off
+        AttendenceTable.setValueAt("Absent", selectedRow, 1);
+        AttendenceTable.setValueAt(sqlDate.toString(), selectedRow, 2);
+        AttendenceTable.setValueAt("Absent", selectedRow, 3);
+        AttendenceTable.setValueAt("Absent", selectedRow, 4);
 
-        // ✅ Save nulls to DB, not "Absent" string (DB can't take string in TIME fields)
-        saveOrUpdateAttendance(empId, "Absent", sqlDate, null, null);
+        // ✅ Pass true to force NULL times
+        saveOrUpdateAttendance(empId, "Absent", sqlDate, null, null, true);
 
     }//GEN-LAST:event_jButton3ActionPerformed
 
@@ -443,6 +475,7 @@ public class AttendencePanel extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Please select a row.");
             return;
         }
+
         String name = (String) AttendenceTable.getValueAt(selectedRow, 0);
         int empId = getEmployeeIdByName(name);
         if (empId == -1) {
@@ -451,7 +484,11 @@ public class AttendencePanel extends javax.swing.JPanel {
         }
 
         String currentStatus = (String) AttendenceTable.getValueAt(selectedRow, 1);
-        if (!confirmOverwriteIfNeeded(currentStatus, "Leave")) {
+
+        // ✅ Check if employee is Present before allowing Leave
+        if (!"Present".equalsIgnoreCase(currentStatus)) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Cannot mark Leave. Employee must be marked as Present first.");
             return;
         }
 
@@ -462,11 +499,25 @@ public class AttendencePanel extends javax.swing.JPanel {
         SimpleDateFormat fmt = new SimpleDateFormat("HH:mm");
         String timeStr = fmt.format(now);
 
-        // Keep status, date, come_in as already there if present
-        // Update come_off
-        AttendenceTable.setValueAt(timeStr, selectedRow, 4);
+        // ✅ Keep existing come_in time
+        String existingComeInStr = (String) AttendenceTable.getValueAt(selectedRow, 3);
+        java.sql.Time comeInTime = null;
+        try {
+            if (existingComeInStr != null && !existingComeInStr.isEmpty()
+                    && !existingComeInStr.equals("Absent")) {
+                java.util.Date parsedTime = fmt.parse(existingComeInStr);
+                comeInTime = new java.sql.Time(parsedTime.getTime());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        saveOrUpdateAttendance(empId, null, sqlDate, null, offTime);
+        // ✅ Update only come_off, keep status as "Present"
+        AttendenceTable.setValueAt("Present", selectedRow, 1);  // Keep Present status
+        AttendenceTable.setValueAt(timeStr, selectedRow, 4);     // Update come_off time
+
+        // ✅ Save with status="Present" (not "Leave")
+        saveOrUpdateAttendance(empId, "Present", sqlDate, comeInTime, offTime, false);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
@@ -484,7 +535,11 @@ public class AttendencePanel extends javax.swing.JPanel {
         }
 
         String currentStatus = (String) AttendenceTable.getValueAt(selectedRow, 1);
-        if (!confirmOverwriteIfNeeded(currentStatus, "Short Leave")) {
+
+        // ✅ Check if employee is Present before allowing Short Leave
+        if (!"Present".equalsIgnoreCase(currentStatus)) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Cannot mark Short Leave. Employee must be marked as Present first.");
             return;
         }
 
@@ -495,12 +550,12 @@ public class AttendencePanel extends javax.swing.JPanel {
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
         String timeStr = formatter.format(now);
 
-        // ----------------------------
-        // 🛠️ NEW: Keep previous 'Come In' time
+        // ✅ Keep previous 'Come In' time
         String existingComeInStr = (String) AttendenceTable.getValueAt(selectedRow, 3);
         java.sql.Time comeInTime = null;
         try {
-            if (existingComeInStr != null && !existingComeInStr.isEmpty()) {
+            if (existingComeInStr != null && !existingComeInStr.isEmpty()
+                    && !existingComeInStr.equals("Absent")) {
                 java.util.Date parsedTime = formatter.parse(existingComeInStr);
                 comeInTime = new java.sql.Time(parsedTime.getTime());
             }
@@ -508,17 +563,14 @@ public class AttendencePanel extends javax.swing.JPanel {
             e.printStackTrace();
         }
 
-        // ----------------------------
-        // Update table UI
+        // ✅ Update to "Short Leave" status
         AttendenceTable.setValueAt("Short Leave", selectedRow, 1);
         AttendenceTable.setValueAt(sqlDate.toString(), selectedRow, 2);
-        // Don't clear come in
-        // AttendenceTable.setValueAt("", selectedRow, 3);
         AttendenceTable.setValueAt(existingComeInStr, selectedRow, 3);
         AttendenceTable.setValueAt(timeStr, selectedRow, 4);
 
         // Save/update to DB
-        saveOrUpdateAttendance(empId, "Short Leave", sqlDate, comeInTime, offTime);
+        saveOrUpdateAttendance(empId, "Short Leave", sqlDate, comeInTime, offTime, false);
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void searchTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchTextFieldActionPerformed
