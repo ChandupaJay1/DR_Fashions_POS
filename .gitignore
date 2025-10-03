@@ -1,0 +1,8 @@
+# Database credentials
+config.properties
+
+# Build files
+build/
+dist/
+nbproject/private/
+*.class
