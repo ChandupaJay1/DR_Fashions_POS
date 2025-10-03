@@ -4,17 +4,135 @@
  */
 package NerdTech.DR_Fashion.Views.Backup;
 
+import NerdTech.DR_Fashion.Views.LoadingPanel;
+import javax.swing.SwingWorker;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.sql.Connection;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import static NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection;
+
 /**
  *
  * @author MG_Pathum
  */
 public class BackupPanel extends javax.swing.JPanel {
 
+    private LoadingPanel loadingPanel;
+    private boolean isInitialized = false;
+
     /**
      * Creates new form BackupPanel
      */
     public BackupPanel() {
+        setLayout(new BorderLayout());
+        setPreferredSize(new Dimension(1237, 686));
+        setBackground(new Color(245, 247, 250));
+
+        showLoading("Connecting to Database");
+        loadContentInBackground();
+    }
+
+    private void showLoading(String message) {
+        removeAll();
+        loadingPanel = new LoadingPanel(message);
+        add(loadingPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
+
+    private void loadContentInBackground() {
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                publish("Initializing backup system");
+                Thread.sleep(300);
+
+                try (Connection conn = getConnection()) {
+                    publish("Verifying database connection");
+                    Thread.sleep(300);
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                if (loadingPanel != null && !chunks.isEmpty()) {
+                    loadingPanel.setMessage(chunks.get(chunks.size() - 1));
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    showActualContent();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showError("Failed to load backup panel: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void showActualContent() {
+        removeAll();
         initComponents();
+        isInitialized = true;
+        revalidate();
+        repaint();
+    }
+
+    private void showError(String errorMessage) {
+        removeAll();
+
+        JPanel errorPanel = new JPanel(new GridBagLayout());
+        errorPanel.setBackground(new Color(245, 247, 250));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 20, 0);
+
+        JLabel errorIcon = new JLabel("⚠️");
+        errorIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 64));
+        errorPanel.add(errorIcon, gbc);
+
+        gbc.gridy = 1;
+        JLabel errorLabel = new JLabel("Connection Failed");
+        errorLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 24));
+        errorLabel.setForeground(new Color(239, 68, 68));
+        errorPanel.add(errorLabel, gbc);
+
+        gbc.gridy = 2;
+        JLabel errorMsg = new JLabel(errorMessage);
+        errorMsg.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
+        errorMsg.setForeground(new Color(100, 116, 139));
+        errorPanel.add(errorMsg, gbc);
+
+        gbc.gridy = 3;
+        gbc.insets = new Insets(20, 0, 0, 0);
+        JButton retryBtn = new JButton("Retry");
+        retryBtn.setFont(new Font("JetBrains Mono", Font.BOLD, 14));
+        retryBtn.addActionListener(e -> {
+            showLoading("Reconnecting");
+            loadContentInBackground();
+        });
+        errorPanel.add(retryBtn, gbc);
+
+        add(errorPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     private void backupEmployeeData(String absolutePath) {
@@ -324,51 +442,6 @@ public class BackupPanel extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this,
                     "Error exporting to Excel: " + e.getMessage(),
                     "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private int countRows(java.sql.Connection conn) {
-        try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM employee")) {
-            if (rs.next()) {
-                return rs.getInt("count");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    private void backupDatabaseAsSQL(String absolutePath) {
-        try {
-            String dbName = "your_database_name";  // මෙතන database name එක දාන්න
-            String dbUser = "root";  // database username
-            String dbPassword = "";  // database password
-
-            String command = String.format(
-                    "mysqldump -u %s -p%s %s -r %s",
-                    dbUser, dbPassword, dbName, absolutePath
-            );
-
-            Process process = Runtime.getRuntime().exec(command);
-            int exitCode = process.waitFor();
-
-            if (exitCode == 0) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Database backup created successfully at:\n" + absolutePath,
-                        "SQL Backup Complete",
-                        javax.swing.JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Database backup failed!",
-                        "Error",
-                        javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Error creating SQL backup: " + e.getMessage(),
-                    "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
 

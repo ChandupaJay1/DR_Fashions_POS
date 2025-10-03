@@ -11,6 +11,7 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.text.SimpleDateFormat;
 import javax.swing.JOptionPane;
 import java.sql.PreparedStatement;
+import java.sql.Connection;
 
 /**
  *
@@ -259,26 +260,11 @@ public class AddEmployeeFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
-        // Validation
+// Validate all fields
         if (InputValidator.isFieldEmpty(fName, "First Name")) {
             return;
         }
         if (InputValidator.isFieldEmpty(lName, "Last Name")) {
-            return;
-        }
-        if (InputValidator.isFieldEmpty(Nic, "NIC")) {
-            return;
-        }
-        if (DoB.getDate() == null) {
-            JOptionPane.showMessageDialog(this, "Please select a valid Date of Birth.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (InputValidator.isFieldEmpty(Phone, "Phone")) {
-            return;
-        }
-        if (!InputValidator.isValidPhoneNumber(Phone)) {
             return;
         }
         if (InputValidator.isFieldEmpty(Email, "Email")) {
@@ -287,52 +273,61 @@ public class AddEmployeeFrame extends javax.swing.JFrame {
         if (!InputValidator.isValidEmail(Email)) {
             return;
         }
+        if (InputValidator.isFieldEmpty(Nic, "NIC")) {
+            return;
+        }
+        if (InputValidator.isFieldEmpty(Phone, "Phone")) {
+            return;
+        }
+        if (!InputValidator.isValidPhoneNumber(Phone)) {
+            return;
+        }
         if (InputValidator.isFieldEmpty(Role, "Role")) {
             return;
         }
+        if (DoB.getDate() == null) {
+            JOptionPane.showMessageDialog(this, "Date of Birth cannot be empty.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            DoB.requestFocus();
+            return;
+        }
 
-        // Data extraction
+        // Gather data
         String firstName = fName.getText().trim();
         String lastName = lName.getText().trim();
         String nic = Nic.getText().trim();
-
-        String dateOfBirth = new SimpleDateFormat("yyyy-MM-dd").format(DoB.getDate());
-
+        String dob = new SimpleDateFormat("yyyy-MM-dd").format(DoB.getDate());
         String phone = Phone.getText().trim();
         String email = Email.getText().trim();
         RoleItem selectedRole = (RoleItem) Role.getSelectedItem();
-        if (selectedRole == null) {
-            JOptionPane.showMessageDialog(this, "Please select a Role", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
         int roleId = selectedRole.getId();
 
-        // SQL query
-        String query = "INSERT INTO employee (fname, lname, email, dob, nic, mobile, role_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (java.sql.Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+        // Insert into database
+        String query = "INSERT INTO employee (fname,lname,email,dob,nic,mobile,role_id,status) "
+                + "VALUES (?,?,?,?,?,?,?,'active')";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setString(1, firstName);
             stmt.setString(2, lastName);
             stmt.setString(3, email);
-            stmt.setString(4, dateOfBirth);
+            stmt.setString(4, dob);
             stmt.setString(5, nic);
             stmt.setString(6, phone);
-            stmt.setInt(7, roleId);  // use roleId
+            stmt.setInt(7, roleId);
 
             int rows = stmt.executeUpdate();
-
             if (rows > 0) {
-                JOptionPane.showMessageDialog(this, "Employee registered successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                employeeRegistrationPanel.refreshTable(); // refresh after register
+                JOptionPane.showMessageDialog(this, "Employee registered successfully!");
+                employeeRegistrationPanel.refreshTable(); // update table in EmployeeRegistration
                 clearFields();
+                this.dispose(); // close the add employee frame
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to register employee.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-            
-            this.dispose();
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
