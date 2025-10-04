@@ -22,6 +22,7 @@ import javax.swing.JPanel;
 import javax.swing.RowFilter;
 import javax.swing.table.TableRowSorter;
 import static NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection;
+import com.formdev.flatlaf.FlatDarkLaf;
 
 /**
  *
@@ -34,9 +35,12 @@ public class AccesoriesPanel extends javax.swing.JPanel {
     private TableRowSorter<javax.swing.table.DefaultTableModel> sorter;
 
     public AccesoriesPanel() {
+
+        FlatDarkLaf.setup();
+
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1237, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
 
         showLoading("Connecting to Database");
         loadContentInBackground();
@@ -349,16 +353,16 @@ public class AccesoriesPanel extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jLabel2)
-                        .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 53, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -461,6 +465,16 @@ public class AccesoriesPanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_searchTextFieldActionPerformed
 
+    // ඔබේ main JFrame class එකේ හෝ main method එකේ
+    public static void main(String[] args) {
+        // Application start වෙද්දි theme set කරන්න
+        FlatDarkLaf.setup();
+
+        SwingUtilities.invokeLater(() -> {
+            AccesoriesPanel frame = new AccesoriesPanel();
+            frame.setVisible(true);
+        });
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;

@@ -5,6 +5,7 @@
 package NerdTech.DR_Fashion.Views.Registration;
 
 import NerdTech.DR_Fashion.Views.LoadingPanel;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -36,10 +37,11 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private int selectedRow;
 
     public EmployeeRegistration() {
+
         initComponents(); // Initialize all GUI components first
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1257, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
 
         showLoading("Connecting to Database");
         loadContentInBackground();

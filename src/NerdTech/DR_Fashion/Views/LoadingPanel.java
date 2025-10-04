@@ -24,12 +24,13 @@ public class LoadingPanel extends JPanel {
         this.baseMessage = message;
         initComponents();
         startAnimation();
+        
     }
 
     private void initComponents() {
         // Use BorderLayout for better centering
         setLayout(new BorderLayout());
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
 
         // Create a center panel with GridBagLayout
         JPanel centerPanel = new JPanel(new GridBagLayout());
