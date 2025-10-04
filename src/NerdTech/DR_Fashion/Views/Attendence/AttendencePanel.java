@@ -6,6 +6,7 @@ package NerdTech.DR_Fashion.Views.Attendence;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -43,9 +44,10 @@ public class AttendencePanel extends javax.swing.JPanel {
     private TableRowSorter<DefaultTableModel> sorter;
 
     public AttendencePanel() {
+        
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1257, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
 
         showLoading("Connecting to Database");
         loadContentInBackground();

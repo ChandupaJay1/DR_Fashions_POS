@@ -18,6 +18,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import static NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection;
+import com.formdev.flatlaf.FlatDarkLaf;
 
 /**
  *
@@ -32,9 +33,10 @@ public class BackupPanel extends javax.swing.JPanel {
      * Creates new form BackupPanel
      */
     public BackupPanel() {
+
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1237, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
 
         showLoading("Connecting to Database");
         loadContentInBackground();
@@ -445,6 +447,90 @@ public class BackupPanel extends javax.swing.JPanel {
         }
     }
 
+    private void backupDatabaseToSQL(String sqlFilePath) {
+        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.io.FileWriter writer = new java.io.FileWriter(sqlFilePath); java.io.BufferedWriter bw = new java.io.BufferedWriter(writer)) {
+
+            java.sql.DatabaseMetaData metaData = conn.getMetaData();
+            String databaseName = conn.getCatalog();
+
+            // SQL Header
+            bw.write("-- SQL Backup File\n");
+            bw.write("-- Database: " + databaseName + "\n");
+            bw.write("-- Backup Date: " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()) + "\n");
+            bw.write("-- =============================================\n\n");
+            bw.write("SET FOREIGN_KEY_CHECKS = 0;\n\n");
+
+            // List of tables to backup
+            String[] tables = {"role", "employee", "stock", "accesories"};
+
+            for (String tableName : tables) {
+                bw.write("\n-- =============================================\n");
+                bw.write("-- Table: " + tableName + "\n");
+                bw.write("-- =============================================\n\n");
+
+                // DROP TABLE IF EXISTS
+                bw.write("DROP TABLE IF EXISTS `" + tableName + "`;\n\n");
+
+                // CREATE TABLE statement
+                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE `" + tableName + "`")) {
+                    if (rs.next()) {
+                        bw.write(rs.getString(2) + ";\n\n");
+                    }
+                }
+
+                // INSERT statements
+                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT * FROM `" + tableName + "`")) {
+
+                    java.sql.ResultSetMetaData rsMetaData = rs.getMetaData();
+                    int columnCount = rsMetaData.getColumnCount();
+
+                    while (rs.next()) {
+                        StringBuilder insertQuery = new StringBuilder();
+                        insertQuery.append("INSERT INTO `").append(tableName).append("` VALUES (");
+
+                        for (int i = 1; i <= columnCount; i++) {
+                            Object value = rs.getObject(i);
+
+                            if (value == null) {
+                                insertQuery.append("NULL");
+                            } else if (value instanceof String || value instanceof java.sql.Date || value instanceof java.sql.Timestamp) {
+                                String strValue = value.toString().replace("'", "''");
+                                insertQuery.append("'").append(strValue).append("'");
+                            } else {
+                                insertQuery.append(value);
+                            }
+
+                            if (i < columnCount) {
+                                insertQuery.append(", ");
+                            }
+                        }
+
+                        insertQuery.append(");\n");
+                        bw.write(insertQuery.toString());
+                    }
+                }
+
+                bw.write("\n");
+            }
+
+            bw.write("\nSET FOREIGN_KEY_CHECKS = 1;\n");
+            bw.write("-- Backup completed successfully\n");
+
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "SQL Database backup completed successfully!\n\n"
+                    + "File saved at:\n" + sqlFilePath,
+                    "Backup Complete",
+                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error creating SQL backup: " + e.getMessage(),
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -456,6 +542,7 @@ public class BackupPanel extends javax.swing.JPanel {
 
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
+        jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         EmployeeBtn = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
@@ -472,6 +559,9 @@ public class BackupPanel extends javax.swing.JPanel {
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Backup System Data");
 
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 50, 477, 38));
+
         EmployeeBtn.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         EmployeeBtn.setText("Backup Data");
         EmployeeBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -479,12 +569,16 @@ public class BackupPanel extends javax.swing.JPanel {
                 EmployeeBtnActionPerformed(evt);
             }
         });
+        jPanel1.add(EmployeeBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 140, 199, 41));
 
         jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel3.setText("Backup Employee Data");
+        jPanel1.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 110, -1, -1));
+        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 50, 477, 38));
 
         jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel5.setText("Backup Stock Data");
+        jPanel1.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 110, -1, -1));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton2.setText("Backup Data");
@@ -493,9 +587,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton2ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 140, 199, 41));
+        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 220, 477, 38));
 
         jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel7.setText("Backup Accesories Data");
+        jPanel1.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 270, -1, -1));
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton3.setText("Backup Data");
@@ -504,9 +601,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton3ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 300, 199, 41));
+        jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 220, 477, 38));
 
         jLabel9.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel9.setText("Backup All Data");
+        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(820, 270, -1, -1));
 
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton4.setText("Backup Data");
@@ -515,96 +615,32 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton4ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 300, 199, 41));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(6, 6, 6)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
                     .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 430, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(118, 118, 118)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(11, 11, 11)
-                                        .addComponent(EmployeeBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jLabel3))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 139, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel5)
-                                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(141, 141, 141))
-                            .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGroup(layout.createSequentialGroup()
-                                    .addGap(129, 129, 129)
-                                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(43, 43, 43)))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jLabel7)
-                                .addGap(122, 122, 122)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jLabel9)
-                                .addGap(19, 19, 19)))
-                        .addGap(133, 133, 133)))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1190, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(6, 6, 6)
                 .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(6, 6, 6)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(49, 49, 49)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(EmployeeBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel5)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(38, 38, 38)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel7)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel9)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(62, Short.MAX_VALUE))
+                .addGap(64, 64, 64)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(79, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -677,19 +713,24 @@ public class BackupPanel extends javax.swing.JPanel {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
-        fileChooser.setDialogTitle("Save All Data as Excel File");
-        fileChooser.setSelectedFile(new java.io.File("all_data_backup.xlsx"));
+        fileChooser.setDialogTitle("Save SQL Database Backup");
+        fileChooser.setSelectedFile(new java.io.File("database_backup.sql"));
+
+        // SQL file filter එකක් add කරන්න
+        javax.swing.filechooser.FileNameExtensionFilter filter
+                = new javax.swing.filechooser.FileNameExtensionFilter("SQL Files (*.sql)", "sql");
+        fileChooser.setFileFilter(filter);
 
         int userSelection = fileChooser.showSaveDialog(this);
         if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
             java.io.File selectedFile = fileChooser.getSelectedFile();
             String path = selectedFile.getAbsolutePath();
 
-            if (!path.toLowerCase().endsWith(".xlsx")) {
-                path += ".xlsx";
+            if (!path.toLowerCase().endsWith(".sql")) {
+                path += ".sql";
             }
 
-            backupAllData(path);
+            backupDatabaseToSQL(path);
         }
     }//GEN-LAST:event_jButton4ActionPerformed
 
@@ -708,6 +749,7 @@ public class BackupPanel extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JSeparator jSeparator1;
     // End of variables declaration//GEN-END:variables
 }

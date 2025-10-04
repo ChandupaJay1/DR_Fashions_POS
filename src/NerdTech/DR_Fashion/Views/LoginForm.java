@@ -7,6 +7,7 @@ package NerdTech.DR_Fashion.Views;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import java.awt.Image;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -237,7 +238,13 @@ public class LoginForm extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        FlatMacLightLaf.setup();
+        // ✅ FlatDarkLaf use කරන්න (FlatMacDarkLaf වෙනුවට)
+        try {
+            FlatMacDarkLaf.setup();
+            // හෝ FlatMacDarkLaf.setup(); - Mac style dark theme එකට
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Show splash screen
         SplashScreen splash = new SplashScreen();

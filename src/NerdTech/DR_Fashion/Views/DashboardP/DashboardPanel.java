@@ -8,6 +8,7 @@ import NerdTech.DR_Fashion.Views.DashboardP.CardPanel;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,8 +28,9 @@ public class DashboardPanel extends javax.swing.JPanel {
     private boolean isInitialized = false;
 
     public DashboardPanel() {
+
         setPreferredSize(new Dimension(1257, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
         setLayout(new BorderLayout());
 
         showLoading("Loading Dashboard Data");
@@ -106,10 +108,10 @@ public class DashboardPanel extends javax.swing.JPanel {
 
         JLabel titleLabel = new JLabel("Dashboard");
         titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 48));
-        titleLabel.setForeground(new Color(30, 41, 59));
+        titleLabel.setForeground(Color.WHITE);  // ✅ White color
 
         JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(203, 213, 225));
+        separator.setForeground(new Color(100, 100, 100));  // Dark theme separator
 
         topPanel.add(titleLabel, BorderLayout.NORTH);
         topPanel.add(separator, BorderLayout.SOUTH);
@@ -268,6 +270,7 @@ public class DashboardPanel extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("Dashboard");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
