@@ -28,12 +28,51 @@ public class Dashboard extends javax.swing.JFrame {
 
     private LoadingPanel loadingPanel;
 
-    public Dashboard(String full_name) {
+    private String role;
+
+    public Dashboard(String full_name, String role) {
         initComponents();
+        this.role = role;
         startClock();
         DisplayLabel.setText("Hi, " + full_name);
-
+        setAccessByRole();
         loadDashboardPanelByDefault();
+    }
+
+    private void setAccessByRole() {
+        switch (role.toLowerCase()) {
+            case "admin" -> {
+                // Admin can access everything
+                jButton2.setEnabled(true); // Dashboard
+                jButton6.setEnabled(true); // Registration
+                jButton1.setEnabled(true); // Attendance
+                jButton8.setEnabled(true); // Accessories
+                jButton3.setEnabled(true); // Stock
+                jButton4.setEnabled(true); // Backup
+            }
+            case "manager" -> {
+                // Manager limited access
+                jButton2.setEnabled(true);
+                jButton6.setEnabled(true);
+                jButton1.setEnabled(true);
+                jButton8.setEnabled(true);
+                jButton3.setEnabled(true);
+                jButton4.setEnabled(false); // Cannot backup
+            }
+            case "employee" -> {
+                // Employee minimal access
+                jButton2.setEnabled(true);
+                jButton1.setEnabled(true);
+                jButton6.setEnabled(false);
+                jButton8.setEnabled(false);
+                jButton3.setEnabled(false);
+                jButton4.setEnabled(false);
+            }
+            default -> {
+                // If unknown role
+                JOptionPane.showMessageDialog(this, "Unknown role: " + role);
+            }
+        }
     }
 
     /**
@@ -316,10 +355,10 @@ public class Dashboard extends javax.swing.JFrame {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE
         );
-        
+
         new LoginForm().setVisible(true);
         this.dispose();
-        
+
     }//GEN-LAST:event_jButton5ActionPerformed
 
     /**
@@ -334,8 +373,11 @@ public class Dashboard extends javax.swing.JFrame {
     public static void main(String args[]) {
         FlatMacLightLaf.setup();
         String name = "John Doe";
-        java.awt.EventQueue.invokeLater(() -> new Dashboard(name).setVisible(true));
+        String role = "admin"; // or "employee" / "manager"
+
+        java.awt.EventQueue.invokeLater(() -> new Dashboard(name, role).setVisible(true));
     }
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Date;

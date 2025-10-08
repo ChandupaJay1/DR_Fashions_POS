@@ -33,6 +33,19 @@ public class LoginForm extends javax.swing.JFrame {
         init();
     }
 
+    class User {
+
+        String username;
+        String fullName;
+        String role;
+
+        public User(String username, String fullName, String role) {
+            this.username = username;
+            this.fullName = fullName;
+            this.role = role;
+        }
+    }
+
     public void init() {
         java.net.URL imageUrl = getClass().getResource("/NerdTech/DR_Fashion/img/logo.png");
         if (imageUrl != null) {
@@ -177,13 +190,13 @@ public class LoginForm extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addGap(0, 80, Short.MAX_VALUE)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(LoginImage, javax.swing.GroupLayout.PREFERRED_SIZE, 441, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 9, Short.MAX_VALUE)))
+                        .addGap(18, 18, 18)
+                        .addComponent(LoginImage, javax.swing.GroupLayout.PREFERRED_SIZE, 396, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -195,14 +208,14 @@ public class LoginForm extends javax.swing.JFrame {
 
     }//GEN-LAST:event_usernameFieldActionPerformed
 
-    private String authenticateUser(String username, String password) {
-        String sql = "SELECT `full_name` FROM user WHERE `name` = ? AND password = ?";
+    private User authenticateUser(String username, String password) {
+        String sql = "SELECT full_name, role FROM user WHERE name = ? AND password = ?";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, password);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getString("full_name");
+                return new User(username, rs.getString("full_name"), rs.getString("role"));
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
@@ -211,6 +224,7 @@ public class LoginForm extends javax.swing.JFrame {
         }
         return null;
     }
+
 
     private void SignInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SignInBtnActionPerformed
         String username = usernameField.getText().trim();
@@ -221,17 +235,17 @@ public class LoginForm extends javax.swing.JFrame {
             return;
         }
 
-        String fullName = authenticateUser(username, password);
+        User user = authenticateUser(username, password);
 
-        if (fullName != null) {
-            JOptionPane.showMessageDialog(this, "Login successful as " + fullName + "!");
+        if (user != null) {
+            JOptionPane.showMessageDialog(this, "Login successful as " + user.fullName + " (" + user.role + ")");
             this.dispose();
 
-            // Open Dashboard with the full name
-            new Dashboard(fullName).setVisible(true); // ✅ fixed line
+            // Pass both name & role
+            new Dashboard(user.fullName, user.role).setVisible(true);
 
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password. Please check your credentials or database connection.");
+            JOptionPane.showMessageDialog(this, "Invalid username or password.");
         }
     }//GEN-LAST:event_SignInBtnActionPerformed
 
