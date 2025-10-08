@@ -64,8 +64,9 @@ public class LoginForm extends javax.swing.JFrame {
         passwordField = new javax.swing.JPasswordField();
         LoginImage = new javax.swing.JLabel();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("LogIn Form");
+        setResizable(false);
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Welcome to DR Fashions");
