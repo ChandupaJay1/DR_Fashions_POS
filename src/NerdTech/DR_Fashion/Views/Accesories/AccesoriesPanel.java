@@ -243,7 +243,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         searchTextField = new javax.swing.JTextField();
 
-        setPreferredSize(new java.awt.Dimension(1237, 0));
+        setPreferredSize(new java.awt.Dimension(1257, 0));
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Accesories");

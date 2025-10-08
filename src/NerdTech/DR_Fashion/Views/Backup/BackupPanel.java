@@ -556,6 +556,8 @@ public class BackupPanel extends javax.swing.JPanel {
         jLabel9 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
 
+        setPreferredSize(new java.awt.Dimension(1257, 0));
+
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Backup System Data");
 
@@ -626,10 +628,8 @@ public class BackupPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
                     .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 430, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1190, Short.MAX_VALUE)
-                .addContainerGap())
+                .addContainerGap(760, Short.MAX_VALUE))
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
