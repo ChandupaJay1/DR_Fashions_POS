@@ -90,13 +90,18 @@ public class BillingDFrame extends javax.swing.JDialog {
         }
 
         try {
+            
             // Get full name from text field and sanitize it for filename
             String fullName = jTextField1.getText().trim().replaceAll("[^a-zA-Z0-9\\s]", "").replaceAll("\\s+", "_");
             String fileName = fullName + "_Invoice.pdf";
 
-// Choose a directory to save (e.g., Desktop or project folder)
+            // >>>>> Replace the default Desktop location with Documents/DR Fashion Invoice folder <<<<<
             String userHome = System.getProperty("user.home");
-            File outputFile = new File(userHome + File.separator + "Desktop" + File.separator + fileName);
+            File saveDir = new File(userHome + File.separator + "Documents" + File.separator + "DR Fashion Invoice");
+            if (!saveDir.exists()) {
+                saveDir.mkdirs(); // Create the directory if it doesn't exist
+            }
+            File outputFile = new File(saveDir, fileName);
 
             Document document = new Document();
             PdfWriter.getInstance(document, new FileOutputStream(outputFile));
@@ -402,7 +407,7 @@ public class BillingDFrame extends javax.swing.JDialog {
         });
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton1.setText("Cancle");
+        jButton1.setText("Cancel");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
