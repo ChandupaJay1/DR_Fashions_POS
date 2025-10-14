@@ -4,17 +4,137 @@
  */
 package NerdTech.DR_Fashion.Views.Backup;
 
+import NerdTech.DR_Fashion.Views.LoadingPanel;
+import javax.swing.SwingWorker;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.sql.Connection;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import static NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection;
+import com.formdev.flatlaf.FlatDarkLaf;
+
 /**
  *
  * @author MG_Pathum
  */
 public class BackupPanel extends javax.swing.JPanel {
 
+    private LoadingPanel loadingPanel;
+    private boolean isInitialized = false;
+
     /**
      * Creates new form BackupPanel
      */
     public BackupPanel() {
+
+        setLayout(new BorderLayout());
+        setPreferredSize(new Dimension(1237, 686));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
+
+        showLoading("Connecting to Database");
+        loadContentInBackground();
+    }
+
+    private void showLoading(String message) {
+        removeAll();
+        loadingPanel = new LoadingPanel(message);
+        add(loadingPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
+
+    private void loadContentInBackground() {
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                publish("Initializing backup system");
+                Thread.sleep(300);
+
+                try (Connection conn = getConnection()) {
+                    publish("Verifying database connection");
+                    Thread.sleep(300);
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                if (loadingPanel != null && !chunks.isEmpty()) {
+                    loadingPanel.setMessage(chunks.get(chunks.size() - 1));
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    showActualContent();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showError("Failed to load backup panel: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void showActualContent() {
+        removeAll();
         initComponents();
+        isInitialized = true;
+        revalidate();
+        repaint();
+    }
+
+    private void showError(String errorMessage) {
+        removeAll();
+
+        JPanel errorPanel = new JPanel(new GridBagLayout());
+        errorPanel.setBackground(new Color(245, 247, 250));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 20, 0);
+
+        JLabel errorIcon = new JLabel("⚠️");
+        errorIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 64));
+        errorPanel.add(errorIcon, gbc);
+
+        gbc.gridy = 1;
+        JLabel errorLabel = new JLabel("Connection Failed");
+        errorLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 24));
+        errorLabel.setForeground(new Color(239, 68, 68));
+        errorPanel.add(errorLabel, gbc);
+
+        gbc.gridy = 2;
+        JLabel errorMsg = new JLabel(errorMessage);
+        errorMsg.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
+        errorMsg.setForeground(new Color(100, 116, 139));
+        errorPanel.add(errorMsg, gbc);
+
+        gbc.gridy = 3;
+        gbc.insets = new Insets(20, 0, 0, 0);
+        JButton retryBtn = new JButton("Retry");
+        retryBtn.setFont(new Font("JetBrains Mono", Font.BOLD, 14));
+        retryBtn.addActionListener(e -> {
+            showLoading("Reconnecting");
+            loadContentInBackground();
+        });
+        errorPanel.add(retryBtn, gbc);
+
+        add(errorPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     private void backupEmployeeData(String absolutePath) {
@@ -327,42 +447,81 @@ public class BackupPanel extends javax.swing.JPanel {
         }
     }
 
-    private int countRows(java.sql.Connection conn) {
-        try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) AS count FROM employee")) {
-            if (rs.next()) {
-                return rs.getInt("count");
+    private void backupDatabaseToSQL(String sqlFilePath) {
+        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.io.FileWriter writer = new java.io.FileWriter(sqlFilePath); java.io.BufferedWriter bw = new java.io.BufferedWriter(writer)) {
+
+            java.sql.DatabaseMetaData metaData = conn.getMetaData();
+            String databaseName = conn.getCatalog();
+
+            // SQL Header
+            bw.write("-- SQL Backup File\n");
+            bw.write("-- Database: " + databaseName + "\n");
+            bw.write("-- Backup Date: " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()) + "\n");
+            bw.write("-- =============================================\n\n");
+            bw.write("SET FOREIGN_KEY_CHECKS = 0;\n\n");
+
+            // List of tables to backup
+            String[] tables = {"role", "employee", "stock", "accesories"};
+
+            for (String tableName : tables) {
+                bw.write("\n-- =============================================\n");
+                bw.write("-- Table: " + tableName + "\n");
+                bw.write("-- =============================================\n\n");
+
+                // DROP TABLE IF EXISTS
+                bw.write("DROP TABLE IF EXISTS `" + tableName + "`;\n\n");
+
+                // CREATE TABLE statement
+                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE `" + tableName + "`")) {
+                    if (rs.next()) {
+                        bw.write(rs.getString(2) + ";\n\n");
+                    }
+                }
+
+                // INSERT statements
+                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT * FROM `" + tableName + "`")) {
+
+                    java.sql.ResultSetMetaData rsMetaData = rs.getMetaData();
+                    int columnCount = rsMetaData.getColumnCount();
+
+                    while (rs.next()) {
+                        StringBuilder insertQuery = new StringBuilder();
+                        insertQuery.append("INSERT INTO `").append(tableName).append("` VALUES (");
+
+                        for (int i = 1; i <= columnCount; i++) {
+                            Object value = rs.getObject(i);
+
+                            if (value == null) {
+                                insertQuery.append("NULL");
+                            } else if (value instanceof String || value instanceof java.sql.Date || value instanceof java.sql.Timestamp) {
+                                String strValue = value.toString().replace("'", "''");
+                                insertQuery.append("'").append(strValue).append("'");
+                            } else {
+                                insertQuery.append(value);
+                            }
+
+                            if (i < columnCount) {
+                                insertQuery.append(", ");
+                            }
+                        }
+
+                        insertQuery.append(");\n");
+                        bw.write(insertQuery.toString());
+                    }
+                }
+
+                bw.write("\n");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
 
-    private void backupDatabaseAsSQL(String absolutePath) {
-        try {
-            String dbName = "your_database_name";  // මෙතන database name එක දාන්න
-            String dbUser = "root";  // database username
-            String dbPassword = "";  // database password
+            bw.write("\nSET FOREIGN_KEY_CHECKS = 1;\n");
+            bw.write("-- Backup completed successfully\n");
 
-            String command = String.format(
-                    "mysqldump -u %s -p%s %s -r %s",
-                    dbUser, dbPassword, dbName, absolutePath
-            );
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "SQL Database backup completed successfully!\n\n"
+                    + "File saved at:\n" + sqlFilePath,
+                    "Backup Complete",
+                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
 
-            Process process = Runtime.getRuntime().exec(command);
-            int exitCode = process.waitFor();
-
-            if (exitCode == 0) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Database backup created successfully at:\n" + absolutePath,
-                        "SQL Backup Complete",
-                        javax.swing.JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Database backup failed!",
-                        "Error",
-                        javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
         } catch (Exception e) {
             e.printStackTrace();
             javax.swing.JOptionPane.showMessageDialog(this,
@@ -383,6 +542,7 @@ public class BackupPanel extends javax.swing.JPanel {
 
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
+        jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         EmployeeBtn = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
@@ -396,8 +556,13 @@ public class BackupPanel extends javax.swing.JPanel {
         jLabel9 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
 
+        setPreferredSize(new java.awt.Dimension(1257, 0));
+
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Backup System Data");
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 50, 477, 38));
 
         EmployeeBtn.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         EmployeeBtn.setText("Backup Data");
@@ -406,12 +571,16 @@ public class BackupPanel extends javax.swing.JPanel {
                 EmployeeBtnActionPerformed(evt);
             }
         });
+        jPanel1.add(EmployeeBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 140, 199, 41));
 
         jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel3.setText("Backup Employee Data");
+        jPanel1.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 110, -1, -1));
+        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 50, 477, 38));
 
         jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel5.setText("Backup Stock Data");
+        jPanel1.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 110, -1, -1));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton2.setText("Backup Data");
@@ -420,9 +589,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton2ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 140, 199, 41));
+        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 220, 477, 38));
 
         jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel7.setText("Backup Accesories Data");
+        jPanel1.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 270, -1, -1));
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton3.setText("Backup Data");
@@ -431,9 +603,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton3ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 300, 199, 41));
+        jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 220, 477, 38));
 
         jLabel9.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel9.setText("Backup All Data");
+        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(820, 270, -1, -1));
 
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton4.setText("Backup Data");
@@ -442,96 +617,30 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton4ActionPerformed(evt);
             }
         });
+        jPanel1.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 300, 199, 41));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(6, 6, 6)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
                     .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 430, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(118, 118, 118)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(11, 11, 11)
-                                        .addComponent(EmployeeBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jLabel3))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 139, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel5)
-                                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(141, 141, 141))
-                            .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 477, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGroup(layout.createSequentialGroup()
-                                    .addGap(129, 129, 129)
-                                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(43, 43, 43)))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jLabel7)
-                                .addGap(122, 122, 122)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jLabel9)
-                                .addGap(19, 19, 19)))
-                        .addGap(133, 133, 133)))
-                .addContainerGap())
+                .addContainerGap(760, Short.MAX_VALUE))
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(6, 6, 6)
                 .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(6, 6, 6)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(49, 49, 49)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(EmployeeBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel5)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(38, 38, 38)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel7)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jLabel9)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(62, Short.MAX_VALUE))
+                .addGap(64, 64, 64)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(79, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -604,19 +713,24 @@ public class BackupPanel extends javax.swing.JPanel {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
-        fileChooser.setDialogTitle("Save All Data as Excel File");
-        fileChooser.setSelectedFile(new java.io.File("all_data_backup.xlsx"));
+        fileChooser.setDialogTitle("Save SQL Database Backup");
+        fileChooser.setSelectedFile(new java.io.File("database_backup.sql"));
+
+        // SQL file filter එකක් add කරන්න
+        javax.swing.filechooser.FileNameExtensionFilter filter
+                = new javax.swing.filechooser.FileNameExtensionFilter("SQL Files (*.sql)", "sql");
+        fileChooser.setFileFilter(filter);
 
         int userSelection = fileChooser.showSaveDialog(this);
         if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
             java.io.File selectedFile = fileChooser.getSelectedFile();
             String path = selectedFile.getAbsolutePath();
 
-            if (!path.toLowerCase().endsWith(".xlsx")) {
-                path += ".xlsx";
+            if (!path.toLowerCase().endsWith(".sql")) {
+                path += ".sql";
             }
 
-            backupAllData(path);
+            backupDatabaseToSQL(path);
         }
     }//GEN-LAST:event_jButton4ActionPerformed
 
@@ -635,6 +749,7 @@ public class BackupPanel extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JSeparator jSeparator1;
     // End of variables declaration//GEN-END:variables
 }
