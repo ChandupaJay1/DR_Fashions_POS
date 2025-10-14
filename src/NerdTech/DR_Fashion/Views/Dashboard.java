@@ -4,12 +4,15 @@
  */
 package NerdTech.DR_Fashion.Views;
 
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseSync;
 import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
 import NerdTech.DR_Fashion.Views.PayRollManage.PayRollManagementPanel;
+import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
@@ -156,11 +159,13 @@ public class Dashboard extends javax.swing.JFrame {
         DisplayLabel = new javax.swing.JLabel();
         jButton5 = new javax.swing.JButton();
         jButton9 = new javax.swing.JButton();
+        jButtonSync = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jButton2 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
+        jButton10 = new javax.swing.JButton();
         jButton8 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
@@ -203,6 +208,14 @@ public class Dashboard extends javax.swing.JFrame {
             }
         });
 
+        jButtonSync.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButtonSync.setText("Sync");
+        jButtonSync.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonSyncActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -216,9 +229,11 @@ public class Dashboard extends javax.swing.JFrame {
                         .addComponent(DisplayLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 302, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(Date, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(47, 47, 47)
+                .addGap(49, 49, 49)
                 .addComponent(Time, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(42, 42, 42)
+                .addGap(18, 18, 18)
+                .addComponent(jButtonSync, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
                     .addComponent(jButton9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -236,7 +251,8 @@ public class Dashboard extends javax.swing.JFrame {
                         .addGap(15, 15, 15)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(Time, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(Date, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(Date, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButtonSync, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addContainerGap()
@@ -246,7 +262,7 @@ public class Dashboard extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jPanel3.setLayout(new java.awt.GridLayout(7, 1, 5, 10));
+        jPanel3.setLayout(new java.awt.GridLayout(8, 1, 5, 10));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton2.setText("Dashboard");
@@ -283,6 +299,15 @@ public class Dashboard extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton7);
+
+        jButton10.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton10.setText("Shipments");
+        jButton10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton10ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton10);
 
         jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton8.setText("Accesories");
@@ -431,6 +456,27 @@ public class Dashboard extends javax.swing.JFrame {
         refreshCurrentPanel();
     }//GEN-LAST:event_jButton9ActionPerformed
 
+    private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
+        loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+    }//GEN-LAST:event_jButton10ActionPerformed
+
+    private void jButtonSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSyncActionPerformed
+        new Thread(() -> {
+            try {
+                JOptionPane.showMessageDialog(this, "🔄 Sync started, please wait...");
+
+                // DatabaseSync වෙනුවට DatabaseConnection භාවිතා කරන්න
+                DatabaseConnection.syncLocalToOnline();
+                DatabaseConnection.syncOnlineToLocal();
+
+                JOptionPane.showMessageDialog(this, "✅ Sync completed successfully!");
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "❌ Sync failed: " + e.getMessage());
+            }
+        }).start();
+    }//GEN-LAST:event_jButtonSyncActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -455,6 +501,7 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JPanel LoaderPanel;
     private javax.swing.JLabel Time;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton10;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
@@ -463,6 +510,7 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JButton jButton7;
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
+    private javax.swing.JButton jButtonSync;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
