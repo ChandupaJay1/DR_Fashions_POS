@@ -6,7 +6,8 @@
 *.class
 
 # Build output directories
-/build/
+build/
+
 /dist/
 
 # =======================================
