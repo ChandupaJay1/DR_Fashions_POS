@@ -7,6 +7,8 @@ package NerdTech.DR_Fashion.Views.DashboardP;
 import NerdTech.DR_Fashion.Views.DashboardP.CardPanel;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import NerdTech.DR_Fashion.Views.LoadingPanel;
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,23 +24,81 @@ public class DashboardPanel extends javax.swing.JPanel {
     private JLabel attendanceCountLabel;
     private JLabel absenceCountLabel;
     private Timer refreshTimer;
+    private LoadingPanel loadingPanel;
+    private boolean isInitialized = false;
 
     public DashboardPanel() {
+
         setPreferredSize(new Dimension(1257, 686));
-        setBackground(new Color(245, 247, 250));
+        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
         setLayout(new BorderLayout());
 
-        createDashboardUI();
-        loadDashboardData();
-
-        // ✅ Auto-refresh every 5 seconds (more responsive)
-        refreshTimer = new Timer(2000, e -> loadDashboardData());
-        refreshTimer.start();
+        showLoading("Loading Dashboard Data");
+        loadContentInBackground();
     }
 
-    // ✅ NEW: Public method to manually refresh from other panels
-    public void refreshData() {
-        loadDashboardData();
+    private void showLoading(String message) {
+        removeAll();
+        loadingPanel = new LoadingPanel(message);
+        add(loadingPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
+
+    private void loadContentInBackground() {
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+            private int totalEmp = 0;
+            private int present = 0;
+            private int absent = 0;
+
+            @Override
+            protected Void doInBackground() {
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    publish("Fetching employees");
+                    totalEmp = getTotalEmployees(conn);
+
+                    publish("Fetching present count");
+                    present = getPresentToday(conn);
+
+                    publish("Fetching absent count");
+                    absent = getAbsentToday(conn);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                if (loadingPanel != null && !chunks.isEmpty()) {
+                    loadingPanel.setMessage(chunks.get(chunks.size() - 1));
+                }
+            }
+
+            @Override
+            protected void done() {
+                showActualContent(totalEmp, present, absent);
+            }
+        };
+        worker.execute();
+    }
+
+    private void showActualContent(int totalEmp, int present, int absent) {
+        removeAll();
+        createDashboardUI();
+
+        employeeCountLabel.setText(String.valueOf(totalEmp));
+        attendanceCountLabel.setText(String.valueOf(present));
+        absenceCountLabel.setText(String.valueOf(absent));
+
+        // Auto-refresh
+        refreshTimer = new Timer(5000, e -> loadDashboardData());
+        refreshTimer.start();
+
+        isInitialized = true;
+        revalidate();
+        repaint();
     }
 
     private void createDashboardUI() {
@@ -48,10 +108,10 @@ public class DashboardPanel extends javax.swing.JPanel {
 
         JLabel titleLabel = new JLabel("Dashboard");
         titleLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 48));
-        titleLabel.setForeground(new Color(30, 41, 59));
+        titleLabel.setForeground(Color.WHITE);  // ✅ White color
 
         JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(203, 213, 225));
+        separator.setForeground(new Color(100, 100, 100));  // Dark theme separator
 
         topPanel.add(titleLabel, BorderLayout.NORTH);
         topPanel.add(separator, BorderLayout.SOUTH);
@@ -123,19 +183,18 @@ public class DashboardPanel extends javax.swing.JPanel {
     }
 
     private void loadDashboardData() {
-        // ✅ Run on background thread to avoid UI freezing
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             private int totalEmp = 0;
             private int present = 0;
             private int absent = 0;
 
             @Override
-            protected Void doInBackground() throws Exception {
-                try {
-                    totalEmp = getTotalEmployees();
-                    present = getPresentToday();
-                    absent = getAbsentToday();
-                } catch (SQLException e) {
+            protected Void doInBackground() {
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    totalEmp = getTotalEmployees(conn);
+                    present = getPresentToday(conn);
+                    absent = getAbsentToday(conn);
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 return null;
@@ -143,68 +202,55 @@ public class DashboardPanel extends javax.swing.JPanel {
 
             @Override
             protected void done() {
-                // ✅ Update UI on EDT
-                if (employeeCountLabel != null) {
-                    employeeCountLabel.setText(String.valueOf(totalEmp));
-                }
-                if (attendanceCountLabel != null) {
-                    attendanceCountLabel.setText(String.valueOf(present));
-                }
-                if (absenceCountLabel != null) {
-                    absenceCountLabel.setText(String.valueOf(absent));
-                }
+                employeeCountLabel.setText(String.valueOf(totalEmp));
+                attendanceCountLabel.setText(String.valueOf(present));
+                absenceCountLabel.setText(String.valueOf(absent));
             }
         };
         worker.execute();
     }
 
-    private int getTotalEmployees() throws SQLException {
-        String query = "SELECT COUNT(*) as total FROM employee";
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
+    // ==== Database Queries ====
+    private int getTotalEmployees(Connection conn) throws SQLException {
+        // Only count active employees
+        String query = "SELECT COUNT(*) as total FROM employee WHERE status = 'active'";
+        try (PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return rs.getInt("total");
             }
-        } catch (Exception ex) {
-            Logger.getLogger(DashboardPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         return 0;
     }
 
-    private int getPresentToday() throws SQLException {
+    private int getPresentToday(Connection conn) throws SQLException {
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
-        String query = "SELECT COUNT(*) as total FROM attendence "
-                + "WHERE attendance_date = ? AND status = 'Present'";
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+        String query = "SELECT COUNT(*) as total FROM attendence WHERE attendance_date = ? AND status = 'Present'";
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setDate(1, today);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("total");
                 }
             }
-        } catch (Exception ex) {
-            Logger.getLogger(DashboardPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         return 0;
     }
 
-    private int getAbsentToday() throws SQLException {
+    private int getAbsentToday(Connection conn) throws SQLException {
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
-        String query = "SELECT COUNT(*) as total FROM attendence "
-                + "WHERE attendance_date = ? AND status = 'Absent'";
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+        String query = "SELECT COUNT(*) as total FROM attendence WHERE attendance_date = ? AND status = 'Absent'";
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setDate(1, today);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("total");
                 }
             }
-        } catch (Exception ex) {
-            Logger.getLogger(DashboardPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
         return 0;
     }
 
-    // ✅ Clean up timer when panel is removed
+// ✅ Clean up timer when panel is removed
     @Override
     public void removeNotify() {
         super.removeNotify();
@@ -224,6 +270,7 @@ public class DashboardPanel extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("Dashboard");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
