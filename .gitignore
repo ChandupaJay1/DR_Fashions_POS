@@ -1,8 +1,70 @@
-# Database credentials
-config.properties
+# =======================================
+#  NetBeans / Java Project Git Ignore
+# =======================================
 
-# Build files
-build/
-dist/
-nbproject/private/
+# Compiled class files
 *.class
+
+# Build output directories
+/build/
+/dist/
+
+# =======================================
+#  Sensitive Configurations
+# =======================================
+
+# Local configuration and secrets
+config.properties
+.env
+
+# Database connection files
+src/**/DatabaseConnection.java
+src/**/DatabaseConnection.class
+
+# Prevent any credential or config files
+**/config/**
+**/credentials/**
+**/secrets/**
+
+# =======================================
+#  IDE / Project Files
+# =======================================
+
+# NetBeans private config
+/nbproject/private/
+
+# VS Code and IntelliJ settings
+.vscode/
+.idea/
+
+# NetBeans generated files
+/nbproject/private/
+nbproject/private/
+*.iml
+
+# =======================================
+#  Logs / Temporary Files
+# =======================================
+
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# =======================================
+#  OS-specific Files
+# =======================================
+
+.DS_Store
+Thumbs.db
+
+# =======================================
+#  Archives / Bundles
+# =======================================
+
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
