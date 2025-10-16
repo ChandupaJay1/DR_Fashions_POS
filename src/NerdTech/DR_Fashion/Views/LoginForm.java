@@ -3,6 +3,7 @@ package NerdTech.DR_Fashion.Views;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseSync;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import java.awt.Image;
 import java.sql.Connection;
@@ -237,10 +238,8 @@ public class LoginForm extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        // ✅ FlatDarkLaf use කරන්න (FlatMacDarkLaf වෙනුවට)
         try {
             FlatMacDarkLaf.setup();
-            // හෝ FlatMacDarkLaf.setup(); - Mac style dark theme එකට
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -249,41 +248,65 @@ public class LoginForm extends javax.swing.JFrame {
         SplashScreen splash = new SplashScreen();
         splash.showSplash();
 
-        // Set callback for database status updates
-        DatabaseConnection.setStatusCallback(status -> splash.setStatus(status));
-
-        // Run database connection in background thread
+        // Run database connection + sync in background
         new Thread(() -> {
             try {
-                splash.setStatus("Initializing...");
+                // Step 1: Initialize
+                splash.setStatus("🔌 Initializing...");
                 Thread.sleep(300);
 
-                // Test database connection (status updates will come from DatabaseConnection)
+                // Step 2: Test database connection
+                splash.setStatus("🔗 Connecting to database...");
                 Connection conn = DatabaseConnection.getConnection();
 
                 if (conn != null && !conn.isClosed()) {
+                    splash.setStatus("✅ Database connected!");
                     Thread.sleep(500);
-                    splash.setStatus("Starting application...");
+
+                    // Step 3: Start sync
+                    splash.setStatus("🔄 Syncing databases...");
+                    splash.setSyncStatus("Please wait, this may take a moment...");
+
+                    // Set callback for detailed sync updates
+                    DatabaseConnection.setStatusCallback(status -> {
+                        splash.setSyncStatus(status);
+                    });
+
+                    // Option 1: Use DatabaseSync (all tables automatically)
+                    DatabaseSync.syncAll();
+
+                    // Option 2: Use DatabaseConnection (manual control)
+                    // DatabaseConnection.syncLocalToOnline();
+                    // DatabaseConnection.syncOnlineToLocal();
+                    splash.setStatus("✅ Sync completed!");
+                    splash.setSyncStatus("All data synchronized successfully");
+                    Thread.sleep(800);
+
+                    // Step 4: Launch login form
+                    splash.setStatus("🚀 Starting application...");
                     Thread.sleep(300);
 
-                    // Close splash and show login form
                     SwingUtilities.invokeLater(() -> {
                         splash.closeSplash();
                         new LoginForm().setVisible(true);
                     });
+                } else {
+                    throw new SQLException("Connection is null or closed");
                 }
+
             } catch (Exception ex) {
-                splash.setStatus("Connection failed!");
+                splash.setStatus("❌ Error occurred!");
+                splash.setSyncStatus(ex.getMessage());
                 ex.printStackTrace();
 
-                // Show error and continue to login
+                // Show error and continue
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
-                            "⚠️ Database Connection Failed!\n\n"
+                            "⚠️ Database Connection/Sync Failed!\n\n"
                             + "Error: " + ex.getMessage() + "\n\n"
                             + "Possible solutions:\n"
                             + "• Check your internet connection\n"
-                            + "• Verify database credentials in config.properties\n"
+                            + "• Verify database credentials\n"
                             + "• Ensure local MySQL server is running\n\n"
                             + "The application will continue in offline mode.",
                             "Connection Error",

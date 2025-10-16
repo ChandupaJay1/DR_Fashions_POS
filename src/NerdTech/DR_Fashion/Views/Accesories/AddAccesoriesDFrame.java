@@ -202,6 +202,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jTextField8.setEditable(false);
         jTextField8.setBackground(new java.awt.Color(211, 211, 211));
         jTextField8.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jTextField8.setForeground(new java.awt.Color(0, 0, 0));
         jTextField8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jTextField8ActionPerformed(evt);

@@ -8,6 +8,7 @@ public class SplashScreen extends JWindow {
     private JProgressBar progressBar;
     private JLabel statusLabel;
     private JLabel titleLabel;
+    private JLabel syncStatusLabel;
 
     public SplashScreen() {
         initComponents();
@@ -47,6 +48,11 @@ public class SplashScreen extends JWindow {
         statusLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
         statusLabel.setForeground(new Color(178, 190, 195));
 
+        // Sync status label (additional detail)
+        syncStatusLabel = new JLabel("", SwingConstants.CENTER);
+        syncStatusLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 12));
+        syncStatusLabel.setForeground(new Color(99, 205, 218)); // Cyan color
+
         // Progress bar
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);
@@ -60,6 +66,8 @@ public class SplashScreen extends JWindow {
         centerPanel.setBackground(new Color(45, 52, 54));
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.add(statusLabel);
+        centerPanel.add(Box.createVerticalStrut(5));
+        centerPanel.add(syncStatusLabel);
         centerPanel.add(Box.createVerticalStrut(10));
         centerPanel.add(progressBar);
         centerPanel.add(Box.createVerticalStrut(30));
@@ -70,7 +78,7 @@ public class SplashScreen extends JWindow {
 
         // Window settings
         setContentPane(mainPanel);
-        setSize(500, 300);
+        setSize(500, 350);
         setLocationRelativeTo(null);
     }
 
@@ -78,11 +86,19 @@ public class SplashScreen extends JWindow {
         SwingUtilities.invokeLater(() -> statusLabel.setText(status));
     }
 
+    public void setSyncStatus(String status) {
+        SwingUtilities.invokeLater(() -> syncStatusLabel.setText(status));
+    }
+
     public void setProgress(int value) {
         SwingUtilities.invokeLater(() -> {
             progressBar.setIndeterminate(false);
             progressBar.setValue(value);
         });
+    }
+
+    public void setIndeterminate(boolean indeterminate) {
+        SwingUtilities.invokeLater(() -> progressBar.setIndeterminate(indeterminate));
     }
 
     public void showSplash() {

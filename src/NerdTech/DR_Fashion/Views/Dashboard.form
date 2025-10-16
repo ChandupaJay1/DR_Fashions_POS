@@ -90,9 +90,11 @@
                       </Group>
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="Date" min="-2" pref="392" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="47" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="49" max="-2" attributes="0"/>
                       <Component id="Time" min="-2" pref="196" max="-2" attributes="0"/>
-                      <EmptySpace min="-2" pref="42" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="jButtonSync" min="-2" pref="101" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
                           <Component id="jButton5" pref="133" max="32767" attributes="0"/>
                           <Component id="jButton9" max="32767" attributes="0"/>
@@ -115,6 +117,7 @@
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="Time" alignment="1" min="-2" pref="48" max="-2" attributes="0"/>
                                   <Component id="Date" alignment="1" min="-2" pref="39" max="-2" attributes="0"/>
+                                  <Component id="jButtonSync" alignment="1" min="-2" pref="32" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                           </Group>
@@ -200,6 +203,17 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton9ActionPerformed"/>
               </Events>
             </Component>
+            <Component class="javax.swing.JButton" name="jButtonSync">
+              <Properties>
+                <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                  <Font name="JetBrains Mono" size="18" style="1"/>
+                </Property>
+                <Property name="text" type="java.lang.String" value="Sync"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonSyncActionPerformed"/>
+              </Events>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="jPanel3">
@@ -207,7 +221,7 @@
           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
             <Property name="columns" type="int" value="1"/>
             <Property name="horizontalGap" type="int" value="5"/>
-            <Property name="rows" type="int" value="7"/>
+            <Property name="rows" type="int" value="8"/>
             <Property name="verticalGap" type="int" value="10"/>
           </Layout>
           <SubComponents>
@@ -253,6 +267,17 @@
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton7ActionPerformed"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JButton" name="jButton10">
+              <Properties>
+                <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                  <Font name="JetBrains Mono" size="18" style="1"/>
+                </Property>
+                <Property name="text" type="java.lang.String" value="Shipments"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton10ActionPerformed"/>
               </Events>
             </Component>
             <Component class="javax.swing.JButton" name="jButton8">
