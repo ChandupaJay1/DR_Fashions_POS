@@ -172,6 +172,7 @@ public class Dashboard extends javax.swing.JFrame {
         LoaderPanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanel2.setBackground(new java.awt.Color(244, 234, 225));
 
