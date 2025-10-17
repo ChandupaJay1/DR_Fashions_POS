@@ -3,7 +3,7 @@ package NerdTech.DR_Fashion.Views;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.DatabaseConnection.DatabaseSync;
+import NerdTech.DR_Fashion.DatabaseConnection.BidirectionalDatabaseSync;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import java.awt.Image;
 import java.sql.Connection;
@@ -248,7 +248,7 @@ public class LoginForm extends javax.swing.JFrame {
         SplashScreen splash = new SplashScreen();
         splash.showSplash();
 
-        // Run database connection + sync in background
+        // Run database connection + bidirectional sync in background
         new Thread(() -> {
             try {
                 // Step 1: Initialize
@@ -263,24 +263,27 @@ public class LoginForm extends javax.swing.JFrame {
                     splash.setStatus("✅ Database connected!");
                     Thread.sleep(500);
 
-                    // Step 3: Start sync
+                    // Step 3: Start bidirectional sync
                     splash.setStatus("🔄 Syncing databases...");
-                    splash.setSyncStatus("Please wait, this may take a moment...");
+                    splash.setSyncStatus("Pulling updates from online...");
 
                     // Set callback for detailed sync updates
-                    DatabaseConnection.setStatusCallback(status -> {
+                    BidirectionalDatabaseSync.setStatusCallback(status -> {
                         splash.setSyncStatus(status);
                     });
 
-                    // Option 1: Use DatabaseSync (all tables automatically)
-                    DatabaseSync.syncAll();
+                    // Perform full bidirectional sync
+                    boolean syncSuccess = BidirectionalDatabaseSync.performFullSync();
 
-                    // Option 2: Use DatabaseConnection (manual control)
-                    // DatabaseConnection.syncLocalToOnline();
-                    // DatabaseConnection.syncOnlineToLocal();
-                    splash.setStatus("✅ Sync completed!");
-                    splash.setSyncStatus("All data synchronized successfully");
-                    Thread.sleep(800);
+                    if (syncSuccess) {
+                        splash.setStatus("✅ Sync completed!");
+                        splash.setSyncStatus("All data synchronized successfully");
+                        Thread.sleep(800);
+                    } else {
+                        splash.setStatus("⚠️ Sync completed with warnings");
+                        splash.setSyncStatus("Check connection and try again");
+                        Thread.sleep(1000);
+                    }
 
                     // Step 4: Launch login form
                     splash.setStatus("🚀 Starting application...");
@@ -299,17 +302,18 @@ public class LoginForm extends javax.swing.JFrame {
                 splash.setSyncStatus(ex.getMessage());
                 ex.printStackTrace();
 
-                // Show error and continue
+                // Show error and continue anyway
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
-                            "⚠️ Database Connection/Sync Failed!\n\n"
+                            "⚠️ Database Sync Issue!\n\n"
                             + "Error: " + ex.getMessage() + "\n\n"
                             + "Possible solutions:\n"
                             + "• Check your internet connection\n"
                             + "• Verify database credentials\n"
+                            + "• Ensure online MySQL server is running\n"
                             + "• Ensure local MySQL server is running\n\n"
                             + "The application will continue in offline mode.",
-                            "Connection Error",
+                            "Sync Error",
                             JOptionPane.WARNING_MESSAGE);
                     splash.closeSplash();
                     new LoginForm().setVisible(true);

@@ -37,31 +37,34 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private int selectedRow;
 
     public EmployeeRegistration() {
-
-        initComponents(); // Initialize all GUI components first
+        initComponents();
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1257, 686));
-        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
+        setBackground(new Color(50, 50, 50));
 
         showLoading("Connecting to Database");
         loadContentInBackground();
 
+        setupTableModel();
+    }
+
+    private void setupTableModel() {
         model.setModel(new javax.swing.table.DefaultTableModel(
                 new Object[][]{},
                 new String[]{
-                    "First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role", "Status"
+                    "EPF No", "Name with Initial", "First Name", "Last Name", "DOB",
+                    "NIC", "Mobile", "Father", "Mother", "Permanent Address",
+                    "Current Address", "Nominee", "Married Status", "District",
+                    "Race", "Designation", "Section"
                 }
         ) {
-            boolean[] canEdit = new boolean[]{
-                false, false, false, false, false, false, false, false
-            };
+            boolean[] canEdit = new boolean[17];  // 17 columns
 
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit[columnIndex];
+                return false;
             }
         });
-
     }
 
     private void showLoading(String message) {
@@ -71,33 +74,21 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         revalidate();
         repaint();
 
-        model.setModel(new javax.swing.table.DefaultTableModel(
-                new Object[][]{},
-                new String[]{
-                    "First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role", "Status"
-                }
-        ) {
-            boolean[] canEdit = new boolean[]{
-                false, false, false, false, false, false, false, false
-            };
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit[columnIndex];
-            }
-        });
+        setupTableModel();
 
         if (model.getColumnModel().getColumnCount() > 0) {
-            for (int i = 0; i < 8; i++) {
+            for (int i = 0; i < model.getColumnModel().getColumnCount(); i++) {
                 model.getColumnModel().getColumn(i).setResizable(false);
             }
-            model.getColumnModel().getColumn(2).setPreferredWidth(150); // Email column
+            model.getColumnModel().getColumn(2).setPreferredWidth(120); // First Name
+            model.getColumnModel().getColumn(3).setPreferredWidth(120); // Last Name
+            model.getColumnModel().getColumn(9).setPreferredWidth(180); // Permanent Address
+            model.getColumnModel().getColumn(10).setPreferredWidth(180); // Current Address
         }
-
     }
 
     private void loadContentInBackground() {
         SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
-
             @Override
             protected Void doInBackground() throws Exception {
                 publish("Loading employee data");
@@ -107,7 +98,6 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     publish("Fetching records");
                     Thread.sleep(300);
                 }
-
                 return null;
             }
 
@@ -144,7 +134,6 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
     private void showError(String errorMessage) {
         removeAll();
-
         JPanel errorPanel = new JPanel(new GridBagLayout());
         errorPanel.setBackground(new Color(245, 247, 250));
 
@@ -220,30 +209,48 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
         tableModel.setRowCount(0);
 
-        String query = "SELECT e.fname, e.lname, e.email, e.dob, e.nic, e.mobile, r.position, e.status "
-                + "FROM employee e JOIN role r ON e.role_id = r.id";
+        // Query එක වෙනස් කරන්න - status column එක REMOVE කරන්න
+        String query = "SELECT e.epf_no, e.name_with_initial, e.fname, e.lname, e.dob, "
+                + "e.nic, e.mobile, e.father, e.mother, "
+                + "e.permanate_address, e.current_address, e.nominee, "
+                + "e.married_status, e.district, e.race, "
+                + "d.title AS designation, s.section_name "
+                + "FROM employee e "
+                + "LEFT JOIN designation d ON e.designation_id = d.id "
+                + "LEFT JOIN section s ON e.section_id = s.id "
+                + "WHERE e.status = 'active' "
+                + "ORDER BY e.epf_no";
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                String status = rs.getString("status");
-
-                if ("active".equalsIgnoreCase(status)) { // active only
-                    tableModel.addRow(new Object[]{
-                        rs.getString("fname"),
-                        rs.getString("lname"),
-                        rs.getString("email"),
-                        rs.getString("dob"),
-                        rs.getString("nic"),
-                        rs.getString("mobile"),
-                        rs.getString("position")
-                    // status column GUI එකට add කරන්නේ නෑ
-                    });
-                }
+                // දැන් column order එක හරි
+                tableModel.addRow(new Object[]{
+                    rs.getString("epf_no"), // 0
+                    rs.getString("name_with_initial"), // 1
+                    rs.getString("fname"), // 2
+                    rs.getString("lname"), // 3
+                    rs.getString("dob"), // 4
+                    rs.getString("nic"), // 5
+                    rs.getString("mobile"), // 6
+                    rs.getString("father"), // 7
+                    rs.getString("mother"), // 8
+                    rs.getString("permanate_address"), // 9
+                    rs.getString("current_address"), // 10
+                    rs.getString("nominee"), // 11
+                    rs.getString("married_status"), // 12
+                    rs.getString("district"), // 13
+                    rs.getString("race"), // 14
+                    rs.getString("designation"), // 15
+                    rs.getString("section_name") // 16
+                });
             }
 
             if (tableModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "No active employees found in database.");
+                JOptionPane.showMessageDialog(this,
+                        "No active employees found in database.",
+                        "Information",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (Exception e) {
@@ -251,6 +258,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     "Failed to load employee data: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
@@ -262,21 +270,6 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         loadContentInBackground();
     }
 
-    public void addEmployeeToTable(String fName, String lName, String email,
-            String dob, String nic, String mobile, String role) {
-        if (!isInitialized) {
-            return;
-        }
-        javax.swing.table.DefaultTableModel tableModel
-                = (javax.swing.table.DefaultTableModel) model.getModel();
-        tableModel.addRow(new Object[]{fName, lName, email, dob, nic, mobile, role});
-    }
-
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -298,17 +291,17 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Employee Registration");
 
-        model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        model.setFont(new java.awt.Font("Calibri", 0, 12)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
             new String [] {
-                "First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role"
+                "epf_no", "Name with Initial", "Fname", "Lname", "DOB", "NIC", "mobile", "Father", "Mother", "Permanate Address", "Current Address", "Nominee", "Married Status", "District", "Race", "Designation", "Section"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -319,12 +312,36 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         if (model.getColumnModel().getColumnCount() > 0) {
             model.getColumnModel().getColumn(0).setResizable(false);
             model.getColumnModel().getColumn(1).setResizable(false);
+            model.getColumnModel().getColumn(1).setPreferredWidth(100);
             model.getColumnModel().getColumn(2).setResizable(false);
             model.getColumnModel().getColumn(2).setPreferredWidth(150);
             model.getColumnModel().getColumn(3).setResizable(false);
+            model.getColumnModel().getColumn(3).setPreferredWidth(100);
             model.getColumnModel().getColumn(4).setResizable(false);
             model.getColumnModel().getColumn(5).setResizable(false);
+            model.getColumnModel().getColumn(5).setPreferredWidth(150);
             model.getColumnModel().getColumn(6).setResizable(false);
+            model.getColumnModel().getColumn(6).setPreferredWidth(150);
+            model.getColumnModel().getColumn(7).setResizable(false);
+            model.getColumnModel().getColumn(7).setPreferredWidth(200);
+            model.getColumnModel().getColumn(8).setResizable(false);
+            model.getColumnModel().getColumn(8).setPreferredWidth(200);
+            model.getColumnModel().getColumn(9).setResizable(false);
+            model.getColumnModel().getColumn(9).setPreferredWidth(100);
+            model.getColumnModel().getColumn(10).setResizable(false);
+            model.getColumnModel().getColumn(10).setPreferredWidth(100);
+            model.getColumnModel().getColumn(11).setResizable(false);
+            model.getColumnModel().getColumn(11).setPreferredWidth(100);
+            model.getColumnModel().getColumn(12).setResizable(false);
+            model.getColumnModel().getColumn(12).setPreferredWidth(100);
+            model.getColumnModel().getColumn(13).setResizable(false);
+            model.getColumnModel().getColumn(13).setPreferredWidth(100);
+            model.getColumnModel().getColumn(14).setResizable(false);
+            model.getColumnModel().getColumn(14).setPreferredWidth(100);
+            model.getColumnModel().getColumn(15).setResizable(false);
+            model.getColumnModel().getColumn(15).setPreferredWidth(100);
+            model.getColumnModel().getColumn(16).setResizable(false);
+            model.getColumnModel().getColumn(16).setPreferredWidth(100);
         }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
@@ -374,34 +391,30 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(54, 54, 54)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 279, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 46, Short.MAX_VALUE)
+                        .addGap(71, 71, 71)
                         .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(39, 39, 39)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addGap(382, 382, 382)
-                                .addComponent(jLabel2)
-                                .addGap(18, 18, 18)
-                                .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 935, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addGap(18, 18, 18)
+                        .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel1))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel2)
+                        .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -426,48 +439,113 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         int selectedRow = model.getSelectedRow();
         if (selectedRow == -1) {
-            javax.swing.JOptionPane.showMessageDialog(EmployeeRegistration.this,
-                    "Please select a row to update.", "No Selection",
-                    javax.swing.JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please select an employee to update.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String fname = model.getValueAt(selectedRow, 0).toString();
-        String lname = model.getValueAt(selectedRow, 1).toString();
-        String email = model.getValueAt(selectedRow, 2).toString();
-        String dob = model.getValueAt(selectedRow, 3).toString();
-        String nic = model.getValueAt(selectedRow, 4).toString();
-        String mobile = model.getValueAt(selectedRow, 5).toString();
-        String roleName = model.getValueAt(selectedRow, 6).toString();
-        NerdTech.DR_Fashion.RoleItems.RoleItem selectedRoleItem = null;
+        try {
+            // Get data from selected row
+            String epfNo = model.getValueAt(selectedRow, 0).toString();
+            String nameInitial = model.getValueAt(selectedRow, 1).toString();
+            String fname = model.getValueAt(selectedRow, 2).toString();
+            String lname = model.getValueAt(selectedRow, 3).toString();
+            String dob = model.getValueAt(selectedRow, 4).toString();
+            String nic = model.getValueAt(selectedRow, 5).toString();
+            String mobile = model.getValueAt(selectedRow, 6).toString();
+            String father = model.getValueAt(selectedRow, 7).toString();
+            String mother = model.getValueAt(selectedRow, 8).toString();
+            String permAddr = model.getValueAt(selectedRow, 9).toString();
+            String currAddr = model.getValueAt(selectedRow, 10).toString();
+            String nominee = model.getValueAt(selectedRow, 11).toString();
+            String marriedStatus = model.getValueAt(selectedRow, 12).toString();
+            String district = model.getValueAt(selectedRow, 13).toString();
+            String race = model.getValueAt(selectedRow, 14).toString();
 
-        try (java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            String sql = "SELECT id, position FROM role WHERE position = ?";
-            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, roleName);
-            java.sql.ResultSet rs = ps.executeQuery();
+            // Database query
+            try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
+                String query = "SELECT e.*, d.id as designation_id, s.id as section_id "
+                        + "FROM employee e "
+                        + "LEFT JOIN designation d ON e.designation_id = d.id "
+                        + "LEFT JOIN section s ON e.section_id = s.id "
+                        + "WHERE e.nic = ?";
 
-            if (rs.next()) {
-                selectedRoleItem = new NerdTech.DR_Fashion.RoleItems.RoleItem(
-                        rs.getInt("id"), rs.getString("position"));
+                PreparedStatement stmt = conn.prepareStatement(query);
+                stmt.setString(1, nic);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    // ENUM එකෙන් STRING value එක ගන්න, then convert to ID
+                    String marriedStatusEnum = rs.getString("married_status");
+                    int marriedStatusId = convertMarriedStatusToId(marriedStatusEnum);
+
+                    int designationId = rs.getInt("designation_id");
+                    int sectionId = rs.getInt("section_id");
+
+                    // Open UpdateEmployeeFrame
+                    UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
+                            this,
+                            epfNo,
+                            fname,
+                            lname,
+                            nameInitial,
+                            dob,
+                            nic,
+                            mobile,
+                            father,
+                            mother,
+                            currAddr,
+                            permAddr,
+                            nominee,
+                            marriedStatusId,
+                            district,
+                            race,
+                            designationId,
+                            sectionId
+                    );
+                    updateFrame.setVisible(true);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Employee details not found in database.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                rs.close();
+                stmt.close();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Error fetching role data: " + e.getMessage());
-        }
 
-        if (selectedRoleItem != null) {
-            UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
-                    EmployeeRegistration.this, fname, lname, email, dob, nic, mobile, selectedRoleItem);
-            updateFrame.setVisible(true);
-        } else {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Role not found in database.", "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error loading employee details: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
 
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private int convertMarriedStatusToId(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return 1; // default to first option
+        }
+
+        String normalized = status.trim();
+
+        // Check what values you have in your database ENUM
+        switch (normalized) {
+            case "Married":
+                return 1;  // or 2, depending on your order
+            case "Unmarried":
+            case "Single":
+                return 2;  // or 1, depending on your order
+            default:
+                System.out.println("Unknown married status ENUM: " + status + ", defaulting to 1");
+                return 1;
+        }
+    }
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         ActivateEmployeePanel activateDialog = new ActivateEmployeePanel(
@@ -483,8 +561,9 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             return;
         }
 
-        String fname = model.getValueAt(selectedRow, 0).toString();
-        String lname = model.getValueAt(selectedRow, 1).toString();
+        String nic = model.getValueAt(selectedRow, 5).toString();
+        String fname = model.getValueAt(selectedRow, 2).toString();
+        String lname = model.getValueAt(selectedRow, 3).toString();
 
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to deactivate " + fname + " " + lname + "?",
@@ -495,36 +574,24 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         }
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            String sql = "UPDATE employee SET status = 'inactive' WHERE fname = ? AND lname = ? AND status = 'active'";
+            String sql = "UPDATE employee SET status = 'inactive' WHERE nic = ? AND status = 'active'";
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, fname);
-            ps.setString(2, lname);
+            ps.setString(1, nic);
 
             int updated = ps.executeUpdate();
 
             if (updated > 0) {
-                // Remove the row from table GUI
-                javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
-                tableModel.removeRow(selectedRow);
-
                 refreshTable();
-
-                JOptionPane.showMessageDialog(this,
-                        "Employee deactivated successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Employee deactivated successfully!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this,
-                        "Employee is already inactive or not found.",
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Employee is already inactive or not found.",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
             }
-
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Error deactivating employee: " + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error deactivating employee: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
 
     }//GEN-LAST:event_jButton4ActionPerformed
