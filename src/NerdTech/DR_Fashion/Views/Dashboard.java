@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
+import NerdTech.DR_Fashion.Views.DashboardP.EmployeeSectionStatsPanel;
 
 /**
  *
