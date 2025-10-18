@@ -4,8 +4,8 @@
  */
 package NerdTech.DR_Fashion.Views.Registration;
 
+import NerdTech.DR_Fashion.Views.Accesories.AddAccesoriesDFrame;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
-import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -53,12 +53,12 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                 new Object[][]{},
                 new String[]{
                     "EPF No", "Name with Initial", "First Name", "Last Name", "DOB",
-                    "NIC", "Mobile", "Father", "Mother", "Permanent Address",
+                    "NIC", "Gender", "Mobile", "Father", "Mother", "Permanent Address",
                     "Current Address", "Nominee", "Married Status", "District",
-                    "Race", "Designation", "Section"
+                    "Race", "Designation", "Title", "Section" // ✅ NOW 19 columns
                 }
         ) {
-            boolean[] canEdit = new boolean[17];  // 17 columns
+            boolean[] canEdit = new boolean[19];  // ✅ Changed to 19
 
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -209,12 +209,13 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
         tableModel.setRowCount(0);
 
-        // Query එක වෙනස් කරන්න - status column එක REMOVE කරන්න
+        // ✅ Query - fetch both capacity AND title separately
         String query = "SELECT e.epf_no, e.name_with_initial, e.fname, e.lname, e.dob, "
-                + "e.nic, e.mobile, e.father, e.mother, "
+                + "e.nic, e.gender, e.mobile, e.father, e.mother, "
                 + "e.permanate_address, e.current_address, e.nominee, "
                 + "e.married_status, e.district, e.race, "
-                + "d.title AS designation, s.section_name "
+                + "d.capacity AS designation, d.title AS title, s.section_name, " // ✅ BOTH columns
+                + "e.designation_id, e.section_id " // ✅ IDs for UPDATE
                 + "FROM employee e "
                 + "LEFT JOIN designation d ON e.designation_id = d.id "
                 + "LEFT JOIN section s ON e.section_id = s.id "
@@ -224,7 +225,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                // දැන් column order එක හරි
+                // ✅ NOW 19 columns match table model
                 tableModel.addRow(new Object[]{
                     rs.getString("epf_no"), // 0
                     rs.getString("name_with_initial"), // 1
@@ -232,17 +233,19 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     rs.getString("lname"), // 3
                     rs.getString("dob"), // 4
                     rs.getString("nic"), // 5
-                    rs.getString("mobile"), // 6
-                    rs.getString("father"), // 7
-                    rs.getString("mother"), // 8
-                    rs.getString("permanate_address"), // 9
-                    rs.getString("current_address"), // 10
-                    rs.getString("nominee"), // 11
-                    rs.getString("married_status"), // 12
-                    rs.getString("district"), // 13
-                    rs.getString("race"), // 14
-                    rs.getString("designation"), // 15
-                    rs.getString("section_name") // 16
+                    rs.getString("gender"), // 6
+                    rs.getString("mobile"), // 7
+                    rs.getString("father"), // 8
+                    rs.getString("mother"), // 9
+                    rs.getString("permanate_address"), // 10
+                    rs.getString("current_address"), // 11
+                    rs.getString("nominee"), // 12
+                    rs.getString("married_status"), // 13
+                    rs.getString("district"), // 14
+                    rs.getString("race"), // 15
+                    rs.getString("designation"), // 16 - CAPACITY
+                    rs.getString("title"), // 17 - TITLE ✅
+                    rs.getString("section_name") // 18
                 });
             }
 
@@ -285,6 +288,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         searchTextField = new javax.swing.JTextField();
         jButton4 = new javax.swing.JButton();
+        AllEmployee = new javax.swing.JButton();
 
         setLayout(new java.awt.CardLayout());
 
@@ -297,11 +301,11 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
             },
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Lname", "DOB", "NIC", "mobile", "Father", "Mother", "Permanate Address", "Current Address", "Nominee", "Married Status", "District", "Race", "Designation", "Section"
+                "epf_no", "Name with Initial", "Fname", "Lname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Permanate Address", "Current Address", "Nominee", "Married Status", "District", "Race", "Designation", "Title", "Section"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -318,20 +322,21 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(3).setResizable(false);
             model.getColumnModel().getColumn(3).setPreferredWidth(100);
             model.getColumnModel().getColumn(4).setResizable(false);
+            model.getColumnModel().getColumn(4).setPreferredWidth(100);
             model.getColumnModel().getColumn(5).setResizable(false);
             model.getColumnModel().getColumn(5).setPreferredWidth(150);
             model.getColumnModel().getColumn(6).setResizable(false);
-            model.getColumnModel().getColumn(6).setPreferredWidth(150);
+            model.getColumnModel().getColumn(6).setPreferredWidth(100);
             model.getColumnModel().getColumn(7).setResizable(false);
-            model.getColumnModel().getColumn(7).setPreferredWidth(200);
+            model.getColumnModel().getColumn(7).setPreferredWidth(150);
             model.getColumnModel().getColumn(8).setResizable(false);
             model.getColumnModel().getColumn(8).setPreferredWidth(200);
             model.getColumnModel().getColumn(9).setResizable(false);
-            model.getColumnModel().getColumn(9).setPreferredWidth(100);
+            model.getColumnModel().getColumn(9).setPreferredWidth(200);
             model.getColumnModel().getColumn(10).setResizable(false);
-            model.getColumnModel().getColumn(10).setPreferredWidth(100);
+            model.getColumnModel().getColumn(10).setPreferredWidth(200);
             model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(11).setPreferredWidth(100);
+            model.getColumnModel().getColumn(11).setPreferredWidth(200);
             model.getColumnModel().getColumn(12).setResizable(false);
             model.getColumnModel().getColumn(12).setPreferredWidth(100);
             model.getColumnModel().getColumn(13).setResizable(false);
@@ -342,10 +347,13 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(15).setPreferredWidth(100);
             model.getColumnModel().getColumn(16).setResizable(false);
             model.getColumnModel().getColumn(16).setPreferredWidth(100);
+            model.getColumnModel().getColumn(17).setResizable(false);
+            model.getColumnModel().getColumn(18).setResizable(false);
+            model.getColumnModel().getColumn(18).setPreferredWidth(100);
         }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton1.setText("Activate Employee");
+        jButton1.setText("Resign");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
@@ -379,6 +387,14 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             }
         });
 
+        AllEmployee.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        AllEmployee.setText("All Employee");
+        AllEmployee.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                AllEmployeeActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -389,15 +405,17 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     .addComponent(jScrollPane1)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(54, 54, 54)
+                        .addGap(39, 39, 39)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 279, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(71, 71, 71)
+                        .addGap(41, 41, 41)
                         .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(33, 33, 33)
+                        .addComponent(AllEmployee, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 935, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -424,7 +442,8 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(AllEmployee, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(16, 16, 16))
         );
 
@@ -447,29 +466,31 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         }
 
         try {
-            // Get data from selected row
-            String epfNo = model.getValueAt(selectedRow, 0).toString();
-            String nameInitial = model.getValueAt(selectedRow, 1).toString();
-            String fname = model.getValueAt(selectedRow, 2).toString();
-            String lname = model.getValueAt(selectedRow, 3).toString();
-            String dob = model.getValueAt(selectedRow, 4).toString();
-            String nic = model.getValueAt(selectedRow, 5).toString();
-            String mobile = model.getValueAt(selectedRow, 6).toString();
-            String father = model.getValueAt(selectedRow, 7).toString();
-            String mother = model.getValueAt(selectedRow, 8).toString();
-            String permAddr = model.getValueAt(selectedRow, 9).toString();
-            String currAddr = model.getValueAt(selectedRow, 10).toString();
-            String nominee = model.getValueAt(selectedRow, 11).toString();
-            String marriedStatus = model.getValueAt(selectedRow, 12).toString();
-            String district = model.getValueAt(selectedRow, 13).toString();
-            String race = model.getValueAt(selectedRow, 14).toString();
+            // ✅ Get data from selected row - CORRECT INDICES with Title column
+            String epfNo = model.getValueAt(selectedRow, 0).toString();     // 0
+            String nameInitial = model.getValueAt(selectedRow, 1).toString(); // 1
+            String fname = model.getValueAt(selectedRow, 2).toString();     // 2
+            String lname = model.getValueAt(selectedRow, 3).toString();     // 3
+            String dob = model.getValueAt(selectedRow, 4).toString();       // 4
+            String nic = model.getValueAt(selectedRow, 5).toString();       // 5
+            String gender = model.getValueAt(selectedRow, 6).toString();    // 6
+            String mobile = model.getValueAt(selectedRow, 7).toString();    // 7
+            String father = model.getValueAt(selectedRow, 8).toString();    // 8
+            String mother = model.getValueAt(selectedRow, 9).toString();    // 9
+            String permAddr = model.getValueAt(selectedRow, 10).toString(); // 10
+            String currAddr = model.getValueAt(selectedRow, 11).toString(); // 11
+            String nominee = model.getValueAt(selectedRow, 12).toString();  // 12
+            String marriedStatus = model.getValueAt(selectedRow, 13).toString(); // 13
+            String district = model.getValueAt(selectedRow, 14).toString(); // 14
+            String race = model.getValueAt(selectedRow, 15).toString();     // 15
+            // Column 16 = Designation (capacity) - not needed
+            // Column 17 = Title - not needed
+            // Column 18 = Section - not needed
 
-            // Database query
+            // ✅ Database query to get IDs
             try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-                String query = "SELECT e.*, d.id as designation_id, s.id as section_id "
+                String query = "SELECT e.designation_id, e.section_id, e.married_status "
                         + "FROM employee e "
-                        + "LEFT JOIN designation d ON e.designation_id = d.id "
-                        + "LEFT JOIN section s ON e.section_id = s.id "
                         + "WHERE e.nic = ?";
 
                 PreparedStatement stmt = conn.prepareStatement(query);
@@ -477,14 +498,16 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
-                    // ENUM එකෙන් STRING value එක ගන්න, then convert to ID
                     String marriedStatusEnum = rs.getString("married_status");
                     int marriedStatusId = convertMarriedStatusToId(marriedStatusEnum);
-
                     int designationId = rs.getInt("designation_id");
                     int sectionId = rs.getInt("section_id");
 
-                    // Open UpdateEmployeeFrame
+                    System.out.println("=== Opening UpdateEmployeeFrame ===");
+                    System.out.println("Designation ID: " + designationId);
+                    System.out.println("Section ID: " + sectionId);
+
+                    // ✅ Open UpdateEmployeeFrame
                     UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
                             this,
                             epfNo,
@@ -502,7 +525,8 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                             marriedStatusId,
                             district,
                             race,
-                            designationId,
+                            gender,
+                            designationId, // ✅ This should be correct now
                             sectionId
                     );
                     updateFrame.setVisible(true);
@@ -529,18 +553,16 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
     private int convertMarriedStatusToId(String status) {
         if (status == null || status.trim().isEmpty()) {
-            return 1; // default to first option
+            return 1;
         }
 
         String normalized = status.trim();
-
-        // Check what values you have in your database ENUM
         switch (normalized) {
             case "Married":
-                return 1;  // or 2, depending on your order
+                return 1;
             case "Unmarried":
             case "Single":
-                return 2;  // or 1, depending on your order
+                return 2;
             default:
                 System.out.println("Unknown married status ENUM: " + status + ", defaulting to 1");
                 return 1;
@@ -596,6 +618,12 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    private void AllEmployeeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AllEmployeeActionPerformed
+        java.awt.Window parentWindow = SwingUtilities.getWindowAncestor(this);
+        AllEmployeeDFrame allEmployeeDFrame = new AllEmployeeDFrame((java.awt.Frame) parentWindow, true);
+        allEmployeeDFrame.setVisible(true);
+    }//GEN-LAST:event_AllEmployeeActionPerformed
+
     public static void main(String args[]) {
         FlatMacLightLaf.setup();
         SwingUtilities.invokeLater(() -> {
@@ -610,6 +638,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton AllEmployee;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;

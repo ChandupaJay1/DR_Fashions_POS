@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -25,7 +26,6 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private String originalNIC;
     private EmployeeRegistration employeeRegistrationPanel;
 
-// New constructor with parameters
     public UpdateEmployeeFrame(EmployeeRegistration panel,
             String epfNumber,
             String fname,
@@ -42,10 +42,13 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             int marriedStatusId,
             String districtName,
             String raceName,
+            String genderValue,
             int designationId,
             int sectionId) {
 
+        // STEP 1: Initialize components first
         initComponents();
+
         this.employeeRegistrationPanel = panel;
         this.originalNIC = nic;
 
@@ -54,14 +57,15 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         DoB.setFont(new java.awt.Font("JetBrains Mono", 0, 18));
         ((javax.swing.JTextField) DoB.getDateEditor().getUiComponent()).setEditable(false);
 
-        // Load all combo boxes
+        // STEP 2: Load combo boxes WITHOUT listeners
         loadMarriedStatus();
-        loadDesignations();
         loadSections();
+        loadGenderOptions();
+        loadDesignationsWithoutListener();
 
-        // Set text fields
+        // STEP 3: Set all text fields
         epfNo.setText(epfNumber);
-        epfNo.setEnabled(false); 
+        epfNo.setEnabled(false);
         fName.setText(fname);
         lName.setText(lname);
         NameInitial.setText(nameInitial);
@@ -91,6 +95,9 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             }
         }
 
+        // Set gender
+        setGenderFromDatabase(genderValue);
+
         // Set section
         for (int i = 0; i < section.getItemCount(); i++) {
             if (section.getItemAt(i).getId() == sectionId) {
@@ -99,47 +106,148 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             }
         }
 
-        // Load and set designation/title
+        // STEP 4: Load existing designation (this will set both designation1 and title)
         loadExistingDesignation(designationId);
+
+        // STEP 5: NOW add listener for future changes
+        designation1.addActionListener(e -> {
+            if (designation1.getSelectedIndex() > 0) {
+                loadTitlesBasedOnDesignation();
+            }
+        });
+    }
+
+    private void loadDesignationsWithoutListener() {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
+                "SELECT DISTINCT capacity FROM designation ORDER BY capacity"); java.sql.ResultSet rs = stmt.executeQuery()) {
+
+            designation1.removeAllItems();
+            designation1.addItem(new RoleItem(0, "-- Select Designation --"));
+
+            while (rs.next()) {
+                String capacity = rs.getString("capacity");
+                designation1.addItem(new RoleItem(0, capacity));
+            }
+
+            // NO listener added here!
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading designations: " + e.getMessage());
+        }
     }
 
     private void loadExistingDesignation(int designationId) {
+        System.out.println("\n=== DEBUG: Loading Designation ID: " + designationId + " ===");
+
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // First, get the designation details
-            String sql = "SELECT capacity, title FROM designation WHERE id = ?";
+            // Query to get designation details
+            String sql = "SELECT id, capacity, title FROM designation WHERE id = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setInt(1, designationId);
             java.sql.ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                String capacity = rs.getString("capacity");
-                String titleName = rs.getString("title");
+            if (!rs.next()) {
+                System.out.println("❌ ERROR: Designation ID " + designationId + " NOT FOUND!");
+                JOptionPane.showMessageDialog(this,
+                        "Designation ID " + designationId + " not found in database.",
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-                // Find and select the matching capacity in designation combobox
-                for (int i = 0; i < designation.getItemCount(); i++) {
-                    if (designation.getItemAt(i).getName().equals(capacity)) {
-                        designation.setSelectedIndex(i);
-                        break;
-                    }
-                }
+            String capacity = rs.getString("capacity");
+            String titleName = rs.getString("title");
 
-                // Load titles for that capacity
-                loadTitlesBasedOnDesignation();
+            System.out.println("✓ Found in DB:");
+            System.out.println("  Capacity: [" + capacity + "]");
+            System.out.println("  Title: [" + titleName + "]");
 
-                // Find and select the matching title
-                for (int i = 0; i < title.getItemCount(); i++) {
-                    if (title.getItemAt(i).getId() == designationId) {
-                        title.setSelectedIndex(i);
-                        break;
-                    }
+            // Find and set capacity in designation1 combo
+            boolean foundCapacity = false;
+            for (int i = 0; i < designation1.getItemCount(); i++) {
+                RoleItem item = designation1.getItemAt(i);
+                if (item.getName().trim().equalsIgnoreCase(capacity.trim())) {
+                    System.out.println("✓ Setting designation1 to: " + capacity);
+                    designation1.setSelectedIndex(i);
+                    foundCapacity = true;
+                    break;
                 }
             }
 
+            if (!foundCapacity) {
+                System.out.println("❌ Capacity not found in combo!");
+                JOptionPane.showMessageDialog(this,
+                        "Capacity '" + capacity + "' not found in dropdown.",
+                        "Load Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Load titles for this capacity
+            String titleQuery = "SELECT id, title FROM designation WHERE capacity = ? ORDER BY title";
+            PreparedStatement titleStmt = conn.prepareStatement(titleQuery);
+            titleStmt.setString(1, capacity);
+            java.sql.ResultSet titleRs = titleStmt.executeQuery();
+
+            title.removeAllItems();
+
+            int titleCount = 0;
+            while (titleRs.next()) {
+                int id = titleRs.getInt("id");
+                String t = titleRs.getString("title");
+                title.addItem(new RoleItem(id, t));
+                titleCount++;
+                System.out.println("  Loaded title: ID=" + id + ", Name=[" + t + "]");
+            }
+
+            System.out.println("✓ Total titles loaded: " + titleCount);
+
+            // Find and set title
+            boolean foundTitle = false;
+            for (int i = 0; i < title.getItemCount(); i++) {
+                RoleItem item = title.getItemAt(i);
+                if (item.getId() == designationId) {
+                    System.out.println("✓ Setting title to: " + item.getName());
+                    title.setSelectedIndex(i);
+                    foundTitle = true;
+                    break;
+                }
+            }
+
+            if (!foundTitle) {
+                System.out.println("❌ Title ID " + designationId + " not found!");
+                JOptionPane.showMessageDialog(this,
+                        "Warning: Title ID " + designationId + " not found.\n"
+                        + "Title '" + titleName + "' may not match capacity '" + capacity + "'",
+                        "Load Warning", JOptionPane.WARNING_MESSAGE);
+            }
+
+            titleRs.close();
+            titleStmt.close();
             rs.close();
             stmt.close();
+
+            System.out.println("=== DEBUG END ===\n");
+
         } catch (Exception e) {
+            System.out.println("❌ EXCEPTION:");
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading designation: " + e.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error loading designation: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadGenderOptions() {
+        Gender.removeAllItems();
+        Gender.addItem(new RoleItem(1, "-- Select Gender --"));
+        Gender.addItem(new RoleItem(2, "Male"));
+        Gender.addItem(new RoleItem(3, "Female"));
+    }
+
+    private void setGenderFromDatabase(String genderValue) {
+        for (int i = 0; i < Gender.getItemCount(); i++) {
+            if (Gender.getItemAt(i).getName().equals(genderValue)) {
+                Gender.setSelectedIndex(i);
+                break;
+            }
         }
     }
 
@@ -165,15 +273,28 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     }
 
     private void loadDesignations() {
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("SELECT DISTINCT capacity FROM designation"); java.sql.ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
+                "SELECT DISTINCT capacity FROM designation ORDER BY capacity"); java.sql.ResultSet rs = stmt.executeQuery()) {
 
-            designation.removeAllItems();
+            designation1.removeAllItems();
+            designation1.addItem(new RoleItem(0, "-- Select Designation --"));
+
             while (rs.next()) {
                 String capacity = rs.getString("capacity");
-                designation.addItem(new RoleItem(0, capacity));
+                designation1.addItem(new RoleItem(0, capacity));
             }
 
-            designation.addActionListener(e -> loadTitlesBasedOnDesignation());
+            // Remove old listeners
+            for (java.awt.event.ActionListener al : designation1.getActionListeners()) {
+                designation1.removeActionListener(al);
+            }
+
+            // Add new listener
+            designation1.addActionListener(e -> {
+                if (designation1.getSelectedIndex() > 0) {
+                    loadTitlesBasedOnDesignation();
+                }
+            });
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading designations: " + e.getMessage());
@@ -181,26 +302,48 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     }
 
     private void loadTitlesBasedOnDesignation() {
+        RoleItem selected = (RoleItem) designation1.getSelectedItem();
+
+        System.out.println("loadTitlesBasedOnDesignation called");
+        System.out.println("Selected designation: " + (selected != null ? selected.getName() : "NULL"));
+
         title.removeAllItems();
-        RoleItem selected = (RoleItem) designation.getSelectedItem();
-        if (selected == null) {
+
+        if (selected == null || selected.getId() == 0) {
+            System.out.println("✗ No valid selection, adding default item");
+            title.addItem(new RoleItem(0, "-- Select Title --"));
             return;
         }
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-                "SELECT id, title FROM designation WHERE capacity = ?")) {
+                "SELECT id, title FROM designation WHERE capacity = ? ORDER BY title")) {
 
             stmt.setString(1, selected.getName());
+            System.out.println("✓ Querying titles for capacity: " + selected.getName());
+
             try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                title.removeAllItems();
+
                 if (!rs.isBeforeFirst()) {
+                    System.out.println("✗ No titles found for this capacity");
                     title.addItem(new RoleItem(0, "No titles available"));
                     return;
                 }
+
+                int count = 0;
                 while (rs.next()) {
-                    title.addItem(new RoleItem(rs.getInt("id"), rs.getString("title")));
+                    int id = rs.getInt("id");
+                    String titleName = rs.getString("title");
+                    title.addItem(new RoleItem(id, titleName));
+                    count++;
+                    System.out.println("  Added title: ID=" + id + ", Name=" + titleName);
                 }
+
+                System.out.println("✓ Total titles loaded: " + count);
             }
         } catch (Exception e) {
+            System.out.println("✗ Exception in loadTitlesBasedOnDesignation:");
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error loading titles: " + e.getMessage());
         }
     }
@@ -230,7 +373,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
-        designation = new javax.swing.JComboBox<>();
+        Gender = new javax.swing.JComboBox<>();
         jLabel9 = new javax.swing.JLabel();
         NameInitial = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
@@ -255,6 +398,8 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         married = new javax.swing.JComboBox<>();
         jLabel20 = new javax.swing.JLabel();
         title = new javax.swing.JComboBox<>();
+        designation1 = new javax.swing.JComboBox<>();
+        jLabel21 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -283,7 +428,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         });
 
         jLabel8.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel8.setText("Designation");
+        jLabel8.setText("Gender");
 
         jLabel6.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel6.setText("Mobile");
@@ -305,7 +450,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel7.setText("NIC");
 
-        designation.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        Gender.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jLabel9.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel9.setText("Name with Initial");
@@ -402,6 +547,11 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
         title.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
+        designation1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel21.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel21.setText("Designation");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -415,71 +565,77 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                     .addComponent(jLabel11)
                     .addComponent(jLabel13)
                     .addComponent(jLabel15)
+                    .addComponent(jLabel20)
+                    .addComponent(jLabel18)
                     .addComponent(jLabel8)
-                    .addComponent(jLabel16)
-                    .addComponent(jLabel20))
+                    .addComponent(jLabel21))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(father, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(married, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(designation, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(title, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(79, 79, 79)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel14)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel17)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel18)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel5)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel9)
+                            .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(father, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(married, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(title, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(designation1, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(79, 79, 79)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGap(280, 280, 280)
-                                .addComponent(NameInitial, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabel14)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel17)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(32, 32, 32)
-                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(jPanel1Layout.createSequentialGroup()
-                                    .addComponent(jLabel12)
-                                    .addGap(70, 70, 70)
-                                    .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(32, 32, 32)
+                                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                            .addComponent(jLabel12)
+                                            .addGap(70, 70, 70)
+                                            .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                                .addComponent(jLabel10)
+                                                .addGap(196, 196, 196)
+                                                .addComponent(mother, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(jLabel7)
+                                                    .addComponent(jLabel16))
+                                                .addGap(168, 168, 168)
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel9)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jLabel10)
-                                        .addGap(196, 196, 196)
-                                        .addComponent(mother, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jLabel7)
-                                        .addGap(238, 238, 238)
-                                        .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
-                .addGap(90, 90, 90))
+                                        .addGap(280, 280, 280)
+                                        .addComponent(NameInitial, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(90, 90, 90))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -521,11 +677,15 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                                 .addGap(26, 26, 26)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(jLabel16)
-                                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel8))
                                 .addGap(24, 24, 24)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel8)
-                                    .addComponent(designation, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel14)
+                                    .addComponent(designation1, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel21))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(jLabel20))
                             .addGroup(jPanel1Layout.createSequentialGroup()
@@ -534,10 +694,14 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                                 .addGap(392, 392, 392)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(title, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel18))
-                                .addGap(4, 4, 4)))
-                        .addGap(215, 215, 215))
+                                    .addComponent(jLabel17)
+                                    .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(3, 3, 3)))
+                        .addGap(26, 26, 26)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel18)
+                            .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(67, 67, 67))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(2, 2, 2)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -553,22 +717,12 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                                     .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jLabel3))
                                 .addGap(26, 26, 26)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addGap(248, 248, 248)
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel14))
-                                        .addGap(24, 24, 24)
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel17)))
-                                    .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(87, 87, 87))))
+                                .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(43, 43, 43))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -590,8 +744,8 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 717, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 745, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -636,7 +790,15 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             }
 
             // Gender - Default value (හැබැයි gender combo එකක් add කරන්න හොඳයි)
-            String gender = "Male";
+            RoleItem selectedGender = (RoleItem) Gender.getSelectedItem();
+            if (selectedGender == null || selectedGender.getId() == 1) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a gender",
+                        "Validation Error",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String gender = selectedGender.getName();
 
             // SQL query - EMAIL එක REMOVE කරලා (20 parameters only)
             String sql = "UPDATE employee SET "
@@ -843,11 +1005,12 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField CAddress;
     private com.toedter.calendar.JDateChooser DoB;
+    private javax.swing.JComboBox<RoleItem> Gender;
     private javax.swing.JTextField NameInitial;
     private javax.swing.JTextField Nic;
     private javax.swing.JTextField PAddress;
     private javax.swing.JTextField Phone;
-    private javax.swing.JComboBox<RoleItem> designation;
+    private javax.swing.JComboBox<RoleItem> designation1;
     private javax.swing.JTextField distric;
     private javax.swing.JTextField epfNo;
     private javax.swing.JTextField fName;
@@ -867,6 +1030,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
+    private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;

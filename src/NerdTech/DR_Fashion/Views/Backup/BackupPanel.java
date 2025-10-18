@@ -556,7 +556,7 @@ public class BackupPanel extends javax.swing.JPanel {
         jLabel9 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
 
-        setPreferredSize(new java.awt.Dimension(1257, 0));
+        setPreferredSize(new java.awt.Dimension(0, 763));
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Backup System Data");
@@ -571,16 +571,16 @@ public class BackupPanel extends javax.swing.JPanel {
                 EmployeeBtnActionPerformed(evt);
             }
         });
-        jPanel1.add(EmployeeBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 140, 199, 41));
+        jPanel1.add(EmployeeBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 100, 199, 41));
 
         jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel3.setText("Backup Employee Data");
-        jPanel1.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 110, -1, -1));
+        jPanel1.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 70, -1, -1));
         jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 50, 477, 38));
 
         jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel5.setText("Backup Stock Data");
-        jPanel1.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 110, -1, -1));
+        jPanel1.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 70, -1, -1));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton2.setText("Backup Data");
@@ -589,12 +589,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton2ActionPerformed(evt);
             }
         });
-        jPanel1.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 140, 199, 41));
+        jPanel1.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 100, 199, 41));
         jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 220, 477, 38));
 
         jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel7.setText("Backup Accesories Data");
-        jPanel1.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 270, -1, -1));
+        jPanel1.add(jLabel7, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 230, -1, -1));
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton3.setText("Backup Data");
@@ -603,12 +603,12 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton3ActionPerformed(evt);
             }
         });
-        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 300, 199, 41));
+        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 260, 199, 41));
         jPanel1.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 220, 477, 38));
 
         jLabel9.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel9.setText("Backup All Data");
-        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(820, 270, -1, -1));
+        jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 230, -1, -1));
 
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
         jButton4.setText("Backup Data");
@@ -617,7 +617,7 @@ public class BackupPanel extends javax.swing.JPanel {
                 jButton4ActionPerformed(evt);
             }
         });
-        jPanel1.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 300, 199, 41));
+        jPanel1.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 260, 199, 41));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -640,7 +640,7 @@ public class BackupPanel extends javax.swing.JPanel {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(64, 64, 64)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(79, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
