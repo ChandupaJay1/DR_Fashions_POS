@@ -3,32 +3,23 @@ package NerdTech.DR_Fashion.RoleItems;
 public class RoleItem {
 
     private int id;
-    private String position;
+    private String name;
 
-    public RoleItem(int id, String position) {
+    public RoleItem(int id, String name) {
         this.id = id;
-        this.position = position;
+        this.name = name;
     }
 
     public int getId() {
         return id;
     }
 
-    public String getPosition() {
-        return position;
+    public String getName() {
+        return name;
     }
 
     @Override
     public String toString() {
-        return position;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof RoleItem) {
-            RoleItem other = (RoleItem) obj;
-            return this.id == other.id;
-        }
-        return false;
+        return name; // JComboBox එකේ display වෙන එක
     }
 }

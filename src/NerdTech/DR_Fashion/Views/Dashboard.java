@@ -5,7 +5,7 @@
 package NerdTech.DR_Fashion.Views;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.DatabaseConnection.DatabaseSync;
+import NerdTech.DR_Fashion.DatabaseConnection.BidirectionalDatabaseSync;
 import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
@@ -23,6 +23,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
+import NerdTech.DR_Fashion.Views.DashboardP.EmployeeSectionStatsPanel;
+import NerdTech.DR_Fashion.Views.Stock.StockPanel;
+import java.sql.SQLException;
 
 /**
  *
@@ -170,7 +173,6 @@ public class Dashboard extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         LoaderPanel = new javax.swing.JPanel();
-        jProgressBar1 = new javax.swing.JProgressBar();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -227,7 +229,7 @@ public class Dashboard extends javax.swing.JFrame {
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(6, 6, 6)
                         .addComponent(DisplayLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 302, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 569, Short.MAX_VALUE)
                 .addComponent(Date, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(49, 49, 49)
                 .addComponent(Time, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -235,8 +237,8 @@ public class Dashboard extends javax.swing.JFrame {
                 .addComponent(jButtonSync, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
-                    .addComponent(jButton9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButton9, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE))
                 .addGap(14, 14, 14))
         );
         jPanel2Layout.setVerticalGroup(
@@ -264,7 +266,7 @@ public class Dashboard extends javax.swing.JFrame {
 
         jPanel3.setLayout(new java.awt.GridLayout(8, 1, 5, 10));
 
-        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton2.setText("Dashboard");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -273,7 +275,7 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton2);
 
-        jButton6.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton6.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton6.setText("Registration");
         jButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -282,7 +284,7 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton6);
 
-        jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton1.setText("Attendence");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -291,7 +293,7 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton1);
 
-        jButton7.setFont(new java.awt.Font("JetBrains Mono", 1, 16)); // NOI18N
+        jButton7.setFont(new java.awt.Font("JetBrains Mono", 1, 14)); // NOI18N
         jButton7.setText("PayRoll Management");
         jButton7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -300,7 +302,7 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton7);
 
-        jButton10.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton10.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton10.setText("Shipments");
         jButton10.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -309,7 +311,7 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton10);
 
-        jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton8.setText("Accesories");
         jButton8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -318,11 +320,16 @@ public class Dashboard extends javax.swing.JFrame {
         });
         jPanel3.add(jButton8);
 
-        jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton3.setText("Stock");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
         jPanel3.add(jButton3);
 
-        jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
+        jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton4.setText("Database Backup");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -335,17 +342,11 @@ public class Dashboard extends javax.swing.JFrame {
         LoaderPanel.setLayout(LoaderPanelLayout);
         LoaderPanelLayout.setHorizontalGroup(
             LoaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, LoaderPanelLayout.createSequentialGroup()
-                .addContainerGap(945, Short.MAX_VALUE)
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(166, 166, 166))
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         LoaderPanelLayout.setVerticalGroup(
             LoaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(LoaderPanelLayout.createSequentialGroup()
-                .addGap(89, 89, 89)
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGap(0, 763, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -354,35 +355,38 @@ public class Dashboard extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(LoaderPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(LoaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(0, 0, 0))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 675, Short.MAX_VALUE)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(LoaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addContainerGap())))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 763, Short.MAX_VALUE)
+                    .addComponent(LoaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -446,6 +450,8 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("Backup", () -> new BackupPanel());
             case "PayRollManagement" ->
                 loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
+            case "Stock" ->
+                loadPanelWithLoading("Stock", () -> new StockPanel());
             default ->
                 showErrorPanel("Cannot refresh this panel.");
         }
@@ -461,21 +467,115 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButtonSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSyncActionPerformed
-        new Thread(() -> {
-            try {
-                JOptionPane.showMessageDialog(this, "🔄 Sync started, please wait...");
+        // Disable button to prevent multiple clicks
+        jButtonSync.setEnabled(false);
+        jButtonSync.setText("Syncing...");
 
-                // DatabaseSync වෙනුවට DatabaseConnection භාවිතා කරන්න
-                DatabaseConnection.syncLocalToOnline();
-                DatabaseConnection.syncOnlineToLocal();
+        // Show temporary loading panel
+        JPanel syncLoadingPanel = new JPanel(new BorderLayout());
+        syncLoadingPanel.add(new LoadingPanel("Syncing database..."), BorderLayout.CENTER);
+        LoaderPanel.removeAll();
+        LoaderPanel.setLayout(new BorderLayout());
+        LoaderPanel.add(syncLoadingPanel, BorderLayout.CENTER);
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
 
-                JOptionPane.showMessageDialog(this, "✅ Sync completed successfully!");
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "❌ Sync failed: " + e.getMessage());
+        // Background sync
+        SwingWorker<Boolean, String> syncWorker = new SwingWorker<Boolean, String>() {
+            @Override
+            protected Boolean doInBackground() throws Exception {
+                // Small delay for UX
+                Thread.sleep(300);
+
+                // Set callback for sync status updates
+                BidirectionalDatabaseSync.setStatusCallback(
+                        new BidirectionalDatabaseSync.SyncStatusCallback() {
+                    @Override
+                    public void onStatusChange(String status) {
+                        publish(status);  // Send to process() method
+                    }
+                }
+                );
+
+                // Perform bidirectional sync
+                boolean success = BidirectionalDatabaseSync.performFullSync();
+                return success;
             }
-        }).start();
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                // Update UI with sync status (optional - show in loading panel)
+                if (!chunks.isEmpty()) {
+                    String latestStatus = chunks.get(chunks.size() - 1);
+                    System.out.println("[SYNC STATUS] " + latestStatus);
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    Boolean success = get(); // Get result and check for exceptions
+
+                    if (success) {
+                        JOptionPane.showMessageDialog(Dashboard.this,
+                                "✅ Sync completed successfully!\n\n"
+                                + "All data has been synchronized between local and online databases.",
+                                "Sync Success",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(Dashboard.this,
+                                "⚠️ Sync completed with warnings!\n\n"
+                                + "Some data may not have been synchronized properly.\n"
+                                + "Please check your internet connection and try again.",
+                                "Sync Warning",
+                                JOptionPane.WARNING_MESSAGE);
+                    }
+
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    Throwable cause = ex.getCause();
+                    ex.printStackTrace();
+
+                    String errorMsg;
+                    if (cause instanceof SQLException) {
+                        errorMsg = "Database connection error: " + cause.getMessage();
+                    } else if (cause instanceof java.net.ConnectException) {
+                        errorMsg = "Cannot connect to online database.\nPlease check your internet connection.";
+                    } else {
+                        errorMsg = cause != null ? cause.getMessage() : ex.getMessage();
+                    }
+
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "❌ Sync failed!\n\n" + errorMsg + "\n\n"
+                            + "Possible solutions:\n"
+                            + "• Check your internet connection\n"
+                            + "• Verify online database credentials\n"
+                            + "• Ensure online MySQL server is running\n"
+                            + "• Check firewall settings",
+                            "Sync Error",
+                            JOptionPane.ERROR_MESSAGE);
+
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "⚠️ Sync was interrupted!",
+                            "Sync Interrupted",
+                            JOptionPane.WARNING_MESSAGE);
+
+                } finally {
+                    // Restore Dashboard panel after sync
+                    loadDashboardPanelByDefault();
+                    jButtonSync.setEnabled(true);
+                    jButtonSync.setText("Sync");
+                }
+            }
+        };
+
+        syncWorker.execute();
     }//GEN-LAST:event_jButtonSyncActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        loadPanelWithLoading("Stock", () -> new StockPanel());
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -515,6 +615,5 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JProgressBar jProgressBar1;
     // End of variables declaration//GEN-END:variables
 }

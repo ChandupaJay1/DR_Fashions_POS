@@ -18,8 +18,6 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
     public AddAccesoriesDFrame(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-
-        // Load types from database
         loadTypes();
 
         // Document listeners for auto-calculation
@@ -50,10 +48,8 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                 updateAvailableQuantity();
             }
         });
-
     }
 
-    // Add this method to AddAccesoriesDFrame class
     private void loadTypes() {
         try {
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
@@ -135,6 +131,8 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jButton1 = new javax.swing.JButton();
         jLabel12 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
+        jLabel7 = new javax.swing.JLabel();
+        jTextField9 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -202,6 +200,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jTextField8.setEditable(false);
         jTextField8.setBackground(new java.awt.Color(211, 211, 211));
         jTextField8.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jTextField8.setForeground(new java.awt.Color(0, 0, 0));
         jTextField8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jTextField8ActionPerformed(evt);
@@ -219,23 +218,23 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jLabel12.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel12.setText("Type");
 
+        jComboBox1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+
+        jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel7.setText("Name");
+
+        jTextField9.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jTextField9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField9ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(322, 322, 322)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(332, Short.MAX_VALUE))
             .addGroup(layout.createSequentialGroup()
                 .addGap(95, 95, 95)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -247,7 +246,8 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                     .addComponent(jLabel9)
                     .addComponent(jLabel10)
                     .addComponent(jLabel11)
-                    .addComponent(jLabel12))
+                    .addComponent(jLabel12)
+                    .addComponent(jLabel7))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jTextField1)
@@ -258,8 +258,20 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                     .addComponent(jTextField7)
                     .addComponent(jTextField8)
                     .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                    .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(44, 44, 44))
+                    .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jTextField9))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1)
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(302, 302, 302)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(352, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -272,7 +284,11 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel2))
-                .addGap(26, 26, 26)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 24, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3))
@@ -304,9 +320,9 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel12)
                     .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                .addGap(36, 36, 36)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(31, 31, 31))
+                .addGap(29, 29, 29))
         );
 
         pack();
@@ -333,6 +349,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         try {
             // Validate inputs
             String orderNum = jTextField2.getText().trim();
+            String name = jTextField9.getText().trim();  // Get name from jTextField9
             String colourName = jTextField3.getText().trim();
             String size = jTextField4.getText().trim();
             String stockQtyText = jTextField5.getText().trim();
@@ -342,7 +359,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
             String unitPriceText = jTextField1.getText().trim();
 
             // Check if fields are empty
-            if (orderNum.isEmpty() || colourName.isEmpty() || size.isEmpty()
+            if (orderNum.isEmpty() || name.isEmpty() || colourName.isEmpty() || size.isEmpty()
                     || stockQtyText.isEmpty() || uom.isEmpty() || totalIssuedText.isEmpty()
                     || availableQtyText.isEmpty() || unitPriceText.isEmpty()) {
                 javax.swing.JOptionPane.showMessageDialog(this, "Please fill all fields!");
@@ -374,21 +391,22 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
             java.sql.Date receiveDate = new java.sql.Date(System.currentTimeMillis());
             java.sql.Date issuedDate = new java.sql.Date(System.currentTimeMillis());
 
-            // DB insert with type_id
+            // DB insert with name and type_id
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
-            String sql = "INSERT INTO accesories (order_no, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price, type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO accesories (order_no, name, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price, type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             java.sql.PreparedStatement pst = con.prepareStatement(sql);
             pst.setString(1, orderNum);
-            pst.setString(2, colourName);
-            pst.setString(3, size);
-            pst.setInt(4, stockQty);
-            pst.setString(5, uom);
-            pst.setDate(6, receiveDate);
-            pst.setDate(7, issuedDate);
-            pst.setInt(8, totalIssued);
-            pst.setInt(9, availableQty);
-            pst.setDouble(10, unitPrice);
-            pst.setInt(11, typeId); // Add type_id here
+            pst.setString(2, name);  // Add name here
+            pst.setString(3, colourName);
+            pst.setString(4, size);
+            pst.setInt(5, stockQty);
+            pst.setString(6, uom);
+            pst.setDate(7, receiveDate);
+            pst.setDate(8, issuedDate);
+            pst.setInt(9, totalIssued);
+            pst.setInt(10, availableQty);
+            pst.setDouble(11, unitPrice);
+            pst.setInt(12, typeId);
 
             int rowAffected = pst.executeUpdate();
             if (rowAffected > 0) {
@@ -417,6 +435,10 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField5ActionPerformed
 
+    private void jTextField9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField9ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField9ActionPerformed
+
     private void clearFields() {
         jTextField1.setText("");
         jTextField2.setText("");
@@ -426,6 +448,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         jTextField6.setText("");
         jTextField7.setText("");
         jTextField8.setText("");
+        jTextField9.setText("");
         if (jComboBox1.getItemCount() > 0) {
             jComboBox1.setSelectedIndex(0);
         }
@@ -435,11 +458,6 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -456,10 +474,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(AddAccesoriesDFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
-        //</editor-fold>
 
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 AddAccesoriesDFrame dialog = new AddAccesoriesDFrame(new javax.swing.JFrame(), true);
@@ -486,6 +501,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
@@ -496,5 +512,6 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
     private javax.swing.JTextField jTextField6;
     private javax.swing.JTextField jTextField7;
     private javax.swing.JTextField jTextField8;
+    private javax.swing.JTextField jTextField9;
     // End of variables declaration//GEN-END:variables
 }
