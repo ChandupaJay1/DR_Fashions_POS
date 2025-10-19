@@ -47,8 +47,6 @@ public class LoginForm extends javax.swing.JFrame {
         }
     }
 
-    
-
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -227,10 +225,7 @@ public class LoginForm extends javax.swing.JFrame {
         if (user != null) {
             JOptionPane.showMessageDialog(this, "Login successful as " + user.fullName + " (" + user.role + ")");
             this.dispose();
-
-            // Pass both name & role
             new Dashboard(user.fullName, user.role).setVisible(true);
-
         } else {
             JOptionPane.showMessageDialog(this, "Invalid username or password.");
         }
@@ -257,65 +252,119 @@ public class LoginForm extends javax.swing.JFrame {
                 splash.setStatus("🔌 Initializing...");
                 Thread.sleep(300);
 
-                // Step 2: Test database connection
-                splash.setStatus("🔗 Connecting to database...");
-                Connection conn = DatabaseConnection.getConnection();
+                // Step 2: Test LOCAL database connection first
+                splash.setStatus("🔗 Connecting to local database...");
+                Connection localConn = DatabaseConnection.getConnection();
 
-                if (conn != null && !conn.isClosed()) {
-                    splash.setStatus("✅ Database connected!");
-                    Thread.sleep(500);
+                if (localConn == null || localConn.isClosed()) {
+                    throw new SQLException("Local database connection failed");
+                }
 
-                    // Step 3: Start bidirectional sync
+                splash.setStatus("✅ Local database connected!");
+                Thread.sleep(500);
+
+                // Step 3: Try to connect to ONLINE database
+                splash.setStatus("🌐 Checking online connection...");
+                Connection onlineConn = null;
+                boolean onlineAvailable = false;
+
+                try {
+                    onlineConn = DatabaseConnection.getOnlineConnection();
+                    if (onlineConn != null && !onlineConn.isClosed()) {
+                        onlineAvailable = true;
+                        splash.setStatus("✅ Online database connected!");
+                        Thread.sleep(500);
+                        onlineConn.close();
+                    }
+                } catch (Exception e) {
+                    splash.setStatus("⚠️ Online database unavailable");
+                    splash.setSyncStatus("Will work in offline mode");
+                    Logger.getLogger(LoginForm.class.getName()).log(Level.WARNING,
+                            "Online database not available", e);
+                    Thread.sleep(1000);
+                }
+
+                // Step 4: Perform sync if online is available
+                if (onlineAvailable) {
                     splash.setStatus("🔄 Syncing databases...");
-                    splash.setSyncStatus("Pulling updates from online...");
+                    splash.setSyncStatus("Starting bidirectional sync...");
 
-                    // Set callback for detailed sync updates
-                    BidirectionalDatabaseSync.setStatusCallback(status -> {
-                        splash.setSyncStatus(status);
+                    // Set callback using the correct interface
+                    BidirectionalDatabaseSync.setStatusCallback(new BidirectionalDatabaseSync.SyncStatusCallback() {
+                        @Override
+                        public void onStatusChange(String status) {
+                            SwingUtilities.invokeLater(() -> {
+                                splash.setSyncStatus(status);
+                            });
+                        }
                     });
 
-                    // Perform full bidirectional sync
-                    boolean syncSuccess = BidirectionalDatabaseSync.performFullSync();
+                    try {
+                        // Perform full bidirectional sync
+                        boolean syncSuccess = BidirectionalDatabaseSync.performFullSync();
 
-                    if (syncSuccess) {
-                        splash.setStatus("✅ Sync completed!");
-                        splash.setSyncStatus("All data synchronized successfully");
-                        Thread.sleep(800);
-                    } else {
-                        splash.setStatus("⚠️ Sync completed with warnings");
-                        splash.setSyncStatus("Check connection and try again");
+                        if (syncSuccess) {
+                            splash.setStatus("✅ Sync completed!");
+                            splash.setSyncStatus("All data synchronized successfully");
+                            Thread.sleep(800);
+                        } else {
+                            splash.setStatus("⚠️ Sync completed with warnings");
+                            splash.setSyncStatus("Some data may not be synced");
+                            Thread.sleep(1000);
+                        }
+                    } catch (Exception syncEx) {
+                        splash.setStatus("⚠️ Sync failed");
+                        splash.setSyncStatus("Continuing in offline mode");
+                        Logger.getLogger(LoginForm.class.getName()).log(Level.WARNING,
+                                "Sync failed", syncEx);
                         Thread.sleep(1000);
                     }
-
-                    // Step 4: Launch login form
-                    splash.setStatus("🚀 Starting application...");
-                    Thread.sleep(300);
-
-                    SwingUtilities.invokeLater(() -> {
-                        splash.closeSplash();
-                        new LoginForm().setVisible(true);
-                    });
-                } else {
-                    throw new SQLException("Connection is null or closed");
                 }
+
+                localConn.close();
+
+                // Step 5: Launch login form
+                splash.setStatus("🚀 Starting application...");
+                Thread.sleep(300);
+
+                SwingUtilities.invokeLater(() -> {
+                    splash.closeSplash();
+                    new LoginForm().setVisible(true);
+                });
+
+            } catch (SQLException sqlEx) {
+                splash.setStatus("❌ Database Error!");
+                splash.setSyncStatus("Cannot connect to local database");
+                sqlEx.printStackTrace();
+
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null,
+                            "❌ Critical Database Error!\n\n"
+                            + "Error: " + sqlEx.getMessage() + "\n\n"
+                            + "Cannot connect to local MySQL database.\n\n"
+                            + "Possible solutions:\n"
+                            + "• Ensure local MySQL server is running\n"
+                            + "• Check database credentials in DatabaseConnection.java\n"
+                            + "• Verify database 'dr_fashion' exists\n"
+                            + "• Check MySQL port (default: 3306)\n\n"
+                            + "Application cannot start without database.",
+                            "Critical Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    splash.closeSplash();
+                    System.exit(1);
+                });
 
             } catch (Exception ex) {
                 splash.setStatus("❌ Error occurred!");
                 splash.setSyncStatus(ex.getMessage());
                 ex.printStackTrace();
 
-                // Show error and continue anyway
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(null,
-                            "⚠️ Database Sync Issue!\n\n"
+                            "⚠️ Application Error!\n\n"
                             + "Error: " + ex.getMessage() + "\n\n"
-                            + "Possible solutions:\n"
-                            + "• Check your internet connection\n"
-                            + "• Verify database credentials\n"
-                            + "• Ensure online MySQL server is running\n"
-                            + "• Ensure local MySQL server is running\n\n"
-                            + "The application will continue in offline mode.",
-                            "Sync Error",
+                            + "The application will try to continue.",
+                            "Error",
                             JOptionPane.WARNING_MESSAGE);
                     splash.closeSplash();
                     new LoginForm().setVisible(true);

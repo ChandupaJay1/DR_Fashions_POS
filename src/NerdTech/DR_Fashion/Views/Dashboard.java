@@ -24,6 +24,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import NerdTech.DR_Fashion.Views.DashboardP.EmployeeSectionStatsPanel;
+import NerdTech.DR_Fashion.Views.Stock.StockPanel;
+import java.sql.SQLException;
 
 /**
  *
@@ -320,6 +322,11 @@ public class Dashboard extends javax.swing.JFrame {
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton3.setText("Stock");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
         jPanel3.add(jButton3);
 
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
@@ -443,6 +450,8 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("Backup", () -> new BackupPanel());
             case "PayRollManagement" ->
                 loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
+            case "Stock" ->
+                loadPanelWithLoading("Stock", () -> new StockPanel());
             default ->
                 showErrorPanel("Cannot refresh this panel.");
         }
@@ -465,7 +474,6 @@ public class Dashboard extends javax.swing.JFrame {
         // Show temporary loading panel
         JPanel syncLoadingPanel = new JPanel(new BorderLayout());
         syncLoadingPanel.add(new LoadingPanel("Syncing database..."), BorderLayout.CENTER);
-
         LoaderPanel.removeAll();
         LoaderPanel.setLayout(new BorderLayout());
         LoaderPanel.add(syncLoadingPanel, BorderLayout.CENTER);
@@ -473,24 +481,86 @@ public class Dashboard extends javax.swing.JFrame {
         LoaderPanel.repaint();
 
         // Background sync
-        SwingWorker<Void, Void> syncWorker = new SwingWorker<Void, Void>() {
+        SwingWorker<Boolean, String> syncWorker = new SwingWorker<Boolean, String>() {
             @Override
-            protected Void doInBackground() throws Exception {
+            protected Boolean doInBackground() throws Exception {
                 // Small delay for UX
                 Thread.sleep(300);
-                // Perform bidirectional sync safely
-                BidirectionalDatabaseSync.syncBothSafe();
-                return null;
+
+                // Set callback for sync status updates
+                BidirectionalDatabaseSync.setStatusCallback(
+                        new BidirectionalDatabaseSync.SyncStatusCallback() {
+                    @Override
+                    public void onStatusChange(String status) {
+                        publish(status);  // Send to process() method
+                    }
+                }
+                );
+
+                // Perform bidirectional sync
+                boolean success = BidirectionalDatabaseSync.performFullSync();
+                return success;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                // Update UI with sync status (optional - show in loading panel)
+                if (!chunks.isEmpty()) {
+                    String latestStatus = chunks.get(chunks.size() - 1);
+                    System.out.println("[SYNC STATUS] " + latestStatus);
+                }
             }
 
             @Override
             protected void done() {
                 try {
-                    get(); // Check for exceptions
-                    JOptionPane.showMessageDialog(Dashboard.this, "✅ Sync completed successfully!");
-                } catch (Exception ex) {
+                    Boolean success = get(); // Get result and check for exceptions
+
+                    if (success) {
+                        JOptionPane.showMessageDialog(Dashboard.this,
+                                "✅ Sync completed successfully!\n\n"
+                                + "All data has been synchronized between local and online databases.",
+                                "Sync Success",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(Dashboard.this,
+                                "⚠️ Sync completed with warnings!\n\n"
+                                + "Some data may not have been synchronized properly.\n"
+                                + "Please check your internet connection and try again.",
+                                "Sync Warning",
+                                JOptionPane.WARNING_MESSAGE);
+                    }
+
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    Throwable cause = ex.getCause();
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(Dashboard.this, "❌ Sync failed: " + ex.getMessage());
+
+                    String errorMsg;
+                    if (cause instanceof SQLException) {
+                        errorMsg = "Database connection error: " + cause.getMessage();
+                    } else if (cause instanceof java.net.ConnectException) {
+                        errorMsg = "Cannot connect to online database.\nPlease check your internet connection.";
+                    } else {
+                        errorMsg = cause != null ? cause.getMessage() : ex.getMessage();
+                    }
+
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "❌ Sync failed!\n\n" + errorMsg + "\n\n"
+                            + "Possible solutions:\n"
+                            + "• Check your internet connection\n"
+                            + "• Verify online database credentials\n"
+                            + "• Ensure online MySQL server is running\n"
+                            + "• Check firewall settings",
+                            "Sync Error",
+                            JOptionPane.ERROR_MESSAGE);
+
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "⚠️ Sync was interrupted!",
+                            "Sync Interrupted",
+                            JOptionPane.WARNING_MESSAGE);
+
                 } finally {
                     // Restore Dashboard panel after sync
                     loadDashboardPanelByDefault();
@@ -499,8 +569,13 @@ public class Dashboard extends javax.swing.JFrame {
                 }
             }
         };
+
         syncWorker.execute();
     }//GEN-LAST:event_jButtonSyncActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        loadPanelWithLoading("Stock", () -> new StockPanel());
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments

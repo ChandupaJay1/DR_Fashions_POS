@@ -1,43 +1,32 @@
 package NerdTech.DR_Fashion.DatabaseConnection;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.JOptionPane;
 
 public class BidirectionalDatabaseSync {
 
-    public static void syncBothSafe() {
-        try {
-            syncLocalToOnlineSafe();
-            syncOnlineToLocalSafe();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Sync failed: " + e.getMessage());
-        }
-    }
-
-    public static void syncLocalToOnlineSafe() throws Exception {
-        DatabaseConnection.syncLocalToOnlineSafe();
-    }
-
-    public static void syncOnlineToLocalSafe() throws Exception {
-        DatabaseConnection.syncOnlineToLocalSafe();
-    }
-
-    private static final String SYNC_LOG_TABLE = "sync_log";
-    private static SyncStatusCallback statusCallback;
-
+    // Use the same callback interface as DatabaseConnection
     public interface SyncStatusCallback {
 
         void onStatusChange(String status);
     }
 
+    private static SyncStatusCallback statusCallback;
+
     public static void setStatusCallback(SyncStatusCallback callback) {
         statusCallback = callback;
+        // Also set it in DatabaseConnection so all messages go through same callback
+        DatabaseConnection.setStatusCallback(new DatabaseConnection.StatusCallback() {
+            @Override
+            public void onStatusChange(String status) {
+                if (statusCallback != null) {
+                    statusCallback.onStatusChange(status);
+                }
+            }
+        });
     }
 
     private static void updateStatus(String status) {
@@ -47,41 +36,79 @@ public class BidirectionalDatabaseSync {
         System.out.println("[SYNC] " + status);
     }
 
-    public static void syncBoth() throws Exception {
-        // මෙතනදී ලොකල් → online සහ online → local sync logic එකක් තියෙනවා
-        syncLocalToOnline();
-        syncOnlineToLocal();
+    /**
+     * Safe bidirectional sync - doesn't throw exceptions
+     */
+    public static void syncBothSafe() {
+        try {
+            updateStatus("Starting safe bidirectional sync...");
+            DatabaseConnection.syncOnlineToLocalSafe();
+            DatabaseConnection.syncLocalToOnlineSafe();
+            updateStatus("✅ Safe sync completed!");
+        } catch (Exception e) {
+            updateStatus("⚠️ Safe sync completed with errors: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
-     * Full bidirectional sync - local <-> online
+     * Full bidirectional sync with proper error handling
      */
     public static boolean performFullSync() {
         try {
             updateStatus("Starting bidirectional sync...");
 
-            // Step 1: Create sync log table if not exists
-            createSyncLogTable();
+            // Step 1: Test online connection
+            updateStatus("Testing online database connection...");
+            Connection testConn = null;
+            boolean onlineAvailable = false;
 
-            // Step 2: Sync from online to local (get latest updates)
+            try {
+                testConn = DatabaseConnection.tryOnlineConnection();
+                if (testConn != null && !testConn.isClosed()) {
+                    onlineAvailable = true;
+                    updateStatus("✓ Online database is reachable");
+                    testConn.close();
+                }
+            } catch (Exception e) {
+                updateStatus("✗ Online database not available: " + e.getMessage());
+            }
+
+            if (!onlineAvailable) {
+                updateStatus("⚠️ Sync aborted - Online database not available");
+                updateStatus("Working in offline mode");
+                return false;
+            }
+
+            // Step 2: Sync from online to local (pull latest)
             updateStatus("Pulling updates from online database...");
-            syncOnlineToLocal();
-            Thread.sleep(500);
+            try {
+                DatabaseConnection.syncOnlineToLocal();
+                Thread.sleep(500);
+            } catch (Exception e) {
+                updateStatus("⚠️ Pull from online failed: " + e.getMessage());
+                throw e;
+            }
 
-            // Step 3: Sync from local to online (push local changes)
+            // Step 3: Sync from local to online (push changes)
             updateStatus("Pushing local changes to online database...");
-            syncLocalToOnline();
-            Thread.sleep(500);
+            try {
+                DatabaseConnection.syncLocalToOnline();
+                Thread.sleep(500);
+            } catch (Exception e) {
+                updateStatus("⚠️ Push to online failed: " + e.getMessage());
+                throw e;
+            }
 
-            // Step 4: Final verification
+            // Step 4: Verification
             updateStatus("Verifying data consistency...");
             verifyDataConsistency();
 
-            updateStatus("Sync completed successfully!");
+            updateStatus("✅ Sync completed successfully!");
             return true;
 
         } catch (Exception e) {
-            updateStatus("Sync failed: " + e.getMessage());
+            updateStatus("❌ Sync failed: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -107,269 +134,28 @@ public class BidirectionalDatabaseSync {
     };
 
     /**
-     * Sync online database → local database
+     * Sync online database → local database (uses DatabaseConnection methods)
      */
     public static void syncOnlineToLocal() throws Exception {
-        updateStatus("Syncing: Online → Local");
-
-        try (Connection onlineConn = DatabaseConnection.getOnlineConnection(); Connection localConn = DatabaseConnection.getLocalConnection()) {
-
-            if (onlineConn == null || localConn == null) {
-                throw new Exception("Database connections failed");
-            }
-
-            String[] tables = {
-                "user", "employee", "accesories", "attendence", "bank_details", "designation",
-                "monthly_payment", "per_day_salary", "resignation", "salary", "salary_details",
-                "section", "stock", "type"
-            };
-
-            for (String table : tables) {
-                syncTableOnlineToLocal(table, onlineConn, localConn);
-                updateStatus("Synced table: " + table + " (Online → Local)");
-            }
-        }
+        DatabaseConnection.syncOnlineToLocal();
     }
 
     /**
-     * Sync local database → online database
+     * Sync local database → online database (uses DatabaseConnection methods)
      */
     public static void syncLocalToOnline() throws Exception {
-        updateStatus("Syncing: Local → Online");
-
-        try (Connection onlineConn = DatabaseConnection.getOnlineConnection(); Connection localConn = DatabaseConnection.getLocalConnection()) {
-
-            if (onlineConn == null || localConn == null) {
-                throw new Exception("Database connections failed");
-            }
-
-            String[] tables = {
-                "user", "employee", "accesories", "attendence", "bank_details", "designation",
-                "monthly_payment", "per_day_salary", "resignation", "salary", "salary_details",
-                "section", "stock", "type"
-            };
-
-            for (String table : tables) {
-                syncTableLocalToOnline(table, onlineConn, localConn);
-                updateStatus("Synced table: " + table + " (Local → Online)");
-            }
-        }
+        DatabaseConnection.syncLocalToOnline();
     }
 
     /**
-     * Sync individual table: Online → Local
+     * Safe sync methods
      */
-    private static void syncTableOnlineToLocal(String tableName, Connection onlineConn, Connection localConn) throws SQLException {
-        String selectSql = "SELECT * FROM " + tableName;
-
-        try (Statement onlineStmt = onlineConn.createStatement(); ResultSet rs = onlineStmt.executeQuery(selectSql)) {
-
-            while (rs.next()) {
-                // Get primary key (assuming 'id' is always first column)
-                int id = rs.getInt(1);
-
-                // Check if record exists in local
-                if (!recordExistsInLocal(tableName, id, localConn)) {
-                    // Insert new record
-                    insertRecordToLocal(tableName, rs, localConn);
-                } else {
-                    // Update existing record
-                    updateRecordInLocal(tableName, rs, localConn);
-                }
-            }
-        }
+    public static void syncOnlineToLocalSafe() throws Exception {
+        DatabaseConnection.syncOnlineToLocalSafe();
     }
 
-    /**
-     * Sync individual table: Local → Online
-     */
-    private static void syncTableLocalToOnline(String tableName, Connection onlineConn, Connection localConn) throws SQLException {
-        String selectSql = "SELECT * FROM " + tableName;
-
-        try (Statement localStmt = localConn.createStatement(); ResultSet rs = localStmt.executeQuery(selectSql)) {
-
-            while (rs.next()) {
-                int id = rs.getInt(1);
-
-                if (!recordExistsInOnline(tableName, id, onlineConn)) {
-                    insertRecordToOnline(tableName, rs, onlineConn);
-                } else {
-                    updateRecordInOnline(tableName, rs, onlineConn);
-                }
-            }
-        }
-    }
-
-    /**
-     * Check if record exists in local DB
-     */
-    private static boolean recordExistsInLocal(String table, int id, Connection conn) throws SQLException {
-        String primaryKey = primaryKeyMap.get(table);
-        if (primaryKey == null) {
-            throw new SQLException("Primary key not defined for table: " + table);
-        }
-        String sql = "SELECT " + primaryKey + " FROM " + table + " WHERE " + primaryKey + " = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            return pstmt.executeQuery().next();
-        }
-    }
-
-    /**
-     * Check if record exists in online DB
-     */
-    private static boolean recordExistsInOnline(String table, int id, Connection conn) throws SQLException {
-        String primaryKey = primaryKeyMap.get(table);
-        if (primaryKey == null) {
-            throw new SQLException("Primary key not defined for table: " + table);
-        }
-        String sql = "SELECT " + primaryKey + " FROM " + table + " WHERE " + primaryKey + " = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            return pstmt.executeQuery().next();
-        }
-    }
-
-    /**
-     * Insert record to local database
-     */
-    private static void insertRecordToLocal(String tableName, ResultSet sourceRs, Connection localConn) throws SQLException {
-        int columnCount = sourceRs.getMetaData().getColumnCount();
-        StringBuilder columns = new StringBuilder();
-        StringBuilder placeholders = new StringBuilder();
-
-        for (int i = 1; i <= columnCount; i++) {
-            columns.append(sourceRs.getMetaData().getColumnName(i));
-            placeholders.append("?");
-            if (i < columnCount) {
-                columns.append(", ");
-                placeholders.append(", ");
-            }
-        }
-
-        String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
-
-        try (PreparedStatement pstmt = localConn.prepareStatement(sql)) {
-            for (int i = 1; i <= columnCount; i++) {
-                pstmt.setObject(i, sourceRs.getObject(i));
-            }
-            pstmt.executeUpdate();
-        }
-    }
-
-    /**
-     * Insert record to online database
-     */
-    private static void insertRecordToOnline(String tableName, ResultSet sourceRs, Connection onlineConn) throws SQLException {
-        int columnCount = sourceRs.getMetaData().getColumnCount();
-        StringBuilder columns = new StringBuilder();
-        StringBuilder placeholders = new StringBuilder();
-
-        for (int i = 1; i <= columnCount; i++) {
-            columns.append(sourceRs.getMetaData().getColumnName(i));
-            placeholders.append("?");
-            if (i < columnCount) {
-                columns.append(", ");
-                placeholders.append(", ");
-            }
-        }
-
-        String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
-
-        try (PreparedStatement pstmt = onlineConn.prepareStatement(sql)) {
-            for (int i = 1; i <= columnCount; i++) {
-                pstmt.setObject(i, sourceRs.getObject(i));
-            }
-            pstmt.executeUpdate();
-        }
-    }
-
-    /**
-     * Update record in local database
-     */
-    /**
-     * Update record in local database
-     */
-    private static void updateRecordInLocal(String tableName, ResultSet sourceRs, Connection localConn) throws SQLException {
-        int columnCount = sourceRs.getMetaData().getColumnCount();
-        StringBuilder setClause = new StringBuilder();
-
-        // Build SET part of query (skip primary key column)
-        for (int i = 2; i <= columnCount; i++) {
-            setClause.append(sourceRs.getMetaData().getColumnName(i)).append(" = ?");
-            if (i < columnCount) {
-                setClause.append(", ");
-            }
-        }
-
-        // ✅ Use correct primary key
-        String primaryKey = primaryKeyMap.getOrDefault(tableName, "id");
-        String sql = "UPDATE " + tableName + " SET " + setClause + " WHERE " + primaryKey + " = ?";
-
-        try (PreparedStatement pstmt = localConn.prepareStatement(sql)) {
-            int paramIndex = 1;
-            for (int i = 2; i <= columnCount; i++) {
-                pstmt.setObject(paramIndex++, sourceRs.getObject(i));
-            }
-            pstmt.setObject(paramIndex, sourceRs.getObject(1)); // Primary key value
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("⚠️ [Local Update Failed] Table: " + tableName + " | Key: " + primaryKey + " | " + e.getMessage());
-        }
-    }
-
-    /**
-     * Update record in online database
-     */
-    private static void updateRecordInOnline(String tableName, ResultSet sourceRs, Connection onlineConn) throws SQLException {
-        int columnCount = sourceRs.getMetaData().getColumnCount();
-        StringBuilder setClause = new StringBuilder();
-
-        // Build SET part of query (skip primary key column)
-        for (int i = 2; i <= columnCount; i++) {
-            setClause.append(sourceRs.getMetaData().getColumnName(i)).append(" = ?");
-            if (i < columnCount) {
-                setClause.append(", ");
-            }
-        }
-
-        // ✅ Use correct primary key
-        String primaryKey = primaryKeyMap.getOrDefault(tableName, "id");
-        String sql = "UPDATE " + tableName + " SET " + setClause + " WHERE " + primaryKey + " = ?";
-
-        try (PreparedStatement pstmt = onlineConn.prepareStatement(sql)) {
-            int paramIndex = 1;
-            for (int i = 2; i <= columnCount; i++) {
-                pstmt.setObject(paramIndex++, sourceRs.getObject(i));
-            }
-            pstmt.setObject(paramIndex, sourceRs.getObject(1)); // Primary key value
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("⚠️ [Online Update Failed] Table: " + tableName + " | Key: " + primaryKey + " | " + e.getMessage());
-        }
-    }
-
-    /**
-     * Create sync log table for tracking
-     */
-    private static void createSyncLogTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS sync_log ("
-                + "sync_id INT AUTO_INCREMENT PRIMARY KEY,"
-                + "table_name VARCHAR(100),"
-                + "record_id INT,"
-                + "action VARCHAR(50),"
-                + "sync_direction VARCHAR(20),"
-                + "sync_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
-                + "status VARCHAR(50)"
-                + ")";
-
-        try (Connection conn = DatabaseConnection.getLocalConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        } catch (SQLException e) {
-            System.out.println("Sync log table already exists or error: " + e.getMessage());
-        }
+    public static void syncLocalToOnlineSafe() throws Exception {
+        DatabaseConnection.syncLocalToOnlineSafe();
     }
 
     /**
@@ -382,20 +168,31 @@ public class BidirectionalDatabaseSync {
             try (Connection onlineConn = DatabaseConnection.getOnlineConnection(); Connection localConn = DatabaseConnection.getLocalConnection()) {
 
                 String[] tables = {
-                    "user", "employee", "accesories", "attendence", "bank_details", "designation",
-                    "monthly_payment", "per_day_salary", "resignation", "salary", "salary_details",
-                    "section", "stock", "type"
+                    "user", "employee", "accesories", "attendence", "type", "stock"
                 };
 
-                for (String table : tables) {
-                    long onlineCount = getRecordCount(table, onlineConn);
-                    long localCount = getRecordCount(table, localConn);
+                boolean allConsistent = true;
 
-                    if (onlineCount == localCount) {
-                        updateStatus("✓ Table '" + table + "' - Consistent (" + localCount + " records)");
-                    } else {
-                        updateStatus("⚠ Table '" + table + "' - Count mismatch (Online: " + onlineCount + ", Local: " + localCount + ")");
+                for (String table : tables) {
+                    try {
+                        long onlineCount = getRecordCount(table, onlineConn);
+                        long localCount = getRecordCount(table, localConn);
+
+                        if (onlineCount == localCount) {
+                            updateStatus("✓ Table '" + table + "' consistent (" + localCount + " records)");
+                        } else {
+                            updateStatus("⚠ Table '" + table + "' - Count mismatch (Online: " + onlineCount + ", Local: " + localCount + ")");
+                            allConsistent = false;
+                        }
+                    } catch (SQLException e) {
+                        updateStatus("⚠ Cannot verify table '" + table + "': " + e.getMessage());
                     }
+                }
+
+                if (allConsistent) {
+                    updateStatus("✓ All tables are consistent");
+                } else {
+                    updateStatus("⚠ Some tables have inconsistencies");
                 }
             }
         } catch (Exception e) {
@@ -410,6 +207,20 @@ public class BidirectionalDatabaseSync {
         String sql = "SELECT COUNT(*) FROM " + table;
         try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             return rs.next() ? rs.getLong(1) : 0;
+        }
+    }
+
+    /**
+     * Check if column exists in table
+     */
+    private static boolean columnExistsInTable(String tableName, String columnName, Connection conn) {
+        try {
+            DatabaseMetaData metaData = conn.getMetaData();
+            ResultSet rs = metaData.getColumns(null, null, tableName, columnName);
+            return rs.next();
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error checking column existence: " + e.getMessage());
+            return false;
         }
     }
 }

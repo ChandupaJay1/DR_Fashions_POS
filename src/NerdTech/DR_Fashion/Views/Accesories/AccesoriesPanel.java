@@ -35,16 +35,12 @@ public class AccesoriesPanel extends javax.swing.JPanel {
     private TableRowSorter<javax.swing.table.DefaultTableModel> sorter;
 
     public AccesoriesPanel() {
-
         FlatDarkLaf.setup();
-
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1237, 686));
-        setBackground(new Color(50, 50, 50));  // FlatMacDarkLaf Panel background
-
+        setBackground(new Color(50, 50, 50));
         showLoading("Connecting to Database");
         loadContentInBackground();
-
     }
 
     private void showLoading(String message) {
@@ -57,17 +53,14 @@ public class AccesoriesPanel extends javax.swing.JPanel {
 
     private void loadContentInBackground() {
         SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
-
             @Override
             protected Void doInBackground() throws Exception {
                 publish("Loading accessories data");
                 Thread.sleep(300);
-
                 try (Connection conn = getConnection()) {
                     publish("Fetching records");
                     Thread.sleep(300);
                 }
-
                 return null;
             }
 
@@ -94,13 +87,10 @@ public class AccesoriesPanel extends javax.swing.JPanel {
 
     private void showActualContent() {
         removeAll();
-        initComponents(); // JTable + searchTextField initialize wenawa methana
-
-        // ✅ sorter setup initComponents ekata passe
+        initComponents();
         sorter = new TableRowSorter<>((javax.swing.table.DefaultTableModel) model.getModel());
         model.setRowSorter(sorter);
 
-        // ✅ search text field listener setup
         searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
@@ -127,7 +117,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
             }
         });
 
-        loadAccessories(); // methanin passe null exception enne na
+        loadAccessories();
         isInitialized = true;
         revalidate();
         repaint();
@@ -135,7 +125,6 @@ public class AccesoriesPanel extends javax.swing.JPanel {
 
     private void showError(String errorMessage) {
         removeAll();
-
         JPanel errorPanel = new JPanel(new GridBagLayout());
         errorPanel.setBackground(new Color(245, 247, 250));
 
@@ -192,9 +181,16 @@ public class AccesoriesPanel extends javax.swing.JPanel {
                     typeName = "N/A";
                 }
 
+                // Get name from database (add default if null)
+                String name = rs.getString("name");
+                if (name == null) {
+                    name = "N/A";
+                }
+
                 Object[] row = {
                     rs.getInt("id"),
                     rs.getString("order_no"),
+                    name, // Name column added here
                     rs.getString("colour_name"),
                     rs.getString("size"),
                     rs.getInt("stock_qty"),
@@ -251,17 +247,17 @@ public class AccesoriesPanel extends javax.swing.JPanel {
         model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "id", "Order Num", "Colour Name", "Size", "Stock Quantity", "UOM", "Recieve Date", "Issued Date", "Totall Issued", "Available Quantiy", "Unit Price", "Type"
+                "id", "Order Num", "Name", "Colour Name", "Size", "Stock Quantity", "UOM", "Recieve Date", "Issued Date", "Totall Issued", "Available Quantiy", "Unit Price", "Type"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -274,21 +270,21 @@ public class AccesoriesPanel extends javax.swing.JPanel {
             model.getColumnModel().getColumn(1).setResizable(false);
             model.getColumnModel().getColumn(2).setResizable(false);
             model.getColumnModel().getColumn(3).setResizable(false);
-            model.getColumnModel().getColumn(3).setPreferredWidth(10);
             model.getColumnModel().getColumn(4).setResizable(false);
-            model.getColumnModel().getColumn(4).setPreferredWidth(50);
+            model.getColumnModel().getColumn(4).setPreferredWidth(10);
             model.getColumnModel().getColumn(5).setResizable(false);
-            model.getColumnModel().getColumn(5).setPreferredWidth(30);
+            model.getColumnModel().getColumn(5).setPreferredWidth(50);
             model.getColumnModel().getColumn(6).setResizable(false);
-            model.getColumnModel().getColumn(6).setPreferredWidth(100);
+            model.getColumnModel().getColumn(6).setPreferredWidth(30);
             model.getColumnModel().getColumn(7).setResizable(false);
             model.getColumnModel().getColumn(7).setPreferredWidth(100);
             model.getColumnModel().getColumn(8).setResizable(false);
+            model.getColumnModel().getColumn(8).setPreferredWidth(100);
             model.getColumnModel().getColumn(9).setResizable(false);
             model.getColumnModel().getColumn(10).setResizable(false);
-            model.getColumnModel().getColumn(10).setPreferredWidth(100);
             model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(11).setHeaderValue("Type");
+            model.getColumnModel().getColumn(11).setPreferredWidth(100);
+            model.getColumnModel().getColumn(12).setResizable(false);
         }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 18)); // NOI18N
@@ -362,7 +358,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 66, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 48, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -426,13 +422,14 @@ public class AccesoriesPanel extends javax.swing.JPanel {
         if (selectedRow >= 0) {
             String id = model.getValueAt(selectedRow, 0).toString();
             String orderNo = model.getValueAt(selectedRow, 1).toString();
-            String colourName = model.getValueAt(selectedRow, 2).toString();
-            String size = model.getValueAt(selectedRow, 3).toString();
-            String stockQty = model.getValueAt(selectedRow, 9).toString();
-            String uom = model.getValueAt(selectedRow, 5).toString();
+            String name = model.getValueAt(selectedRow, 2).toString();  // Get name from column 2
+            String colourName = model.getValueAt(selectedRow, 3).toString();  // Index changed to 3
+            String size = model.getValueAt(selectedRow, 4).toString();  // Index changed to 4
+            String stockQty = model.getValueAt(selectedRow, 10).toString();  // Index changed to 10
+            String uom = model.getValueAt(selectedRow, 6).toString();  // Index changed to 6
             String totalIssued = "";
             String availableQty = "";
-            String unitPrice = model.getValueAt(selectedRow, 10).toString().replace("Rs. ", "");
+            String unitPrice = model.getValueAt(selectedRow, 11).toString().replace("Rs. ", "");  // Index changed to 11
 
             int typeId = 0;
             try {
@@ -450,7 +447,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
             }
 
             updateAccesories.setData(
-                    id, orderNo, colourName, size,
+                    id, orderNo, name, colourName, size, // Added name parameter
                     stockQty, uom, totalIssued, availableQty, unitPrice, issueDate, typeId
             );
 
@@ -467,9 +464,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
 
     // ඔබේ main JFrame class එකේ හෝ main method එකේ
     public static void main(String[] args) {
-        // Application start වෙද්දි theme set කරන්න
         FlatDarkLaf.setup();
-
         SwingUtilities.invokeLater(() -> {
             AccesoriesPanel frame = new AccesoriesPanel();
             frame.setVisible(true);
