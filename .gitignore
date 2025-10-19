@@ -82,3 +82,4 @@ desktop.ini
 *.tar
 *.tar.gz
 *.7z
+build/
