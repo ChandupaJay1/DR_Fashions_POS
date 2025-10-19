@@ -58,7 +58,7 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton3.setEnabled(true); // Stock
                 jButton4.setEnabled(true); // Backup
             }
-            case "hr_manager" -> {  // Changed from "HR_Manager" to "hr_manager"
+            case "hr" -> {  // Changed from "HR_Manager" to "hr_manager"
                 // Manager limited access
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
