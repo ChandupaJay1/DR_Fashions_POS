@@ -1,50 +1,59 @@
 # =======================================
-#  NetBeans / Java Project Git Ignore
+#  Java / NetBeans Project Git Ignore
 # =======================================
 
-# Compiled class files
+# === Build Artifacts ===
 *.class
-
-# Build output directories
-build/
-
+/build/
 /dist/
+
+# === Maven / Gradle Outputs ===
+/target/
+/out/
 
 # =======================================
 #  Sensitive Configurations
 # =======================================
 
-# Local configuration and secrets
+# Environment & Configuration Files
 config.properties
 .env
+*.env
+*.key
+*.pem
 
 # Database connection files
 src/**/DatabaseConnection.java
 src/**/DatabaseConnection.class
 
-# Prevent any credential or config files
+# Prevent any credential or config directories
 **/config/**
 **/credentials/**
 **/secrets/**
 
 # =======================================
-#  IDE / Project Files
+#  IDE / Editor Files
 # =======================================
 
-# NetBeans private config
-/nbproject/private/
-
-# VS Code and IntelliJ settings
-.vscode/
-.idea/
-
-# NetBeans generated files
-/nbproject/private/
+# --- NetBeans ---
 nbproject/private/
+nbproject/private/private.properties
+nbproject/private/private.xml
+nbproject/private/
+**/nbproject/private/**
+
+# --- IntelliJ IDEA / VSCode ---
+.idea/
+.vscode/
 *.iml
 
+# --- Eclipse ---
+.project
+.classpath
+.settings/
+
 # =======================================
-#  Logs / Temporary Files
+#  Logs / Temp Files
 # =======================================
 
 *.log
@@ -52,13 +61,15 @@ nbproject/private/
 *.bak
 *.swp
 *.swo
+*.orig
 
 # =======================================
-#  OS-specific Files
+#  OS / System Files
 # =======================================
 
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # =======================================
 #  Archives / Bundles
@@ -68,4 +79,6 @@ Thumbs.db
 *.war
 *.ear
 *.zip
+*.tar
 *.tar.gz
+*.7z
