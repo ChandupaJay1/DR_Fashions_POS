@@ -74,11 +74,11 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton2.setEnabled(true);
                 jButton1.setEnabled(false);
                 jButton6.setEnabled(false);
-                jButton8.setEnabled(false);
+                jButton8.setEnabled(true);
                 jButton3.setEnabled(true);
                 jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
-                jButton10.setEnabled(false);
+                jButton10.setEnabled(true);
             }
             default -> {
                 // If unknown role
