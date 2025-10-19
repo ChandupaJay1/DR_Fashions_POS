@@ -58,23 +58,27 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton3.setEnabled(true); // Stock
                 jButton4.setEnabled(true); // Backup
             }
-            case "manager" -> {
+            case "hr" -> {  // Changed from "HR_Manager" to "hr_manager"
                 // Manager limited access
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
-                jButton1.setEnabled(true);
-                jButton8.setEnabled(true);
-                jButton3.setEnabled(true);
-                jButton4.setEnabled(false); // Cannot backup
-            }
-            case "employee" -> {
-                // Employee minimal access
-                jButton2.setEnabled(true);
-                jButton1.setEnabled(true);
-                jButton6.setEnabled(false);
+                jButton1.setEnabled(false);
                 jButton8.setEnabled(false);
                 jButton3.setEnabled(false);
+                jButton4.setEnabled(false); // Cannot backup
+                jButton7.setEnabled(false);
+                jButton10.setEnabled(false);
+            }
+            case "stores" -> {  // Changed from "Stores" to "stores"
+                // Employee minimal access
+                jButton2.setEnabled(true);
+                jButton1.setEnabled(false);
+                jButton6.setEnabled(false);
+                jButton8.setEnabled(true);
+                jButton3.setEnabled(true);
                 jButton4.setEnabled(false);
+                jButton7.setEnabled(false);
+                jButton10.setEnabled(true);
             }
             default -> {
                 // If unknown role

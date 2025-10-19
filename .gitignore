@@ -4,7 +4,7 @@
 
 # === Build Artifacts ===
 *.class
-/build/
+build/
 /dist/
 
 # === Maven / Gradle Outputs ===
@@ -82,3 +82,4 @@ desktop.ini
 *.tar
 *.tar.gz
 *.7z
+build/
