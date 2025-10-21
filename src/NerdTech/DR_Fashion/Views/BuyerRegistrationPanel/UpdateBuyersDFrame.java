@@ -5,6 +5,7 @@
 package NerdTech.DR_Fashion.Views.BuyerPanel;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import javax.swing.JOptionPane;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

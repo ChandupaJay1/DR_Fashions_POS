@@ -472,26 +472,135 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an employee to update.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
+        try {
+            // Get selected employee data from table
+            String epfNumber = model.getValueAt(selectedRow, 0).toString();
+            String nameWithInitial = model.getValueAt(selectedRow, 1).toString();
+            String firstName = model.getValueAt(selectedRow, 2).toString();
+            String lastName = model.getValueAt(selectedRow, 3).toString();
+            String surname = model.getValueAt(selectedRow, 4).toString();
+            String dob = model.getValueAt(selectedRow, 5).toString();
+            String nic = model.getValueAt(selectedRow, 6).toString();
+            String gender = model.getValueAt(selectedRow, 7).toString();
+            String mobile = model.getValueAt(selectedRow, 8).toString();
+            String fatherName = model.getValueAt(selectedRow, 9).toString();
+            String motherName = model.getValueAt(selectedRow, 10).toString();
+            String serviceEndDate = model.getValueAt(selectedRow, 11) != null ? model.getValueAt(selectedRow, 11).toString() : "";
+            String dateToServiceEnd = model.getValueAt(selectedRow, 12) != null ? model.getValueAt(selectedRow, 12).toString() : "";
+            String electroate = model.getValueAt(selectedRow, 13) != null ? model.getValueAt(selectedRow, 13).toString() : "";
+            String permanentAddress = model.getValueAt(selectedRow, 14).toString();
+            String currentAddress = model.getValueAt(selectedRow, 15).toString();
+            String nomineeName = model.getValueAt(selectedRow, 16) != null ? model.getValueAt(selectedRow, 16).toString() : "";
+            String marriedStatus = model.getValueAt(selectedRow, 17).toString();
+            String districtName = model.getValueAt(selectedRow, 18) != null ? model.getValueAt(selectedRow, 18).toString() : "";
+            String raceName = model.getValueAt(selectedRow, 19) != null ? model.getValueAt(selectedRow, 19).toString() : "";
+            String designation = model.getValueAt(selectedRow, 20).toString();
+            String title = model.getValueAt(selectedRow, 21).toString();
+            String sectionName = model.getValueAt(selectedRow, 22).toString();
+            String joinedDate = model.getValueAt(selectedRow, 23) != null ? model.getValueAt(selectedRow, 23).toString() : "";
 
+            // Convert married status to ID
+            int marriedStatusId = convertMarriedStatusToId(marriedStatus);
+
+            // Get designation ID and section ID from database
+            int designationId = getDesignationId(designation, title);
+            int sectionId = getSectionId(sectionName);
+
+            // ✅ FIXED: Remove the first parameter (parent Frame)
+            UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
+                    this, // Only EmployeeRegistration panel
+                    epfNumber,
+                    firstName,
+                    lastName,
+                    nameWithInitial,
+                    dob,
+                    nic,
+                    mobile,
+                    fatherName,
+                    motherName,
+                    currentAddress,
+                    permanentAddress,
+                    electroate,
+                    nomineeName,
+                    marriedStatusId,
+                    districtName,
+                    raceName,
+                    gender,
+                    designationId,
+                    sectionId
+            );
+
+            updateFrame.setVisible(true);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error loading employee data: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private int getDesignationId(String capacity, String titleName) {
+        String query = "SELECT id FROM designation WHERE capacity = ? AND title = ?";
+        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, capacity);
+            stmt.setString(2, titleName);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0; // Default value if not found
+    }
+
+    private int getSectionId(String sectionName) {
+        String query = "SELECT id FROM section WHERE section_name = ?";
+        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, sectionName);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0; // Default value if not found
+    }
 
     private int convertMarriedStatusToId(String status) {
         if (status == null || status.trim().isEmpty()) {
-            return 1;
+            return 1; // Default to Married
         }
 
-        String normalized = status.trim();
+        String normalized = status.trim().toLowerCase();
         switch (normalized) {
-            case "Married":
+            case "married":
                 return 1;
-            case "Unmarried":
-            case "Single":
+            case "unmarried":
+            case "single":
                 return 2;
             default:
-                return 1;
+                return 1; // Default to Married
         }
     }
+
+   
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         ActivateEmployeePanel activateDialog = new ActivateEmployeePanel(

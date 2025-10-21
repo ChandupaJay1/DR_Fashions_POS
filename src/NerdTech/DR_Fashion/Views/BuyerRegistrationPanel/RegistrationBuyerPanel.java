@@ -1,6 +1,7 @@
-package NerdTech.DR_Fashion.Views.BuyerPanel;
+package NerdTech.DR_Fashion.Views.BuyerRegistrationPanel;
 
 import NerdTech.DR_Fashion.Views.Dashboard;
+import NerdTech.DR_Fashion.Views.ViewBuyerStock.ViewBuyerStock;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -16,6 +17,45 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         initComponents();
         this.parentDashboard = parentDashboard;
         loadBuyerData();
+        // initComponents() method eke table eka define karana kotala, me code eka add karanna:
+        model.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) { // Double click check
+                    jTableMouseClicked(evt);
+                }
+            }
+        });
+    }
+
+    private void jTableMouseClicked(java.awt.event.MouseEvent evt) {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow != -1) {
+            String buyerName = model.getValueAt(selectedRow, 0).toString();
+            openViewBuyerStock(buyerName);
+        }
+    }
+
+    private void openViewBuyerStock(String buyerName) {
+        try {
+            // Create a new JFrame to show the buyer stock
+            javax.swing.JFrame frame = new javax.swing.JFrame("Buyer Stock - " + buyerName);
+            frame.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+
+            // Set the specific size [675, 80]
+            frame.setSize(1800, 800);
+            frame.setLocationRelativeTo(null);
+
+            ViewBuyerStock buyerStockPanel = new ViewBuyerStock(buyerName);
+            frame.add(buyerStockPanel);
+            frame.setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error opening buyer stock: " + e.getMessage(),
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void loadBuyerData() {
@@ -238,8 +278,8 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // Update Buyer
         int selectedRow = model.getSelectedRow();
+
         if (selectedRow == -1) {
             javax.swing.JOptionPane.showMessageDialog(this,
                     "⚠️ Please select a row to update!",
@@ -248,30 +288,37 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
             return;
         }
 
+        // ✅ table model එක ගන්නවා
+        javax.swing.table.TableModel tableModel = model.getModel();
+
         // Get row data from table
-        String name = model.getValueAt(selectedRow, 0).toString();
-        String email = model.getValueAt(selectedRow, 1).toString();
-        String mobileNo = model.getValueAt(selectedRow, 2).toString();
-        String lanNo = model.getValueAt(selectedRow, 3).toString();
-        String coordinator = model.getValueAt(selectedRow, 4).toString();
-        String address = model.getValueAt(selectedRow, 5).toString();
-        String companyName = model.getValueAt(selectedRow, 6).toString();
-        String brandName = model.getValueAt(selectedRow, 7).toString();
-        String brNo = model.getValueAt(selectedRow, 8).toString();
-        String brName = model.getValueAt(selectedRow, 9).toString();
-        String paymentMethod = model.getValueAt(selectedRow, 10).toString();
-        String duePayment = model.getValueAt(selectedRow, 11).toString();
+        String name = tableModel.getValueAt(selectedRow, 0).toString();
+        String email = tableModel.getValueAt(selectedRow, 1).toString();
+        String mobileNo = tableModel.getValueAt(selectedRow, 2).toString();
+        String lanNo = tableModel.getValueAt(selectedRow, 3).toString();
+        String coordinator = tableModel.getValueAt(selectedRow, 4).toString();
+        String address = tableModel.getValueAt(selectedRow, 5).toString();
+        String companyName = tableModel.getValueAt(selectedRow, 6).toString();
+        String brandName = tableModel.getValueAt(selectedRow, 7).toString();
+        String brNo = tableModel.getValueAt(selectedRow, 8).toString();
+        String brName = tableModel.getValueAt(selectedRow, 9).toString();
+        String paymentMethod = tableModel.getValueAt(selectedRow, 10).toString();
+        String duePayment = tableModel.getValueAt(selectedRow, 11).toString();
 
         // Open update dialog with data
-        java.awt.Window parentWindow = SwingUtilities.getWindowAncestor(this);
-        UpdateBuyersDFrame dialog = new UpdateBuyersDFrame(
-                (java.awt.Frame) parentWindow,
-                true,
-                this,
-                name, email, mobileNo, lanNo, coordinator, address,
-                companyName, brandName, brNo, brName, paymentMethod, duePayment
-        );
-        dialog.setVisible(true);
+        java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (parentWindow instanceof java.awt.Frame) {
+            NerdTech.DR_Fashion.Views.BuyerPanel.UpdateBuyersDFrame dialog
+                    = new NerdTech.DR_Fashion.Views.BuyerPanel.UpdateBuyersDFrame(
+                            (java.awt.Frame) parentWindow,
+                            true,
+                            this,
+                            name, email, mobileNo, lanNo, coordinator, address,
+                            companyName, brandName, brNo, brName, paymentMethod, duePayment
+                    );
+            dialog.setVisible(true);
+        }
     }//GEN-LAST:event_jButton3ActionPerformed
 
 

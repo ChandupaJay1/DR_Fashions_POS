@@ -26,7 +26,8 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private String originalNIC;
     private EmployeeRegistration employeeRegistrationPanel;
 
-    public UpdateEmployeeFrame(EmployeeRegistration panel,
+    public UpdateEmployeeFrame(
+            EmployeeRegistration panel,
             String epfNumber,
             String fname,
             String lname,
@@ -107,7 +108,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             }
         }
 
-        // STEP 4: Load existing designation (this will set both designation1 and title)
+        // STEP 4: Load existing designation
         loadExistingDesignation(designationId);
 
         // STEP 5: NOW add listener for future changes
@@ -116,6 +117,23 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 loadTitlesBasedOnDesignation();
             }
         });
+    }
+
+    private int convertMarriedStatusToId(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return 1; // Default to Married
+        }
+
+        String normalized = status.trim();
+        switch (normalized) {
+            case "Married":
+                return 1;
+            case "Unmarried":
+            case "Single":
+                return 2;
+            default:
+                return 1; // Default to Married
+        }
     }
 
     private void loadDesignationsWithoutListener() {

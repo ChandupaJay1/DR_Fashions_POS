@@ -10,7 +10,7 @@ import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
-import NerdTech.DR_Fashion.Views.BuyerPanel.RegistrationBuyerPanel;
+import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
 import NerdTech.DR_Fashion.Views.PayRollManage.PayRollManagementPanel;
 import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;

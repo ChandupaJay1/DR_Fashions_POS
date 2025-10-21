@@ -7,7 +7,7 @@ package NerdTech.DR_Fashion.Views.Stock;
 import NerdTech.DR_Fashion.Views.Dashboard;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.Views.BuyerPanel.RegistrationBuyerPanel;
+import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.Dashboard;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
