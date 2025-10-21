@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<Form version="1.3" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+<Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
     <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
@@ -85,7 +85,7 @@
         <Component class="javax.swing.JTable" name="model">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="13" rowCount="4">
+              <Table columnCount="12" rowCount="4">
                 <Column editable="false" title="Name" type="java.lang.Object"/>
                 <Column editable="false" title="Email" type="java.lang.Object"/>
                 <Column editable="false" title="Mobile No" type="java.lang.Object"/>
@@ -94,7 +94,6 @@
                 <Column editable="false" title="Address" type="java.lang.Object"/>
                 <Column editable="false" title="Company Name" type="java.lang.Object"/>
                 <Column editable="false" title="Brand Name" type="java.lang.Object"/>
-                <Column editable="false" title="Items" type="java.lang.Object"/>
                 <Column editable="false" title="BR No" type="java.lang.Object"/>
                 <Column editable="false" title="BR Name" type="java.lang.Object"/>
                 <Column editable="false" title="Payment Method" type="java.lang.Object"/>
@@ -139,11 +138,6 @@
                   <Renderer/>
                 </Column>
                 <Column maxWidth="-1" minWidth="-1" prefWidth="100" resizable="false">
-                  <Title/>
-                  <Editor/>
-                  <Renderer/>
-                </Column>
-                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="false">
                   <Title/>
                   <Editor/>
                   <Renderer/>

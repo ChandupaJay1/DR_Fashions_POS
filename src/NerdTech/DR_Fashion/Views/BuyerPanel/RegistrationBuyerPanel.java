@@ -22,7 +22,7 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         try {
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, barnd_name, items, br_no, br_name, payment_method, due_payment FROM registration_buyers");
+            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, brand_name, br_no, br_name, payment_method, due_payment FROM registration_buyer");
 
             DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
             tableModel.setRowCount(0);
@@ -36,12 +36,11 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
                 rowData[4] = rs.getString("coodinator");
                 rowData[5] = rs.getString("address");
                 rowData[6] = rs.getString("company_name");
-                rowData[7] = rs.getString("barnd_name");
-                rowData[8] = rs.getString("items");
-                rowData[9] = rs.getString("br_no");
-                rowData[10] = rs.getString("br_name");
-                rowData[11] = rs.getString("payment_method");
-                rowData[12] = rs.getString("due_payment");
+                rowData[7] = rs.getString("brand_name");
+                rowData[8] = rs.getString("br_no");
+                rowData[9] = rs.getString("br_name");
+                rowData[10] = rs.getString("payment_method");
+                rowData[11] = rs.getString("due_payment");
 
                 tableModel.addRow(rowData);
             }
@@ -73,17 +72,17 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
 
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Name", "Email", "Mobile No", "Lan-No", "Coodinator", "Address", "Company Name", "Brand Name", "Items", "BR No", "BR Name", "Payment Method", "Due Payments"
+                "Name", "Email", "Mobile No", "Lan-No", "Coodinator", "Address", "Company Name", "Brand Name", "BR No", "BR Name", "Payment Method", "Due Payments"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -111,7 +110,6 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
             model.getColumnModel().getColumn(9).setResizable(false);
             model.getColumnModel().getColumn(10).setResizable(false);
             model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(12).setResizable(false);
         }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
@@ -259,11 +257,10 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         String address = model.getValueAt(selectedRow, 5).toString();
         String companyName = model.getValueAt(selectedRow, 6).toString();
         String brandName = model.getValueAt(selectedRow, 7).toString();
-        String items = model.getValueAt(selectedRow, 8).toString();
-        String brNo = model.getValueAt(selectedRow, 9).toString();
-        String brName = model.getValueAt(selectedRow, 10).toString();
-        String paymentMethod = model.getValueAt(selectedRow, 11).toString();
-        String duePayment = model.getValueAt(selectedRow, 12).toString();
+        String brNo = model.getValueAt(selectedRow, 8).toString();
+        String brName = model.getValueAt(selectedRow, 9).toString();
+        String paymentMethod = model.getValueAt(selectedRow, 10).toString();
+        String duePayment = model.getValueAt(selectedRow, 11).toString();
 
         // Open update dialog with data
         java.awt.Window parentWindow = SwingUtilities.getWindowAncestor(this);
@@ -272,7 +269,7 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
                 true,
                 this,
                 name, email, mobileNo, lanNo, coordinator, address,
-                companyName, brandName, items, brNo, brName, paymentMethod, duePayment
+                companyName, brandName, brNo, brName, paymentMethod, duePayment
         );
         dialog.setVisible(true);
     }//GEN-LAST:event_jButton3ActionPerformed

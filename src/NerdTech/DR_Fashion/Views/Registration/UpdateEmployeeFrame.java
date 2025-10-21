@@ -38,6 +38,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             String motherName,
             String currentAddr,
             String permAddr,
+            String elctroate,
             String nomineeName,
             int marriedStatusId,
             String districtName,
