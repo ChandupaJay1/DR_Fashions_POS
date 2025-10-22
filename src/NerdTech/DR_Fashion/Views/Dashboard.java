@@ -55,7 +55,6 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton2.setEnabled(true); // Dashboard
                 jButton6.setEnabled(true); // Registration
                 jButton1.setEnabled(true); // Attendance
-                jButton8.setEnabled(true); // Accessories
                 jButton3.setEnabled(true); // Stock
                 jButton4.setEnabled(true); // Backup
             }
@@ -64,7 +63,6 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
                 jButton1.setEnabled(false);
-                jButton8.setEnabled(false);
                 jButton3.setEnabled(false);
                 jButton4.setEnabled(false); // Cannot backup
                 jButton7.setEnabled(false);
@@ -75,7 +73,6 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton2.setEnabled(true);
                 jButton1.setEnabled(false);
                 jButton6.setEnabled(false);
-                jButton8.setEnabled(true);
                 jButton3.setEnabled(true);
                 jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
@@ -178,7 +175,6 @@ public class Dashboard extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
         jButton10 = new javax.swing.JButton();
-        jButton8 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         LoaderPanel = new javax.swing.JPanel();
@@ -273,7 +269,7 @@ public class Dashboard extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jPanel3.setLayout(new java.awt.GridLayout(8, 1, 5, 10));
+        jPanel3.setLayout(new java.awt.GridLayout(7, 1, 5, 10));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton2.setText("Dashboard");
@@ -319,15 +315,6 @@ public class Dashboard extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton10);
-
-        jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
-        jButton8.setText("Accesories");
-        jButton8.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton8ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(jButton8);
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton3.setText("Stock");
@@ -409,10 +396,6 @@ public class Dashboard extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         loadPanelWithLoading("Attendance", () -> new AttendencePanel());
     }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
-        loadPanelWithLoading("Accessories", () -> new AccesoriesPanel());
-    }//GEN-LAST:event_jButton8ActionPerformed
 
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
@@ -619,7 +602,6 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JButton jButton7;
-    private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JButton jButtonSync;
     private javax.swing.JLabel jLabel1;

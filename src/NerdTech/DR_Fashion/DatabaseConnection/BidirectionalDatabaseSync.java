@@ -1,14 +1,11 @@
 package NerdTech.DR_Fashion.DatabaseConnection;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class BidirectionalDatabaseSync {
 
-    // Use the same callback interface as DatabaseConnection
     public interface SyncStatusCallback {
 
         void onStatusChange(String status);
@@ -18,7 +15,6 @@ public class BidirectionalDatabaseSync {
 
     public static void setStatusCallback(SyncStatusCallback callback) {
         statusCallback = callback;
-        // Also set it in DatabaseConnection so all messages go through same callback
         DatabaseConnection.setStatusCallback(new DatabaseConnection.StatusCallback() {
             @Override
             public void onStatusChange(String status) {
@@ -34,6 +30,71 @@ public class BidirectionalDatabaseSync {
             statusCallback.onStatusChange(status);
         }
         System.out.println("[SYNC] " + status);
+    }
+
+    // Primary key mapping - ONLY actual tables from database
+    private static final Map<String, String> primaryKeyMap = new HashMap<>() {
+        {
+            // Core tables
+            put("user", "id");
+            put("employee", "id");
+            put("designation", "id");
+            put("section", "id");
+            put("bank_details", "id");
+
+            // Attendance & Salary tables
+            put("attendence", "id");
+            put("salary", "id");
+            put("salary_details", "id");
+            put("per_day_salary", "id");
+            put("monthly_payment", "id");
+            put("resignation", "id");
+
+            // Inventory tables
+            put("type", "type_id");  // Special case - different primary key
+            put("accesories", "id");
+            put("stock", "id");
+
+            // Buyer & Shipment tables (මේවා තියෙනවා database එකේ)
+            put("buyer", "id");
+            put("registration_buyer", "id");
+            put("registration_buyers", "id");  // Duplicate table
+            put("bstock", "id");
+            put("baccesories", "id");
+        }
+    };
+
+    /**
+     * Get ONLY the tables that actually exist in the database මේ tables විතරයි
+     * database schema එකේ තියෙන්නේ
+     */
+    private static String[] getSyncTables() {
+        return new String[]{
+            // Core tables - මේවා priority
+            "user",
+            "designation",
+            "section",
+            "employee", // designation & section වලට depend වෙනවා
+            "bank_details", // employee එකට depend වෙනවා
+
+            // Attendance & Salary
+            "attendence",
+            "salary",
+            "salary_details",
+            "per_day_salary",
+            "monthly_payment",
+            "resignation",
+            // Inventory - type එක first
+            "type", // accesories එකට depend වෙනවා
+            "accesories",
+            "stock",
+            // Buyer tables
+            "buyer",
+            "registration_buyer",
+            "registration_buyers",
+            "bstock", // registration_buyer එකට depend වෙනවා
+            "baccesories" // registration_buyer & type එකට depend වෙනවා
+        };
     }
 
     /**
@@ -114,34 +175,15 @@ public class BidirectionalDatabaseSync {
         }
     }
 
-    private static final Map<String, String> primaryKeyMap = new HashMap<>() {
-        {
-            put("user", "id");
-            put("employee", "id");
-            put("accesories", "id");
-            put("attendence", "id");
-            put("bank_details", "id");
-            put("designation", "id");
-            put("monthly_payment", "id");
-            put("per_day_salary", "id");
-            put("resignation", "id");
-            put("salary", "id");
-            put("salary_details", "id");
-            put("section", "id");
-            put("stock", "id");
-            put("type", "type_id");
-        }
-    };
-
     /**
-     * Sync online database → local database (uses DatabaseConnection methods)
+     * Sync online database → local database
      */
     public static void syncOnlineToLocal() throws Exception {
         DatabaseConnection.syncOnlineToLocal();
     }
 
     /**
-     * Sync local database → online database (uses DatabaseConnection methods)
+     * Sync local database → online database
      */
     public static void syncLocalToOnline() throws Exception {
         DatabaseConnection.syncLocalToOnline();
@@ -167,32 +209,55 @@ public class BidirectionalDatabaseSync {
 
             try (Connection onlineConn = DatabaseConnection.getOnlineConnection(); Connection localConn = DatabaseConnection.getLocalConnection()) {
 
-                String[] tables = {
-                    "user", "employee", "accesories", "attendence", "type", "stock"
-                };
-
+                String[] tables = getSyncTables();
                 boolean allConsistent = true;
+                int consistentCount = 0;
+                int inconsistentCount = 0;
+                int missingCount = 0;
 
                 for (String table : tables) {
                     try {
+                        // Check if table exists in both databases
+                        if (!tableExists(table, onlineConn)) {
+                            updateStatus("⚠ Table '" + table + "' not found in online database");
+                            missingCount++;
+                            continue;
+                        }
+
+                        if (!tableExists(table, localConn)) {
+                            updateStatus("⚠ Table '" + table + "' not found in local database");
+                            missingCount++;
+                            continue;
+                        }
+
                         long onlineCount = getRecordCount(table, onlineConn);
                         long localCount = getRecordCount(table, localConn);
 
                         if (onlineCount == localCount) {
-                            updateStatus("✓ Table '" + table + "' consistent (" + localCount + " records)");
+                            updateStatus("✓ " + table + " (" + localCount + " records)");
+                            consistentCount++;
                         } else {
-                            updateStatus("⚠ Table '" + table + "' - Count mismatch (Online: " + onlineCount + ", Local: " + localCount + ")");
+                            updateStatus("⚠ " + table + " - Mismatch (Online: "
+                                    + onlineCount + ", Local: " + localCount + ")");
                             allConsistent = false;
+                            inconsistentCount++;
                         }
                     } catch (SQLException e) {
-                        updateStatus("⚠ Cannot verify table '" + table + "': " + e.getMessage());
+                        updateStatus("⚠ Cannot verify '" + table + "': " + e.getMessage());
+                        inconsistentCount++;
                     }
                 }
 
-                if (allConsistent) {
-                    updateStatus("✓ All tables are consistent");
+                // Summary
+                if (allConsistent && missingCount == 0) {
+                    updateStatus("✅ All " + consistentCount + " tables are consistent");
                 } else {
-                    updateStatus("⚠ Some tables have inconsistencies");
+                    String summary = String.format("⚠ Summary: %d consistent, %d mismatch",
+                            consistentCount, inconsistentCount);
+                    if (missingCount > 0) {
+                        summary += String.format(", %d missing", missingCount);
+                    }
+                    updateStatus(summary);
                 }
             }
         } catch (Exception e) {
@@ -204,7 +269,7 @@ public class BidirectionalDatabaseSync {
      * Get record count for a table
      */
     private static long getRecordCount(String table, Connection conn) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM " + table;
+        String sql = "SELECT COUNT(*) FROM `" + table + "`";
         try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             return rs.next() ? rs.getLong(1) : 0;
         }
@@ -220,6 +285,29 @@ public class BidirectionalDatabaseSync {
             return rs.next();
         } catch (SQLException e) {
             System.err.println("⚠️ Error checking column existence: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get primary key for a table
+     */
+    public static String getPrimaryKey(String tableName) {
+        return primaryKeyMap.getOrDefault(tableName, "id");
+    }
+
+    /**
+     * Check if table exists in database
+     */
+    public static boolean tableExists(String tableName, Connection conn) {
+        try {
+            DatabaseMetaData metaData = conn.getMetaData();
+            ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
+            boolean exists = rs.next();
+            rs.close();
+            return exists;
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error checking table existence: " + e.getMessage());
             return false;
         }
     }

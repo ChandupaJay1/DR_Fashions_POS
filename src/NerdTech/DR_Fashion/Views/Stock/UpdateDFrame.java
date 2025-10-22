@@ -10,37 +10,43 @@ import javax.swing.JOptionPane;
 
 public class UpdateDFrame extends javax.swing.JDialog {
 
+    // ✅ MISSING: Declare these variables
     private StockPanel parentPanel;
-    private String oldName;
+    private String oldColour;
 
     public UpdateDFrame(java.awt.Frame parent, boolean modal, StockPanel parentPanel,
-            String name, String stockQty, String material, String receivedDate,
+            String colour, String stockQty, String material, String receivedDate,
             String issuedDate, String totalIssued, String availableQty, String unitPrice) {
         super(parent, modal);
         initComponents();
 
         this.parentPanel = parentPanel;
-        this.oldName = name;
+        this.oldColour = colour;
 
-        Name.setText(name);
-        SQty.setText(availableQty); // ✅ Stock Qty field loads Available Qty from table
+        // ✅ Load fields with existing data
+        jTextField1.setText(colour);        // Colour field
+        SQty.setText(availableQty);         // ✅ Stock Qty = Available Qty from table
         Materials.setText(material);
-        TIssued.setText("");         // ✅ Total issued empty
-        AQty.setText("");            // ✅ Available Qty empty
+        TIssued.setText("");                // ✅ Total Issued empty (user will enter)
+        AQty.setText("");                   // ✅ Available Qty empty (will auto-calculate)
         UPrice.setText(unitPrice);
 
         try {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
             RDate.setDate(sdf.parse(receivedDate));
-            IDate.setDate(sdf.parse(issuedDate));
+            if (issuedDate != null && !issuedDate.equals("null")) {
+                IDate.setDate(sdf.parse(issuedDate));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        SQty.setEnabled(false);
-        RDate.setEnabled(false);
-        AQty.setEnabled(false);
+        // ✅ Disable fields that shouldn't be edited
+        SQty.setEnabled(false);      // Stock Qty disabled
+        RDate.setEnabled(false);     // Received Date disabled
+        AQty.setEnabled(false);      // Available Qty disabled (calculated field)
 
+        // ✅ Auto-update Available Qty when Total Issued changes
         TIssued.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             private void updateAvailable() {
                 try {
@@ -74,37 +80,38 @@ public class UpdateDFrame extends javax.swing.JDialog {
     }
 
     private void updateStockInDatabase() {
-        String name = Name.getText().trim();
+        String colour = jTextField1.getText().trim();
         String material = Materials.getText().trim();
         String totalIssued = TIssued.getText().trim();
         String availableQty = AQty.getText().trim();
         String unitPrice = UPrice.getText().trim();
         java.util.Date issuedDate = IDate.getDate();
 
-        if (name.isEmpty() || material.isEmpty() || totalIssued.isEmpty() || unitPrice.isEmpty() || issuedDate == null) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields properly!");
+        // ✅ Validation
+        if (colour.isEmpty() || material.isEmpty() || totalIssued.isEmpty() || unitPrice.isEmpty() || issuedDate == null) {
+            JOptionPane.showMessageDialog(this, "Please fill all required fields (Colour, Material, Total Issued, Unit Price, Issued Date)!");
             return;
         }
 
-        // 🟢 FIX: Use correct column names in your DB
-        String sql = "UPDATE stock SET name=?, material=?, issued_date=?, total_issued=?, available_qty=?, unit_price=?, last_modified=NOW() WHERE name=?";
+        // ✅ Update query with all fields including total_issued and available_qty
+        String sql = "UPDATE stock SET colour=?, material=?, issued_date=?, total_issued=?, available_qty=?, unit_price=? WHERE colour=?";
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, name);
+            ps.setString(1, colour);
             ps.setString(2, material);
-            ps.setTimestamp(3, new java.sql.Timestamp(issuedDate.getTime()));
-            ps.setString(4, totalIssued);
-            ps.setString(5, availableQty);
-            ps.setString(6, unitPrice);
-            ps.setString(7, oldName);
+            ps.setDate(3, new java.sql.Date(issuedDate.getTime()));
+            ps.setInt(4, Integer.parseInt(totalIssued));
+            ps.setInt(5, Integer.parseInt(availableQty));
+            ps.setDouble(6, Double.parseDouble(unitPrice));
+            ps.setString(7, oldColour);
 
             int updated = ps.executeUpdate();
 
             if (updated > 0) {
                 JOptionPane.showMessageDialog(this, "✅ Stock updated successfully!");
                 if (parentPanel != null) {
-                    parentPanel.loadStockData(); // refresh table
+                    parentPanel.loadStockData();
                 }
                 this.dispose();
             } else {
@@ -121,7 +128,6 @@ public class UpdateDFrame extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
@@ -131,7 +137,6 @@ public class UpdateDFrame extends javax.swing.JDialog {
         jLabel9 = new javax.swing.JLabel();
         SQty = new javax.swing.JTextField();
         Materials = new javax.swing.JTextField();
-        Name = new javax.swing.JTextField();
         AQty = new javax.swing.JTextField();
         UPrice = new javax.swing.JTextField();
         TIssued = new javax.swing.JTextField();
@@ -141,13 +146,12 @@ public class UpdateDFrame extends javax.swing.JDialog {
         jButton2 = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
+        jLabel10 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Update Stock");
         setPreferredSize(new java.awt.Dimension(1233, 505));
-
-        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        jLabel2.setText("Name");
 
         jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel3.setText("Materials");
@@ -179,8 +183,6 @@ public class UpdateDFrame extends javax.swing.JDialog {
             }
         });
 
-        Name.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
         AQty.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         UPrice.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
@@ -211,108 +213,97 @@ public class UpdateDFrame extends javax.swing.JDialog {
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Update Stock");
 
+        jLabel10.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel10.setText("Colour");
+
+        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(861, Short.MAX_VALUE))
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                            .addGap(0, 0, Short.MAX_VALUE)
-                            .addComponent(jButton1)
-                            .addGap(40, 40, 40)
-                            .addComponent(jButton2)
-                            .addGap(3, 3, 3))
-                        .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(layout.createSequentialGroup()
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel2)
-                                        .addComponent(jLabel8))
-                                    .addGap(155, 155, 155)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(Name, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(AQty, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGroup(layout.createSequentialGroup()
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel3)
-                                        .addComponent(jLabel6))
-                                    .addGap(177, 177, 177)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                        .addComponent(IDate, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
-                                        .addComponent(Materials))))
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 74, Short.MAX_VALUE)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(6, 6, 6)
+                        .addComponent(jLabel1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(6, 6, 6)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(803, 803, 803)
+                        .addComponent(jButton1)
+                        .addGap(40, 40, 40)
+                        .addComponent(jButton2))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(10, 10, 10)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel4)
-                                    .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.TRAILING))
-                                .addComponent(jLabel7)
-                                .addComponent(jLabel5))
-                            .addGap(86, 86, 86)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(TIssued, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(UPrice, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(SQty, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(RDate, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addContainerGap()))
+                                    .addComponent(jLabel10)
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel6)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel8)))
+                        .addGap(121, 121, 121)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(Materials, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(IDate, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(AQty, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(125, 125, 125)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel7)
+                            .addComponent(jLabel9))
+                        .addGap(77, 77, 77)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(UPrice, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(TIssued, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(RDate, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(SQty, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(27, 27, 27))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(6, 6, 6)
                 .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(6, 6, 6)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(392, Short.MAX_VALUE))
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addGap(117, 117, 117)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel2)
-                                .addComponent(Name, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(18, 18, 18)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel3)
-                                .addComponent(Materials, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(18, 18, 18)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(jLabel6)
-                                .addComponent(IDate, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(23, 23, 23)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel8)
-                                .addComponent(AQty, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel4)
-                                .addComponent(SQty, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(18, 18, 18)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel5)
-                                .addComponent(RDate, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(18, 18, 18)
+                .addGap(47, 47, 47)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel10)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4)
+                    .addComponent(SQty, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(Materials, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel5))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(IDate, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel6)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(jLabel7)
-                                .addComponent(TIssued, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGap(20, 20, 20)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel9)
-                                .addComponent(UPrice, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addGap(102, 102, 102)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jButton1)
-                        .addComponent(jButton2))
-                    .addContainerGap(23, Short.MAX_VALUE)))
+                                .addComponent(TIssued, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(19, 19, 19)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(AQty, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel8)
+                            .addComponent(UPrice, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel9))
+                        .addGap(98, 98, 98)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton1)
+                            .addComponent(jButton2)))
+                    .addComponent(RDate, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
         pack();
@@ -328,7 +319,8 @@ public class UpdateDFrame extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
+        this.dispose();
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void TIssuedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TIssuedActionPerformed
@@ -357,7 +349,6 @@ public class UpdateDFrame extends javax.swing.JDialog {
     private javax.swing.JTextField AQty;
     private com.toedter.calendar.JDateChooser IDate;
     private javax.swing.JTextField Materials;
-    private javax.swing.JTextField Name;
     private com.toedter.calendar.JDateChooser RDate;
     private javax.swing.JTextField SQty;
     private javax.swing.JTextField TIssued;
@@ -365,7 +356,7 @@ public class UpdateDFrame extends javax.swing.JDialog {
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -374,5 +365,6 @@ public class UpdateDFrame extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }

@@ -471,6 +471,7 @@ public class UpdateAccesoriesDFrame extends javax.swing.JDialog {
 
     private void btnUpdateActionPerformedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformedActionPerformed
         try {
+            // Validate Type
             if (jComboBox1.getSelectedItem() == null) {
                 JOptionPane.showMessageDialog(this, "Please select a type!");
                 return;
@@ -484,41 +485,121 @@ public class UpdateAccesoriesDFrame extends javax.swing.JDialog {
                 return;
             }
 
-            // Get name from jTextField10
+            // Validate Name
             String name = jTextField10.getText().trim();
             if (name.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter a name!");
                 return;
             }
 
+            // Validate Stock Quantity
+            if (jTextField5.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter stock quantity!");
+                return;
+            }
+
+            // Validate UOM
+            if (jTextField6.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter UOM!");
+                return;
+            }
+
+            // Validate Total Issued
+            if (jTextField7.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter total issued!");
+                return;
+            }
+
+            // Validate Unit Price
+            if (jTextField1.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter unit price!");
+                return;
+            }
+
+            // Parse numbers with error handling
+            int stockQty;
+            int totalIssued;
+            int availableQty;
+            double unitPrice;
+
+            try {
+                stockQty = Integer.parseInt(jTextField5.getText().trim());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid stock quantity! Please enter a valid number.");
+                jTextField5.requestFocus();
+                return;
+            }
+
+            try {
+                totalIssued = Integer.parseInt(jTextField7.getText().trim());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid total issued! Please enter a valid number.");
+                jTextField7.requestFocus();
+                return;
+            }
+
+            try {
+                availableQty = Integer.parseInt(jTextField8.getText().trim());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid available quantity! Please enter a valid number.");
+                jTextField8.requestFocus();
+                return;
+            }
+
+            try {
+                unitPrice = Double.parseDouble(jTextField1.getText().trim());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid unit price! Please enter a valid number.");
+                jTextField1.requestFocus();
+                return;
+            }
+
+            // Validate that stock quantity is not negative
+            if (stockQty < 0) {
+                JOptionPane.showMessageDialog(this, "Stock quantity cannot be negative!");
+                return;
+            }
+
+            // Validate that total issued is not negative
+            if (totalIssued < 0) {
+                JOptionPane.showMessageDialog(this, "Total issued cannot be negative!");
+                return;
+            }
+
+            // Validate that unit price is not negative
+            if (unitPrice < 0) {
+                JOptionPane.showMessageDialog(this, "Unit price cannot be negative!");
+                return;
+            }
+
             Connection con = DatabaseConnection.getConnection();
-            // Updated SQL to include name field
-            String sql = "UPDATE accesories SET name=?, stock_qty=?, uom=?, total_issued=?, available_qty=?, unit_price=?, type_id=?, issued_date=CURDATE() WHERE id=?";
+            String sql = "UPDATE accesories SET name=?, order_no=?, colour_name=?, size=?, stock_qty=?, uom=?, total_issued=?, available_qty=?, unit_price=?, type_id=?, issued_date=CURDATE() WHERE id=?";
             PreparedStatement pst = con.prepareStatement(sql);
 
-            pst.setString(1, name);  // Add name parameter
-            pst.setInt(2, Integer.parseInt(jTextField5.getText()));
-            pst.setString(3, jTextField6.getText());
-            pst.setInt(4, Integer.parseInt(jTextField7.getText()));
-            pst.setInt(5, Integer.parseInt(jTextField8.getText()));
-            pst.setDouble(6, Double.parseDouble(jTextField1.getText()));
-            pst.setInt(7, typeId);
-            pst.setInt(8, Integer.parseInt(jTextField9.getText()));
+            pst.setString(1, name);
+            pst.setString(2, jTextField2.getText().trim());
+            pst.setString(3, jTextField3.getText().trim());
+            pst.setString(4, jTextField4.getText().trim());
+            pst.setInt(5, stockQty);
+            pst.setString(6, jTextField6.getText().trim());
+            pst.setInt(7, totalIssued);
+            pst.setInt(8, availableQty);
+            pst.setDouble(9, unitPrice);
+            pst.setInt(10, typeId);
+            pst.setInt(11, Integer.parseInt(jTextField9.getText().trim()));
 
             int rowsUpdated = pst.executeUpdate();
             if (rowsUpdated > 0) {
                 JOptionPane.showMessageDialog(this, "Record updated successfully!");
                 this.dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Update failed!");
+                JOptionPane.showMessageDialog(this, "Update failed! No record found with this ID.");
             }
 
             con.close();
-        } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(this, "Invalid number input!");
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Database Error: " + e.getMessage());
         }
     }//GEN-LAST:event_btnUpdateActionPerformedActionPerformed
 
