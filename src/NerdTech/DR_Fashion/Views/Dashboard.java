@@ -10,6 +10,7 @@ import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
+import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
 import NerdTech.DR_Fashion.Views.PayRollManage.PayRollManagementPanel;
 import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
@@ -90,6 +91,10 @@ public class Dashboard extends javax.swing.JFrame {
     /**
      * Shows loading indicator and loads panel in background
      */
+    public void loadPanel(String panelName, PanelLoader loader) {
+        loadPanelWithLoading(panelName, loader);
+    }
+
     private void loadPanelWithLoading(String panelName, PanelLoader loader) {
 
         currentPanelName = panelName;
@@ -456,6 +461,8 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
             case "Stock" ->
                 loadPanelWithLoading("Stock", () -> new StockPanel());
+            case "Registration Buyer" ->
+                loadPanelWithLoading("Registration Buyer", () -> new RegistrationBuyerPanel(this));
             default ->
                 showErrorPanel("Cannot refresh this panel.");
         }
@@ -585,7 +592,7 @@ public class Dashboard extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     @FunctionalInterface
-    private interface PanelLoader {
+    public interface PanelLoader {
 
         JPanel loadPanel() throws Exception;
     }
