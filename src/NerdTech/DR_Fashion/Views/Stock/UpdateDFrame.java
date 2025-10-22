@@ -201,7 +201,7 @@ public class UpdateDFrame extends javax.swing.JDialog {
         });
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton2.setText("Cancle");
+        jButton2.setText("Cancel");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);
