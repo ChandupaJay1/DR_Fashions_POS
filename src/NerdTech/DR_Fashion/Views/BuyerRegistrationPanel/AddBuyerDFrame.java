@@ -226,7 +226,7 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
         });
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton2.setText("Cancle");
+        jButton2.setText("Cancel");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
