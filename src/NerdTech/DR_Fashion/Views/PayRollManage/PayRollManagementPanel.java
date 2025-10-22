@@ -229,7 +229,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         jButton1.setBackground(new java.awt.Color(102, 255, 102));
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jButton1.setForeground(new java.awt.Color(0, 0, 0));
-        jButton1.setText("Payed");
+        jButton1.setText("Pay");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
