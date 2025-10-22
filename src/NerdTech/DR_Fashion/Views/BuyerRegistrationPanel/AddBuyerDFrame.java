@@ -7,6 +7,7 @@ package NerdTech.DR_Fashion.Views.BuyerRegistrationPanel;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import javax.swing.JOptionPane;
 
 /**
@@ -71,12 +72,21 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
             return;
         }
 
+        // Check if buyer already exists (including deactivated ones)
+        if (checkBuyerExists(name)) {
+            JOptionPane.showMessageDialog(this,
+                    "Buyer with this name already exists!\nPlease use a different name.",
+                    "Duplicate Buyer",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         // Database insert
         String query = "INSERT INTO registration_buyer "
                 + "(name, email, mobile_no, lan_no, coodinator, address, "
                 + "company_name, brand_name, br_no, br_name, "
-                + "payment_method, due_payment) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "payment_method, due_payment, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
 
@@ -90,8 +100,9 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
             ps.setString(8, brandName);
             ps.setString(9, brNo.isEmpty() ? "0" : brNo);
             ps.setString(10, brName.isEmpty() ? "" : brName);
-            ps.setString(11, paymentMethod.isEmpty() ? "" : paymentMethod); // ✅ THIS WAS MISSING
+            ps.setString(11, paymentMethod.isEmpty() ? "" : paymentMethod);
             ps.setString(12, duePayment.isEmpty() ? "0.00" : duePayment);
+            ps.setString(13, "active"); // Set status as active
 
             int result = ps.executeUpdate();
 
@@ -117,6 +128,27 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
                     "Database Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private boolean checkBuyerExists(String buyerName) {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String query = "SELECT COUNT(*) FROM registration_buyer WHERE name = ?";
+            try (PreparedStatement ps = conn.prepareStatement(query)) {
+                ps.setString(1, buyerName);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt(1) > 0;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error checking buyer existence: " + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")

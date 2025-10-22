@@ -249,11 +249,11 @@ public class ViewBuyerStock extends javax.swing.JPanel {
                     .addComponent(jScrollPane1)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(jButton1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 167, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 82, Short.MAX_VALUE)
                         .addComponent(jButton2)
                         .addGap(157, 157, 157)
                         .addComponent(jButton4)
-                        .addGap(163, 163, 163)
+                        .addGap(249, 249, 249)
                         .addComponent(jButton3))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -269,8 +269,8 @@ public class ViewBuyerStock extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 523, Short.MAX_VALUE)
-                .addGap(32, 32, 32)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 536, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton3)
                     .addComponent(jButton2)
@@ -361,40 +361,131 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
 
         try {
-            // Get buyer name and colour for confirmation
-            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);
-            String colour = (String) tableModel.getValueAt(selectedRow, 2);
+            // Get stock details for confirmation
+            int stockId = (int) tableModel.getValueAt(selectedRow, 0);           // Column 0: ID (hidden)
+            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);   // Column 1: Buyer Name
+            String colour = (String) tableModel.getValueAt(selectedRow, 2);      // Column 2: Colour
+            String material = (String) tableModel.getValueAt(selectedRow, 4);    // Column 4: Material
 
             // Confirm deletion with user
             int confirm = JOptionPane.showConfirmDialog(this,
-                    "Are you sure you want to remove this record from view?\n\n"
+                    "Are you sure you want to DEACTIVATE this stock record?\n\n"
                     + "Buyer: " + buyerName + "\n"
-                    + "Colour: " + colour,
-                    "Confirm Removal",
+                    + "Colour: " + colour + "\n"
+                    + "Material: " + material + "\n\n"
+                    + "This record will be hidden from view but kept in the database.",
+                    "Confirm Deactivation",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE);
 
             if (confirm == JOptionPane.YES_OPTION) {
-                // Remove row from table only (not from database)
-                tableModel.removeRow(selectedRow);
-
-                JOptionPane.showMessageDialog(this,
-                        "Record removed from view successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
+                // Deactivate in database (soft delete)
+                deactivateStock(stockId, buyerName, colour, material);
             }
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error removing record: " + e.getMessage(),
+                    "Error deactivating stock record: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    private void deactivateStock(int stockId, String buyerName, String colour, String material) {
+        try {
+            boolean success = DatabaseConnection.deactivateBuyerStock(stockId);
+
+            if (success) {
+                JOptionPane.showMessageDialog(this,
+                        "Stock record deactivated successfully!\n\n"
+                        + "Buyer: " + buyerName + "\n"
+                        + "Colour: " + colour + "\n"
+                        + "Material: " + material,
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+                refreshTable(); // Refresh the table after deactivation
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Failed to deactivate stock record!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error deactivating stock record: " + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        
+        // Navigate to Buyer Accessories Panel
+        try {
+            // Get the parent window (could be JFrame or JDialog)
+            java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
+
+            if (parentWindow != null) {
+                // Create ViewBuyerAccesoriesPanel instance
+                NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel accessoriesPanel;
+
+                // If this panel has a selected buyer, pass it to accessories panel
+                if (selectedBuyerName != null && !selectedBuyerName.isEmpty()) {
+                    accessoriesPanel = new NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel(selectedBuyerName);
+                } else {
+                    accessoriesPanel = new NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel();
+                }
+
+                // Get LoadingPanel from parent window
+                javax.swing.JPanel loadingPanel = null;
+
+                // Try to get LoadingPanel field from the parent window
+                try {
+                    java.lang.reflect.Field field = parentWindow.getClass().getDeclaredField("LoadingPanel");
+                    field.setAccessible(true);
+                    loadingPanel = (javax.swing.JPanel) field.get(parentWindow);
+                } catch (NoSuchFieldException e) {
+                    // If LoadingPanel field not found, try to find it in the content pane
+                    if (parentWindow instanceof javax.swing.JFrame) {
+                        javax.swing.JFrame frame = (javax.swing.JFrame) parentWindow;
+                        java.awt.Container contentPane = frame.getContentPane();
+                        if (contentPane instanceof javax.swing.JPanel) {
+                            loadingPanel = (javax.swing.JPanel) contentPane;
+                        }
+                    } else if (parentWindow instanceof javax.swing.JDialog) {
+                        javax.swing.JDialog dialog = (javax.swing.JDialog) parentWindow;
+                        java.awt.Container contentPane = dialog.getContentPane();
+                        if (contentPane instanceof javax.swing.JPanel) {
+                            loadingPanel = (javax.swing.JPanel) contentPane;
+                        }
+                    }
+                }
+
+                if (loadingPanel != null) {
+                    // Clear LoadingPanel and add new panel
+                    loadingPanel.removeAll();
+                    loadingPanel.setLayout(new java.awt.BorderLayout());
+                    loadingPanel.add(accessoriesPanel, java.awt.BorderLayout.CENTER);
+
+                    // Refresh the panel
+                    loadingPanel.revalidate();
+                    loadingPanel.repaint();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Could not find LoadingPanel to load accessories view!",
+                            "Navigation Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error loading Buyer Accessories panel: " + e.getMessage(),
+                    "Navigation Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_jButton3ActionPerformed
 
 

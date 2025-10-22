@@ -249,7 +249,6 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-
         // Get buyer name from jTextField1 (not jComboBox1)
         String buyerName = jTextField1.getText().trim();
         String colour = jTextField2.getText().trim();
@@ -306,9 +305,9 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
                     return;
                 }
 
-                // Insert into bstock table
-                String sql = "INSERT INTO bstock (registration_buyer_id, colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price, last_modified) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                // ✅ UPDATED: Insert into bstock table with status = 'active'
+                String sql = "INSERT INTO bstock (registration_buyer_id, colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price, status, last_modified) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
 
                 PreparedStatement pst = conn.prepareStatement(sql);
                 pst.setInt(1, buyerId);
@@ -346,7 +345,6 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(this, "Please enter valid numbers for quantity and price fields.",
                     "Validation Error", JOptionPane.WARNING_MESSAGE);
         }
-
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed

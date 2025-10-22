@@ -5,6 +5,7 @@ import NerdTech.DR_Fashion.Views.ViewBuyerStock.ViewBuyerStock;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
@@ -62,13 +63,14 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         try {
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, brand_name, br_no, br_name, payment_method, due_payment FROM registration_buyer");
+            // Only load active buyers
+            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, brand_name, br_no, br_name, payment_method, due_payment FROM registration_buyer WHERE status = 'active' OR status IS NULL");
 
             DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
             tableModel.setRowCount(0);
 
             while (rs.next()) {
-                Object[] rowData = new Object[13];
+                Object[] rowData = new Object[12];
                 rowData[0] = rs.getString("name");
                 rowData[1] = rs.getString("email");
                 rowData[2] = rs.getString("mobile_no");
@@ -219,7 +221,7 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // Delete Buyer
+        // Delete Buyer (Deactivate)
         int selectedRow = model.getSelectedRow();
         if (selectedRow == -1) {
             javax.swing.JOptionPane.showMessageDialog(this,
@@ -235,14 +237,46 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         // Confirmation dialog
         int confirm = javax.swing.JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure you want to delete buyer:\n" + buyerName + "?",
-                "Confirm Delete",
+                "Are you sure you want to deactivate buyer:\n" + buyerName + "?",
+                "Confirm Deactivate",
                 javax.swing.JOptionPane.YES_NO_OPTION,
                 javax.swing.JOptionPane.WARNING_MESSAGE
         );
 
         if (confirm == javax.swing.JOptionPane.YES_OPTION) {
-            deleteBuyer(selectedRow);
+            deactivateBuyer(buyerName, selectedRow);
+        }
+    }
+
+    private void deactivateBuyer(String buyerName, int selectedRow) {
+        try {
+            Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
+            String query = "UPDATE registration_buyer SET status = 'deactivated' WHERE name = ?";
+
+            try (PreparedStatement ps = con.prepareStatement(query)) {
+                ps.setString(1, buyerName);
+                int result = ps.executeUpdate();
+
+                if (result > 0) {
+                    // Remove from table UI
+                    DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
+                    tableModel.removeRow(selectedRow);
+
+                    javax.swing.JOptionPane.showMessageDialog(this,
+                            "✅ Buyer deactivated successfully!",
+                            "Deactivated",
+                            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+
+            con.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "❌ Error deactivating buyer:\n" + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
