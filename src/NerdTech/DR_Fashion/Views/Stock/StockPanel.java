@@ -14,6 +14,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 
 public class StockPanel extends javax.swing.JPanel {
@@ -21,6 +23,91 @@ public class StockPanel extends javax.swing.JPanel {
     public StockPanel() {
         initComponents();
         loadStockData();
+        setupSearchListener();
+    }
+
+    // ✅ Advanced Search - Search across multiple columns
+    private void setupSearchListener() {
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+        });
+    }
+
+    // ✅ Advanced Search Method - searches across colour, material, and dates
+    private void performAdvancedSearch() {
+        String searchText = jTextField1.getText().trim().toLowerCase();
+
+        DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
+        tableModel.setRowCount(0); // Clear table
+
+        if (searchText.isEmpty()) {
+            loadStockData(); // Show all data if search is empty
+            return;
+        }
+
+        // ✅ Search in multiple columns using LIKE with OR conditions
+        String query = "SELECT colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price "
+                + "FROM stock WHERE status = 'active' AND ("
+                + "LOWER(colour) LIKE ? OR "
+                + "LOWER(material) LIKE ? OR "
+                + "CAST(stock_qty AS CHAR) LIKE ? OR "
+                + "CAST(available_qty AS CHAR) LIKE ? OR "
+                + "CAST(received_date AS CHAR) LIKE ? OR "
+                + "CAST(issued_date AS CHAR) LIKE ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+
+            String searchPattern = "%" + searchText + "%";
+
+            // Set all parameters with the same search pattern
+            for (int i = 1; i <= 6; i++) {
+                ps.setString(i, searchPattern);
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Object[] row = new Object[]{
+                    rs.getString("colour"),
+                    rs.getInt("stock_qty"),
+                    rs.getString("material"),
+                    rs.getDate("received_date"),
+                    rs.getDate("issued_date"),
+                    rs.getInt("total_issued"),
+                    rs.getInt("available_qty"),
+                    "Rs. " + String.format("%.2f", rs.getDouble("unit_price"))
+                };
+                tableModel.addRow(row);
+            }
+
+            // Show message if no results found
+            if (tableModel.getRowCount() == 0) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "No results found for: " + searchText,
+                        "Search Results",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error searching stock: " + e.getMessage(),
+                    "Search Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void loadStockData() {
@@ -65,6 +152,8 @@ public class StockPanel extends javax.swing.JPanel {
         jButton3 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
 
         setPreferredSize(new java.awt.Dimension(0, 763));
 
@@ -146,6 +235,11 @@ public class StockPanel extends javax.swing.JPanel {
             }
         });
 
+        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel2.setText("Search");
+
+        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 14)); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -155,11 +249,6 @@ public class StockPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 1105, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2)
                         .addGap(102, 102, 102)
                         .addComponent(jButton1)
@@ -167,20 +256,33 @@ public class StockPanel extends javax.swing.JPanel {
                         .addComponent(jButton4)
                         .addGap(93, 93, 93)
                         .addComponent(jButton3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 116, Short.MAX_VALUE)
+                        .addComponent(jButton5))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButton5)))
+                        .addComponent(jLabel2)
+                        .addGap(27, 27, 27)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel2)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 44, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 184, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jButton2)
@@ -319,8 +421,10 @@ public class StockPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JTable model;
     // End of variables declaration//GEN-END:variables
 }

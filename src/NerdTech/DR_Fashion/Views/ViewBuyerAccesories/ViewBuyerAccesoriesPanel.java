@@ -8,6 +8,10 @@ import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import javax.swing.table.DefaultTableModel;
 import java.sql.ResultSet;
 import javax.swing.JOptionPane;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
 
@@ -21,6 +25,7 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
         initComponents();
         initializeTable();
         loadBuyerAccessoriesData();
+        setupSearchListener();
     }
 
     /**
@@ -31,15 +36,135 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
         this.selectedBuyerName = buyerName;
         initializeTable();
         loadBuyerAccessoriesDataByBuyer();
+        setupSearchListener();
 
         // Update title to show which buyer's accessories are being viewed
         jLabel1.setText("View Buyer Accesories - " + buyerName);
     }
 
-    /**
-     * Initialize table model with columns Note: We add "ID" as hidden first
-     * column for database operations
-     */
+    // ✅ Setup Real-time Search Listener
+    private void setupSearchListener() {
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+        });
+    }
+
+    // ✅ Advanced Search Method - searches across multiple columns
+    private void performAdvancedSearch() {
+        String searchText = jTextField1.getText().trim().toLowerCase();
+
+        tableModel.setRowCount(0); // Clear table
+
+        if (searchText.isEmpty()) {
+            // Show all data if search is empty
+            if (selectedBuyerName != null) {
+                loadBuyerAccessoriesDataByBuyer();
+            } else {
+                loadBuyerAccessoriesData();
+            }
+            return;
+        }
+
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+
+            // ✅ Build query based on whether we're filtering by buyer or not
+            StringBuilder queryBuilder = new StringBuilder();
+            queryBuilder.append("SELECT ba.id, r.buyer_name, ba.order_no, c.colour_name, ba.size, ")
+                    .append("ba.stock_qty, ba.uom, ba.received_date, ba.issued_date, ")
+                    .append("ba.total_issued, ba.available_qty, ba.unit_price, t.type_name ")
+                    .append("FROM buyer_accesories ba ")
+                    .append("JOIN registration r ON ba.buyer_id = r.id ")
+                    .append("JOIN colour c ON ba.colour_id = c.id ")
+                    .append("JOIN type t ON ba.type_id = t.id ")
+                    .append("WHERE ba.status = 'active' ");
+
+            // Add buyer filter if specific buyer is selected
+            if (selectedBuyerName != null && !selectedBuyerName.isEmpty()) {
+                queryBuilder.append("AND r.buyer_name = ? ");
+            }
+
+            // Add search conditions for multiple columns
+            queryBuilder.append("AND (")
+                    .append("LOWER(r.buyer_name) LIKE ? OR ")
+                    .append("LOWER(ba.order_no) LIKE ? OR ")
+                    .append("LOWER(c.colour_name) LIKE ? OR ")
+                    .append("LOWER(ba.size) LIKE ? OR ")
+                    .append("CAST(ba.stock_qty AS CHAR) LIKE ? OR ")
+                    .append("LOWER(ba.uom) LIKE ? OR ")
+                    .append("CAST(ba.received_date AS CHAR) LIKE ? OR ")
+                    .append("CAST(ba.issued_date AS CHAR) LIKE ? OR ")
+                    .append("CAST(ba.available_qty AS CHAR) LIKE ? OR ")
+                    .append("LOWER(t.type_name) LIKE ?)");
+
+            PreparedStatement ps = conn.prepareStatement(queryBuilder.toString());
+
+            String searchPattern = "%" + searchText + "%";
+            int paramIndex = 1;
+
+            // Set buyer name parameter if filtering by buyer
+            if (selectedBuyerName != null && !selectedBuyerName.isEmpty()) {
+                ps.setString(paramIndex++, selectedBuyerName);
+            }
+
+            // Set search pattern for all searchable columns (10 columns)
+            for (int i = 0; i < 10; i++) {
+                ps.setString(paramIndex++, searchPattern);
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Object[] row = new Object[]{
+                    rs.getInt("id"),
+                    rs.getString("buyer_name"),
+                    rs.getString("order_no"),
+                    rs.getString("colour_name"),
+                    rs.getString("size"),
+                    rs.getInt("stock_qty"),
+                    rs.getString("uom"),
+                    rs.getDate("received_date"),
+                    rs.getDate("issued_date"),
+                    rs.getInt("total_issued"),
+                    rs.getInt("available_qty"),
+                    String.format("Rs. %.2f", rs.getDouble("unit_price")),
+                    rs.getString("type_name")
+                };
+                tableModel.addRow(row);
+            }
+
+            // Show message if no results found
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "No results found for: " + searchText,
+                        "Search Results",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+
+            closeResources(rs);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error searching accessories: " + e.getMessage(),
+                    "Search Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
     private void initializeTable() {
         String[] columnNames = {
             "ID", // Hidden column for database ID
@@ -195,6 +320,8 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jTextField1 = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("View Buyer Accesories");
@@ -266,6 +393,11 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
             }
         });
 
+        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 14)); // NOI18N
+
+        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel2.setText("Search");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -275,9 +407,7 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton1)
@@ -286,14 +416,27 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
                         .addGap(141, 141, 141)
                         .addComponent(jButton3)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 181, Short.MAX_VALUE)
-                        .addComponent(jButton4)))
+                        .addComponent(jButton4))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addGap(27, 27, 27)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(14, 14, 14)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel2)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -530,8 +673,10 @@ public class ViewBuyerAccesoriesPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }
