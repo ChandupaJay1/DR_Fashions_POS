@@ -852,7 +852,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             stmt.setString(paramIndex++, phone);
             stmt.setString(paramIndex++, father.getText().trim().isEmpty() ? null : father.getText().trim());
             stmt.setString(paramIndex++, mother.getText().trim().isEmpty() ? null : mother.getText().trim());
-            stmt.setString(paramIndex++, religionValue.isEmpty() ? null : religionValue);
+            stmt.setString(paramIndex++, religionValue); // Already validated above
 
             // Address Information
             stmt.setString(paramIndex++, elctroateField.getText().trim().isEmpty() ? null : elctroateField.getText().trim());
@@ -860,13 +860,13 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             stmt.setString(paramIndex++, CAddress.getText().trim().isEmpty() ? null : CAddress.getText().trim());
             stmt.setString(paramIndex++, nominee.getText().trim().isEmpty() ? null : nominee.getText().trim());
 
-            // Status and Location
+            // ✅ FIX: Married Status - Use Integer instead of String
             RoleItem selectedMarriedStatus = (RoleItem) marriedStatusCombo.getSelectedItem();
-            String marriedStatus = "0";
+            int marriedStatusId = 1; // Default to Married
             if (selectedMarriedStatus != null) {
-                marriedStatus = selectedMarriedStatus.getName().equals("Married") ? "1" : "0";
+                marriedStatusId = selectedMarriedStatus.getId(); // This should be 1 for Married, 2 for Unmarried
             }
-            stmt.setString(paramIndex++, marriedStatus);
+            stmt.setInt(paramIndex++, marriedStatusId);
 
             stmt.setString(paramIndex++, distric.getText().trim().isEmpty() ? null : distric.getText().trim());
             stmt.setString(paramIndex++, race.getText().trim().isEmpty() ? null : race.getText().trim());
@@ -887,9 +887,11 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             // WHERE clause - use original NIC to identify the record
             stmt.setString(paramIndex++, originalNIC);
 
-            // ✅ Debug: Print parameter count
+            // ✅ Debug: Print parameter count and married status
             System.out.println("Total parameters set: " + (paramIndex - 1));
             System.out.println("Original NIC: " + originalNIC);
+            System.out.println("Married Status ID: " + marriedStatusId);
+            System.out.println("Selected Married Status: " + (selectedMarriedStatus != null ? selectedMarriedStatus.getName() : "null"));
 
             int res = stmt.executeUpdate();
 
@@ -898,6 +900,7 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                         "Employee Updated Successfully!\n"
                         + "Name: " + fName.getText() + " " + initials.getText() + "\n"
                         + "EPF No: " + epfNo.getText() + "\n"
+                        + "Married Status: " + (selectedMarriedStatus != null ? selectedMarriedStatus.getName() : "Unknown") + "\n"
                         + "Recruited Date: " + new SimpleDateFormat("yyyy-MM-dd").format(recruitedDateValue) + "\n"
                         + "Confirmation Date: " + new SimpleDateFormat("yyyy-MM-dd").format(confirmationDate) + "\n"
                         + "Service End Date: " + new SimpleDateFormat("yyyy-MM-dd").format(serviceEndDate),
