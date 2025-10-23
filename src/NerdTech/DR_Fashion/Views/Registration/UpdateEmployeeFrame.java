@@ -11,10 +11,6 @@ import java.text.SimpleDateFormat;
 import java.sql.Connection;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 
-/**
- *
- * @author MG_Pathum
- */
 public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
     // Original NIC to track in update query

@@ -202,33 +202,50 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     }
 
     private void setupSearchFilter() {
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
         javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter
-                = new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) model.getModel());
+                = new javax.swing.table.TableRowSorter<>(tableModel);
         model.setRowSorter(rowSorter);
 
         searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filterTable() {
+                String searchText = searchTextField.getText().trim();
+
+                if (searchText.isEmpty()) {
+                    rowSorter.setRowFilter(null);
+                    return;
+                }
+
+                // Search across all columns, case-insensitive
+                javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object> rf
+                        = new javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object>() {
+                    @Override
+                    public boolean include(Entry<? extends javax.swing.table.DefaultTableModel, ? extends Object> entry) {
+                        for (int i = 0; i < entry.getValueCount(); i++) {
+                            Object value = entry.getValue(i);
+                            if (value != null && value.toString().toLowerCase().contains(searchText.toLowerCase())) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                };
+                rowSorter.setRowFilter(rf);
+            }
+
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
+                filterTable();
             }
 
             @Override
             public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
+                filterTable();
             }
 
             @Override
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
-
-            private void filter() {
-                String searchText = searchTextField.getText();
-                if (searchText.trim().length() == 0) {
-                    rowSorter.setRowFilter(null);
-                } else {
-                    rowSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + searchText));
-                }
+                filterTable();
             }
         });
     }
@@ -453,13 +470,13 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     .addComponent(jScrollPane1)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(39, 39, 39)
+                        .addGap(48, 48, 48)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 279, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(55, 55, 55)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 53, Short.MAX_VALUE)
                         .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(54, 54, 54)
+                        .addGap(59, 59, 59)
                         .addComponent(AllEmployee, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 70, Short.MAX_VALUE)
+                        .addGap(58, 58, 58)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -658,44 +675,105 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         int selectedRow = model.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an employee to deactivate.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please select an employee to resign.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String nic = model.getValueAt(selectedRow, 6).toString(); // Column 6 = NIC
-        String fname = model.getValueAt(selectedRow, 2).toString();
-        String lname = model.getValueAt(selectedRow, 3).toString();
+        try {
+            String epfNo = model.getValueAt(selectedRow, 0).toString();
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to deactivate " + fname + " " + lname + "?",
-                "Confirm Deactivate", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            // ✅ FIXED: Get joined_date from DATABASE instead of table
+            String joinedDate = getJoinedDateFromDatabase(epfNo);
 
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
+            // Debug
+            System.out.println("=== Debug Info from Database ===");
+            System.out.println("Selected Row: " + selectedRow);
+            System.out.println("EPF No: " + epfNo);
+            System.out.println("Joined Date from DB: " + joinedDate);
+            System.out.println("============================");
 
-        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            String sql = "UPDATE employee SET status = 'inactive' WHERE nic = ? AND status = 'active'";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, nic);
-
-            int updated = ps.executeUpdate();
-
-            if (updated > 0) {
-                refreshTable();
-                JOptionPane.showMessageDialog(this, "Employee deactivated successfully!",
-                        "Success", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Employee is already inactive or not found.",
-                        "Warning", JOptionPane.WARNING_MESSAGE);
+            // Validate joined date
+            if (joinedDate == null || joinedDate.trim().isEmpty() || joinedDate.equalsIgnoreCase("null")) {
+                JOptionPane.showMessageDialog(this,
+                        "Joined Date is not available for this employee!\n"
+                        + "Please update the employee record with a valid joined date.",
+                        "Missing Data",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
             }
+
+            int employeeId = getEmployeeIdByEpf(epfNo);
+
+            if (employeeId == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee ID not found for EPF: " + epfNo,
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            java.awt.Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
+            ResignTableDFrame resignFrame = new ResignTableDFrame(
+                    (java.awt.Frame) parentWindow,
+                    true,
+                    employeeId,
+                    epfNo,
+                    joinedDate,
+                    this
+            );
+
+            resignFrame.setLocationRelativeTo(this);
+            resignFrame.setVisible(true);
+
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error deactivating employee: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Error opening Resign Dialog: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_jButton4ActionPerformed
+
+    private String getJoinedDateFromDatabase(String epfNo) {
+        String query = "SELECT joined_date FROM employee WHERE epf_no = ?";
+        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, epfNo);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                // Get date and convert to yyyy-MM-dd format
+                java.sql.Date sqlDate = rs.getDate("joined_date");
+                if (sqlDate != null) {
+                    return sqlDate.toString(); // Returns yyyy-MM-dd format
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Helper method to get employee_id from database
+    private int getEmployeeIdByEpf(String epfNo) {
+        String query = "SELECT id FROM employee WHERE epf_no = ?";
+        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, epfNo);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0; // Return 0 if not found
+    }
 
     private void AllEmployeeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AllEmployeeActionPerformed
         java.awt.Window parentWindow = SwingUtilities.getWindowAncestor(this);

@@ -26,33 +26,53 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
     }
 
     private void setupSearchFilter() {
+        // Create and attach a row sorter
+        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
         javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter
-                = new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) model.getModel());
+                = new javax.swing.table.TableRowSorter<>(tableModel);
         model.setRowSorter(rowSorter);
 
+        // Add a document listener for real-time filtering
         searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filterTable() {
+                String searchText = searchTextField.getText().trim();
+
+                if (searchText.isEmpty()) {
+                    rowSorter.setRowFilter(null);
+                    return;
+                }
+
+                // Custom filter — searches all columns, case-insensitive, no regex issues
+                javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object> rowFilter
+                        = new javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object>() {
+                    @Override
+                    public boolean include(Entry<? extends javax.swing.table.DefaultTableModel, ? extends Object> entry) {
+                        for (int i = 0; i < entry.getValueCount(); i++) {
+                            Object value = entry.getValue(i);
+                            if (value != null && value.toString().toLowerCase().contains(searchText.toLowerCase())) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                };
+
+                rowSorter.setRowFilter(rowFilter);
+            }
+
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
+                filterTable();
             }
 
             @Override
             public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
+                filterTable();
             }
 
             @Override
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
-
-            private void filter() {
-                String searchText = searchTextField.getText();
-                if (searchText.trim().length() == 0) {
-                    rowSorter.setRowFilter(null);
-                } else {
-                    rowSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + searchText));
-                }
+                filterTable();
             }
         });
     }
@@ -62,15 +82,47 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 = (javax.swing.table.DefaultTableModel) model.getModel();
         tableModel.setRowCount(0);
 
-        String query = "SELECT e.epf_no, e.name_with_initial, e.fname, e.lname, e.dob, "
-                + "e.nic, e.mobile, e.father, e.mother, "
-                + "e.permanate_address, e.current_address, e.nominee, "
-                + "e.married_status, e.district, e.race, "
-                + "d.title AS designation, s.section_name "
+        // Employee table එකේ inactive status එක තියෙන employees විතරක් ගන්න
+        String query = "SELECT "
+                + "e.epf_no, " // 0
+                + "e.name_with_initial, " // 1
+                + "e.fname, " // 2
+                + "e.initials, " // 3
+                + "e.surname, " // 4
+                + "e.dob, " // 5
+                + "e.nic, " // 6
+                + "e.gender, " // 7
+                + "e.mobile, " // 8
+                + "e.father, " // 9
+                + "e.mother, " // 10
+                + "e.religion, " // 11
+                + "e.recruited_date, " // 12
+                + "e.as_today, " // 13
+                + "e.confirmation_date, " // 14
+                + "e.service_end_date, " // 15
+                + "e.date_to_service_end, " // 16
+                + "e.permanate_address, " // 17
+                + "e.current_address, " // 18
+                + "e.electroate, " // 19
+                + "e.nominee, " // 20
+                + "e.married_status, " // 21
+                + "e.district, " // 22
+                + "e.race, " // 23
+                + "d.title AS designation, " // 24
+                + "c.name AS capacity, " // 25
+                + "s.section_name, " // 26
+                + "e.joined_date, " // 27
+                + "CONCAT(e.fname, ' ', e.surname) AS employee, " // 28
+                + "r.resign_type, " // 29
+                + "r.resign_date, " // 30
+                + "r.reason, " // 31
+                + "r.service_duration " // 32
                 + "FROM employee e "
                 + "LEFT JOIN designation d ON e.designation_id = d.id "
                 + "LEFT JOIN section s ON e.section_id = s.id "
-                + "WHERE e.status = 'inactive' "
+                + "LEFT JOIN capacity c ON e.capacity_id = c.id "
+                + "LEFT JOIN resignation r ON e.id = r.employee_id "
+                + "WHERE e.status = 'inactive' " // මෙතන නිවැරදි කරන්න
                 + "ORDER BY e.epf_no";
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
@@ -80,20 +132,36 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                     rs.getString("epf_no"), // 0
                     rs.getString("name_with_initial"), // 1
                     rs.getString("fname"), // 2
-                    rs.getString("lname"), // 3
-                    rs.getString("dob"), // 4
-                    rs.getString("nic"), // 5
-                    rs.getString("mobile"), // 6
-                    rs.getString("father"), // 7
-                    rs.getString("mother"), // 8
-                    rs.getString("permanate_address"), // 9
-                    rs.getString("current_address"), // 10
-                    rs.getString("nominee"), // 11
-                    rs.getString("married_status"), // 12
-                    rs.getString("district"), // 13
-                    rs.getString("race"), // 14
-                    rs.getString("designation"), // 15
-                    rs.getString("section_name") // 16
+                    rs.getString("initials"), // 3
+                    rs.getString("surname"), // 4
+                    rs.getDate("dob"), // 5
+                    rs.getString("nic"), // 6
+                    rs.getString("gender"), // 7
+                    rs.getString("mobile"), // 8
+                    rs.getString("father"), // 9
+                    rs.getString("mother"), // 10
+                    rs.getString("religion"), // 11
+                    rs.getDate("recruited_date"), // 12
+                    rs.getString("as_today"), // 13
+                    rs.getDate("confirmation_date"), // 14
+                    rs.getDate("service_end_date"), // 15
+                    rs.getString("date_to_service_end"), // 16
+                    rs.getString("permanate_address"), // 17
+                    rs.getString("current_address"), // 18
+                    rs.getString("electroate"), // 19
+                    rs.getString("nominee"), // 20
+                    rs.getString("married_status"), // 21
+                    rs.getString("district"), // 22
+                    rs.getString("race"), // 23
+                    rs.getString("designation"), // 24
+                    rs.getString("capacity"), // 25
+                    rs.getString("section_name"), // 26
+                    rs.getDate("joined_date"), // 27
+                    rs.getString("employee"), // 28
+                    rs.getString("resign_type"), // 29 - Resignation table එකෙන්
+                    rs.getDate("resign_date"), // 30 - Resignation table එකෙන්
+                    rs.getString("reason"), // 31 - Resignation table එකෙන්
+                    rs.getString("service_duration") // 32 - Resignation table එකෙන්
                 });
             }
 
@@ -155,11 +223,11 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
 
             },
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Lname", "DOB", "NIC", "mobile", "Father", "Mother", "Permanate Address", "Current Address", "Nominee", "Married Status", "District", "Race", "Designation", "Section"
+                "epf_no", "Name with Initial", "Fname", "Initials", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Religion", "Recruited Date", "As Today", "Confirmation Date", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Capacity", "Section", "Joined Date", "Employee", "Resign Type", "Resign Date", "Reason", "Service Duration"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -167,27 +235,6 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
             }
         });
         jScrollPane1.setViewportView(model);
-        if (model.getColumnModel().getColumnCount() > 0) {
-            model.getColumnModel().getColumn(0).setResizable(false);
-            model.getColumnModel().getColumn(1).setResizable(false);
-            model.getColumnModel().getColumn(2).setResizable(false);
-            model.getColumnModel().getColumn(3).setResizable(false);
-            model.getColumnModel().getColumn(4).setResizable(false);
-            model.getColumnModel().getColumn(5).setResizable(false);
-            model.getColumnModel().getColumn(6).setResizable(false);
-            model.getColumnModel().getColumn(7).setResizable(false);
-            model.getColumnModel().getColumn(7).setPreferredWidth(200);
-            model.getColumnModel().getColumn(8).setResizable(false);
-            model.getColumnModel().getColumn(8).setPreferredWidth(200);
-            model.getColumnModel().getColumn(9).setResizable(false);
-            model.getColumnModel().getColumn(10).setResizable(false);
-            model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(12).setResizable(false);
-            model.getColumnModel().getColumn(13).setResizable(false);
-            model.getColumnModel().getColumn(14).setResizable(false);
-            model.getColumnModel().getColumn(15).setResizable(false);
-            model.getColumnModel().getColumn(16).setResizable(false);
-        }
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -198,10 +245,10 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 456, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(1081, Short.MAX_VALUE))
+                        .addContainerGap(1297, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 802, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 1018, Short.MAX_VALUE)
                         .addComponent(jLabel2)
                         .addGap(18, 18, 18)
                         .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -215,7 +262,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1531, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1747, Short.MAX_VALUE)
                     .addContainerGap()))
         );
         layout.setVerticalGroup(
@@ -235,9 +282,9 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 .addGap(27, 27, 27))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
-                    .addGap(63, 63, 63)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 518, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(100, Short.MAX_VALUE)))
+                    .addGap(83, 83, 83)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 514, Short.MAX_VALUE)
+                    .addGap(84, 84, 84)))
         );
 
         pack();
@@ -253,13 +300,13 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
             return;
         }
 
-        // NIC use කරන එක වඩා safe (column 5)
-        String nic = model.getValueAt(selectedRow, 5).toString();
+        // NIC use කරන එක වඩා safe (column 6)
+        String nic = model.getValueAt(selectedRow, 6).toString();
         String fname = model.getValueAt(selectedRow, 2).toString();
-        String lname = model.getValueAt(selectedRow, 3).toString();
+        String surname = model.getValueAt(selectedRow, 4).toString();
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to activate " + fname + " " + lname + "?",
+                "Are you sure you want to activate " + fname + " " + surname + "?",
                 "Confirm Activation",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
@@ -302,9 +349,6 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
         dispose();
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
