@@ -49,18 +49,19 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     }
 
     private void setupTableModel() {
-        // ✅ 24 columns matching database structure (joined_date සහිතව)
         model.setModel(new javax.swing.table.DefaultTableModel(
                 new Object[][]{},
                 new String[]{
-                    "EPF No", "Name with Initial", "First Name", "Last Name", "Surname",
-                    "DOB", "NIC", "Gender", "Mobile", "Father", "Mother",
-                    "Service End Date", "Date To Service End", "Electroate",
-                    "Permanent Address", "Current Address", "Nominee", "Married Status",
-                    "District", "Race", "Designation", "Title", "Section", "Joined Date"
+                    "EPF No", "Name with Initial", "First Name", "Initials", "Surname",
+                    "Gender", "DOB", "NIC", "Mobile", "Father", "Mother",
+                    "Religion", "Recruited Date", "As Today", "Confirmation Date",
+                    "Service End Date", "Days to Service End", "Electroate",
+                    "Permanent Address", "Current Address", "Nominee",
+                    "Married Status", "District", "Race", "Designation",
+                    "Capacity", "Section", "Joined Date"
                 }
         ) {
-            boolean[] canEdit = new boolean[24];
+            boolean[] canEdit = new boolean[28];
 
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -83,10 +84,34 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                 model.getColumnModel().getColumn(i).setResizable(false);
             }
             // Set preferred widths for better visibility
+            model.getColumnModel().getColumn(0).setPreferredWidth(80);  // EPF No
+            model.getColumnModel().getColumn(1).setPreferredWidth(150); // Name with Initial
             model.getColumnModel().getColumn(2).setPreferredWidth(120); // First Name
-            model.getColumnModel().getColumn(3).setPreferredWidth(120); // Last Name
-            model.getColumnModel().getColumn(14).setPreferredWidth(180); // Permanent Address
-            model.getColumnModel().getColumn(15).setPreferredWidth(180); // Current Address
+            model.getColumnModel().getColumn(3).setPreferredWidth(80);  // Initials
+            model.getColumnModel().getColumn(4).setPreferredWidth(120); // Surname
+            model.getColumnModel().getColumn(5).setPreferredWidth(80);  // Gender
+            model.getColumnModel().getColumn(6).setPreferredWidth(100); // DOB
+            model.getColumnModel().getColumn(7).setPreferredWidth(150); // NIC
+            model.getColumnModel().getColumn(8).setPreferredWidth(120); // Mobile
+            model.getColumnModel().getColumn(9).setPreferredWidth(120); // Father
+            model.getColumnModel().getColumn(10).setPreferredWidth(120); // Mother
+            model.getColumnModel().getColumn(11).setPreferredWidth(100); // Religion
+            model.getColumnModel().getColumn(12).setPreferredWidth(120); // Recruited Date
+            model.getColumnModel().getColumn(13).setPreferredWidth(100); // As Today
+            model.getColumnModel().getColumn(14).setPreferredWidth(120); // Confirmation Date
+            model.getColumnModel().getColumn(15).setPreferredWidth(120); // Service End Date
+            model.getColumnModel().getColumn(16).setPreferredWidth(120); // Days to Service End
+            model.getColumnModel().getColumn(17).setPreferredWidth(100); // Electroate
+            model.getColumnModel().getColumn(18).setPreferredWidth(180); // Permanent Address
+            model.getColumnModel().getColumn(19).setPreferredWidth(180); // Current Address
+            model.getColumnModel().getColumn(20).setPreferredWidth(120); // Nominee
+            model.getColumnModel().getColumn(21).setPreferredWidth(100); // Married Status
+            model.getColumnModel().getColumn(22).setPreferredWidth(100); // District
+            model.getColumnModel().getColumn(23).setPreferredWidth(100); // Race
+            model.getColumnModel().getColumn(24).setPreferredWidth(120); // Designation
+            model.getColumnModel().getColumn(25).setPreferredWidth(120); // Capacity
+            model.getColumnModel().getColumn(26).setPreferredWidth(100); // Section
+            model.getColumnModel().getColumn(27).setPreferredWidth(120); // Joined Date
         }
     }
 
@@ -212,16 +237,20 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
         tableModel.setRowCount(0);
 
-        // ✅ UPDATED query - service_end_date and date_to_service_end ඇතුළත් කරන්න
-        String query = "SELECT e.epf_no, e.name_with_initial, e.fname, e.lname, e.surname, "
-                + "e.dob, e.nic, e.gender, e.mobile, e.father, e.mother, "
+        String query = "SELECT "
+                + "e.epf_no, e.name_with_initial, e.fname, e.initials, e.surname, "
+                + "e.gender, e.dob, e.nic, e.mobile, e.father, e.mother, "
+                + "e.religion, e.recruited_date, e.as_today, e.confirmation_date, "
                 + "e.service_end_date, e.date_to_service_end, e.electroate, "
                 + "e.permanate_address, e.current_address, e.nominee, "
                 + "e.married_status, e.district, e.race, "
-                + "d.capacity AS designation, d.title AS title, s.section_name, "
+                + "d.title AS designation_title, "
+                + "c.name AS capacity_name, "
+                + "s.section_name, "
                 + "e.joined_date "
                 + "FROM employee e "
                 + "LEFT JOIN designation d ON e.designation_id = d.id "
+                + "LEFT JOIN capacity c ON e.capacity_id = c.id "
                 + "LEFT JOIN section s ON e.section_id = s.id "
                 + "WHERE e.status = 'active' "
                 + "ORDER BY e.epf_no";
@@ -230,30 +259,34 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
             while (rs.next()) {
                 tableModel.addRow(new Object[]{
-                    rs.getString("epf_no"), // 0
-                    rs.getString("name_with_initial"), // 1
-                    rs.getString("fname"), // 2
-                    rs.getString("lname"), // 3
-                    rs.getString("surname"), // 4
-                    rs.getString("dob"), // 5
-                    rs.getString("nic"), // 6
-                    rs.getString("gender"), // 7
-                    rs.getString("mobile"), // 8
-                    rs.getString("father"), // 9
-                    rs.getString("mother"), // 10
-                    rs.getString("service_end_date"), // 11 - Service End Date
-                    rs.getString("date_to_service_end"), // 12 - Date To Service End
-                    rs.getString("electroate"), // 13
-                    rs.getString("permanate_address"), // 14
-                    rs.getString("current_address"), // 15
-                    rs.getString("nominee"), // 16
-                    rs.getString("married_status"), // 17
-                    rs.getString("district"), // 18
-                    rs.getString("race"), // 19
-                    rs.getString("designation"), // 20
-                    rs.getString("title"), // 21
-                    rs.getString("section_name"), // 22
-                    rs.getString("joined_date") // 23
+                    rs.getString("epf_no"),
+                    rs.getString("name_with_initial"),
+                    rs.getString("fname"),
+                    rs.getString("initials"),
+                    rs.getString("surname"),
+                    rs.getString("gender"),
+                    rs.getString("dob"),
+                    rs.getString("nic"),
+                    rs.getString("mobile"),
+                    rs.getString("father"),
+                    rs.getString("mother"),
+                    rs.getString("religion"),
+                    rs.getString("recruited_date"),
+                    rs.getString("as_today"), // ✅ As Today
+                    rs.getString("confirmation_date"), // ✅ Confirmation Date
+                    rs.getString("service_end_date"),
+                    rs.getString("date_to_service_end"),
+                    rs.getString("electroate"),
+                    rs.getString("permanate_address"),
+                    rs.getString("current_address"),
+                    rs.getString("nominee"),
+                    rs.getString("married_status"),
+                    rs.getString("district"),
+                    rs.getString("race"),
+                    rs.getString("designation_title"),
+                    rs.getString("capacity_name"),
+                    rs.getString("section_name"),
+                    rs.getString("joined_date")
                 });
             }
 
@@ -309,11 +342,11 @@ public class EmployeeRegistration extends javax.swing.JPanel {
 
             },
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Lname", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Title", "Section", "Joined Date"
+                "epf_no", "Name with Initial", "Fname", "Initials", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Religion", "Recruited Date", "As Today", "Confirmation Date", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Capacity", "Section", "Joined Date"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -344,28 +377,27 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(10).setResizable(false);
             model.getColumnModel().getColumn(10).setPreferredWidth(200);
             model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(11).setPreferredWidth(150);
-            model.getColumnModel().getColumn(12).setResizable(false);
-            model.getColumnModel().getColumn(12).setPreferredWidth(150);
-            model.getColumnModel().getColumn(13).setResizable(false);
-            model.getColumnModel().getColumn(13).setPreferredWidth(200);
-            model.getColumnModel().getColumn(14).setResizable(false);
-            model.getColumnModel().getColumn(14).setPreferredWidth(200);
-            model.getColumnModel().getColumn(15).setResizable(false);
-            model.getColumnModel().getColumn(16).setResizable(false);
-            model.getColumnModel().getColumn(16).setPreferredWidth(100);
+            model.getColumnModel().getColumn(15).setPreferredWidth(150);
+            model.getColumnModel().getColumn(16).setPreferredWidth(150);
             model.getColumnModel().getColumn(17).setResizable(false);
-            model.getColumnModel().getColumn(17).setPreferredWidth(100);
+            model.getColumnModel().getColumn(17).setPreferredWidth(200);
             model.getColumnModel().getColumn(18).setResizable(false);
-            model.getColumnModel().getColumn(18).setPreferredWidth(100);
+            model.getColumnModel().getColumn(18).setPreferredWidth(200);
             model.getColumnModel().getColumn(19).setResizable(false);
-            model.getColumnModel().getColumn(19).setPreferredWidth(100);
             model.getColumnModel().getColumn(20).setResizable(false);
             model.getColumnModel().getColumn(20).setPreferredWidth(100);
             model.getColumnModel().getColumn(21).setResizable(false);
+            model.getColumnModel().getColumn(21).setPreferredWidth(100);
             model.getColumnModel().getColumn(22).setResizable(false);
             model.getColumnModel().getColumn(22).setPreferredWidth(100);
             model.getColumnModel().getColumn(23).setResizable(false);
+            model.getColumnModel().getColumn(23).setPreferredWidth(100);
+            model.getColumnModel().getColumn(24).setResizable(false);
+            model.getColumnModel().getColumn(24).setPreferredWidth(100);
+            model.getColumnModel().getColumn(25).setResizable(false);
+            model.getColumnModel().getColumn(26).setResizable(false);
+            model.getColumnModel().getColumn(26).setPreferredWidth(100);
+            model.getColumnModel().getColumn(27).setResizable(false);
         }
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
@@ -423,11 +455,11 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(39, 39, 39)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 279, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(41, 41, 41)
+                        .addGap(55, 55, 55)
                         .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(33, 33, 33)
+                        .addGap(54, 54, 54)
                         .addComponent(AllEmployee, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 70, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 289, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -482,80 +514,80 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         }
 
         try {
-            // Get selected employee data from table
-            String epfNumber = model.getValueAt(selectedRow, 0).toString();
-            String nameWithInitial = model.getValueAt(selectedRow, 1).toString();
-            String firstName = model.getValueAt(selectedRow, 2).toString();
-            String lastName = model.getValueAt(selectedRow, 3).toString();
-            String surname = model.getValueAt(selectedRow, 4).toString();
-            String dob = model.getValueAt(selectedRow, 5).toString();
-            String nic = model.getValueAt(selectedRow, 6).toString();
-            String gender = model.getValueAt(selectedRow, 7).toString();
-            String mobile = model.getValueAt(selectedRow, 8).toString();
-            String fatherName = model.getValueAt(selectedRow, 9).toString();
-            String motherName = model.getValueAt(selectedRow, 10).toString();
-            String serviceEndDate = model.getValueAt(selectedRow, 11) != null ? model.getValueAt(selectedRow, 11).toString() : "";
-            String dateToServiceEnd = model.getValueAt(selectedRow, 12) != null ? model.getValueAt(selectedRow, 12).toString() : "";
-            String electroate = model.getValueAt(selectedRow, 13) != null ? model.getValueAt(selectedRow, 13).toString() : "";
-            String permanentAddress = model.getValueAt(selectedRow, 14).toString();
-            String currentAddress = model.getValueAt(selectedRow, 15).toString();
-            String nomineeName = model.getValueAt(selectedRow, 16) != null ? model.getValueAt(selectedRow, 16).toString() : "";
-            String marriedStatus = model.getValueAt(selectedRow, 17).toString();
-            String districtName = model.getValueAt(selectedRow, 18) != null ? model.getValueAt(selectedRow, 18).toString() : "";
-            String raceName = model.getValueAt(selectedRow, 19) != null ? model.getValueAt(selectedRow, 19).toString() : "";
-            String designation = model.getValueAt(selectedRow, 20).toString();
-            String title = model.getValueAt(selectedRow, 21).toString();
-            String sectionName = model.getValueAt(selectedRow, 22).toString();
-            String joinedDate = model.getValueAt(selectedRow, 23) != null ? model.getValueAt(selectedRow, 23).toString() : "";
+            // Get employee data from selected row - CORRECT COLUMN INDEXES
+            String epfNo = model.getValueAt(selectedRow, 0).toString();           // EPF No
+            String nameWithInitial = model.getValueAt(selectedRow, 1).toString(); // Name with Initial
+            String firstName = model.getValueAt(selectedRow, 2).toString();       // First Name
+            String initials = model.getValueAt(selectedRow, 3).toString();        // Initials
+            String surname = model.getValueAt(selectedRow, 4).toString();         // Surname
+            String gender = model.getValueAt(selectedRow, 5).toString();          // Gender
+            String dob = model.getValueAt(selectedRow, 6).toString();             // DOB
+            String nic = model.getValueAt(selectedRow, 7).toString();             // NIC
+            String mobile = model.getValueAt(selectedRow, 8).toString();          // Mobile
+            String father = model.getValueAt(selectedRow, 9).toString();          // Father
+            String mother = model.getValueAt(selectedRow, 10).toString();         // Mother
+            String religion = model.getValueAt(selectedRow, 11).toString();       // Religion
+            String electroate = model.getValueAt(selectedRow, 17).toString();     // Electroate
+            String permanentAddress = model.getValueAt(selectedRow, 18).toString(); // Permanent Address
+            String currentAddress = model.getValueAt(selectedRow, 19).toString(); // Current Address
+            String nominee = model.getValueAt(selectedRow, 20).toString();        // Nominee
+            String marriedStatus = model.getValueAt(selectedRow, 21).toString();  // Married Status
+            String district = model.getValueAt(selectedRow, 22).toString();       // District
+            String race = model.getValueAt(selectedRow, 23).toString();           // Race
+            String designationTitle = model.getValueAt(selectedRow, 24).toString(); // Designation
+            String capacityName = model.getValueAt(selectedRow, 25).toString();   // Capacity
+            String sectionName = model.getValueAt(selectedRow, 26).toString();    // Section
 
             // Convert married status to ID
             int marriedStatusId = convertMarriedStatusToId(marriedStatus);
 
-            // Get designation ID and section ID from database
-            int designationId = getDesignationId(designation, title);
+            // Get IDs from database
+            int designationId = getDesignationId(designationTitle);
+            int capacityId = getCapacityId(capacityName);
             int sectionId = getSectionId(sectionName);
 
-            // ✅ FIXED: Remove the first parameter (parent Frame)
+            // Open update frame - ADD RELIGION PARAMETER
             UpdateEmployeeFrame updateFrame = new UpdateEmployeeFrame(
-                    this, // Only EmployeeRegistration panel
-                    epfNumber,
+                    this,
+                    epfNo,
                     firstName,
-                    lastName,
+                    initials,
                     nameWithInitial,
                     dob,
                     nic,
                     mobile,
-                    fatherName,
-                    motherName,
+                    father,
+                    mother,
                     currentAddress,
                     permanentAddress,
                     electroate,
-                    nomineeName,
+                    nominee,
                     marriedStatusId,
-                    districtName,
-                    raceName,
+                    district,
+                    race,
                     gender,
                     designationId,
-                    sectionId
+                    capacityId,
+                    sectionId,
+                    religion // ✅ Add religion parameter
             );
 
             updateFrame.setVisible(true);
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error loading employee data: " + e.getMessage(),
+                    "Error loading employee data for update: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    private int getDesignationId(String capacity, String titleName) {
-        String query = "SELECT id FROM designation WHERE capacity = ? AND title = ?";
+    private int getDesignationId(String titleName) {
+        String query = "SELECT id FROM designation WHERE title = ?";
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, capacity);
-            stmt.setString(2, titleName);
+            stmt.setString(1, titleName);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -564,7 +596,23 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0; // Default value if not found
+        return 0;
+    }
+
+    private int getCapacityId(String capacityName) {
+        String query = "SELECT id FROM capacity WHERE name = ?";
+        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, capacityName);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     private int getSectionId(String sectionName) {
@@ -600,7 +648,6 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         }
     }
 
-   
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         ActivateEmployeePanel activateDialog = new ActivateEmployeePanel(

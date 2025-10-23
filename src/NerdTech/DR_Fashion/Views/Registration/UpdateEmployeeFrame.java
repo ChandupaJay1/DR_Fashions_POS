@@ -9,9 +9,7 @@ import javax.swing.JOptionPane;
 import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.sql.Connection;
-import java.text.SimpleDateFormat;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import javax.swing.SwingUtilities;
 
 /**
  *
@@ -19,9 +17,6 @@ import javax.swing.SwingUtilities;
  */
 public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
-    /**
-     * Creates new form UpdateEmployeeFrame
-     */
     // Original NIC to track in update query
     private String originalNIC;
     private EmployeeRegistration employeeRegistrationPanel;
@@ -46,7 +41,9 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             String raceName,
             String genderValue,
             int designationId,
-            int sectionId) {
+            int capacityId,
+            int sectionId,
+            String religionValue) {  // ✅ Add religion parameter
 
         // STEP 1: Initialize components first
         initComponents();
@@ -59,17 +56,24 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         DoB.setFont(new java.awt.Font("JetBrains Mono", 0, 18));
         ((javax.swing.JTextField) DoB.getDateEditor().getUiComponent()).setEditable(false);
 
-        // STEP 2: Load combo boxes WITHOUT listeners
+        // ✅ Set recruited date to today
+        recruitedDate.setDate(new java.util.Date());
+        recruitedDate.setDateFormatString("yyyy-MM-dd");
+        recruitedDate.setFont(new java.awt.Font("JetBrains Mono", 0, 18));
+        ((javax.swing.JTextField) recruitedDate.getDateEditor().getUiComponent()).setEditable(false);
+
+        // STEP 2: Load combo boxes
         loadMarriedStatus();
         loadSections();
         loadGenderOptions();
-        loadDesignationsWithoutListener();
+        loadDesignations();
+        loadCapacities();
 
         // STEP 3: Set all text fields
         epfNo.setText(epfNumber);
         epfNo.setEnabled(false);
         fName.setText(fname);
-        lName.setText(lname);
+        initials.setText(lname);
         NameInitial.setText(nameInitial);
         Nic.setText(nic);
         Phone.setText(mobile);
@@ -77,22 +81,33 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         mother.setText(motherName);
         CAddress.setText(currentAddr);
         PAddress.setText(permAddr);
+        elctroateField.setText(elctroate);
         nominee.setText(nomineeName);
         distric.setText(districtName);
         race.setText(raceName);
 
+        // ✅ Set religion field - MOVE THIS AFTER initComponents()
+        if (religion != null && religionValue != null) {
+            religion.setText(religionValue);
+        }
+
+        // Set surname field
+        if (surname != null) {
+            surname.setText(lname);
+        }
+
         // Set date
         try {
-            java.util.Date parsedDate = new java.text.SimpleDateFormat("yyyy-MM-dd").parse(dob);
+            java.util.Date parsedDate = new SimpleDateFormat("yyyy-MM-dd").parse(dob);
             DoB.setDate(parsedDate);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // Set married status
-        for (int i = 0; i < married.getItemCount(); i++) {
-            if (married.getItemAt(i).getId() == marriedStatusId) {
-                married.setSelectedIndex(i);
+        for (int i = 0; i < marriedStatusCombo.getItemCount(); i++) {
+            if (marriedStatusCombo.getItemAt(i).getId() == marriedStatusId) {
+                marriedStatusCombo.setSelectedIndex(i);
                 break;
             }
         }
@@ -108,149 +123,20 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             }
         }
 
-        // STEP 4: Load existing designation
-        loadExistingDesignation(designationId);
-
-        // STEP 5: NOW add listener for future changes
-        designation1.addActionListener(e -> {
-            if (designation1.getSelectedIndex() > 0) {
-                loadTitlesBasedOnDesignation();
+        // Set designation
+        for (int i = 0; i < designation.getItemCount(); i++) {
+            if (designation.getItemAt(i).getId() == designationId) {
+                designation.setSelectedIndex(i);
+                break;
             }
-        });
-    }
-
-    private int convertMarriedStatusToId(String status) {
-        if (status == null || status.trim().isEmpty()) {
-            return 1; // Default to Married
         }
 
-        String normalized = status.trim();
-        switch (normalized) {
-            case "Married":
-                return 1;
-            case "Unmarried":
-            case "Single":
-                return 2;
-            default:
-                return 1; // Default to Married
-        }
-    }
-
-    private void loadDesignationsWithoutListener() {
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-                "SELECT DISTINCT capacity FROM designation ORDER BY capacity"); java.sql.ResultSet rs = stmt.executeQuery()) {
-
-            designation1.removeAllItems();
-            designation1.addItem(new RoleItem(0, "-- Select Designation --"));
-
-            while (rs.next()) {
-                String capacity = rs.getString("capacity");
-                designation1.addItem(new RoleItem(0, capacity));
+        // Set capacity
+        for (int i = 0; i < capacity.getItemCount(); i++) {
+            if (capacity.getItemAt(i).getId() == capacityId) {
+                capacity.setSelectedIndex(i);
+                break;
             }
-
-            // NO listener added here!
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error loading designations: " + e.getMessage());
-        }
-    }
-
-    private void loadExistingDesignation(int designationId) {
-        System.out.println("\n=== DEBUG: Loading Designation ID: " + designationId + " ===");
-
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            // Query to get designation details
-            String sql = "SELECT id, capacity, title FROM designation WHERE id = ?";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setInt(1, designationId);
-            java.sql.ResultSet rs = stmt.executeQuery();
-
-            if (!rs.next()) {
-                System.out.println("❌ ERROR: Designation ID " + designationId + " NOT FOUND!");
-                JOptionPane.showMessageDialog(this,
-                        "Designation ID " + designationId + " not found in database.",
-                        "Database Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            String capacity = rs.getString("capacity");
-            String titleName = rs.getString("title");
-
-            System.out.println("✓ Found in DB:");
-            System.out.println("  Capacity: [" + capacity + "]");
-            System.out.println("  Title: [" + titleName + "]");
-
-            // Find and set capacity in designation1 combo
-            boolean foundCapacity = false;
-            for (int i = 0; i < designation1.getItemCount(); i++) {
-                RoleItem item = designation1.getItemAt(i);
-                if (item.getName().trim().equalsIgnoreCase(capacity.trim())) {
-                    System.out.println("✓ Setting designation1 to: " + capacity);
-                    designation1.setSelectedIndex(i);
-                    foundCapacity = true;
-                    break;
-                }
-            }
-
-            if (!foundCapacity) {
-                System.out.println("❌ Capacity not found in combo!");
-                JOptionPane.showMessageDialog(this,
-                        "Capacity '" + capacity + "' not found in dropdown.",
-                        "Load Warning", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Load titles for this capacity
-            String titleQuery = "SELECT id, title FROM designation WHERE capacity = ? ORDER BY title";
-            PreparedStatement titleStmt = conn.prepareStatement(titleQuery);
-            titleStmt.setString(1, capacity);
-            java.sql.ResultSet titleRs = titleStmt.executeQuery();
-
-            title.removeAllItems();
-
-            int titleCount = 0;
-            while (titleRs.next()) {
-                int id = titleRs.getInt("id");
-                String t = titleRs.getString("title");
-                title.addItem(new RoleItem(id, t));
-                titleCount++;
-                System.out.println("  Loaded title: ID=" + id + ", Name=[" + t + "]");
-            }
-
-            System.out.println("✓ Total titles loaded: " + titleCount);
-
-            // Find and set title
-            boolean foundTitle = false;
-            for (int i = 0; i < title.getItemCount(); i++) {
-                RoleItem item = title.getItemAt(i);
-                if (item.getId() == designationId) {
-                    System.out.println("✓ Setting title to: " + item.getName());
-                    title.setSelectedIndex(i);
-                    foundTitle = true;
-                    break;
-                }
-            }
-
-            if (!foundTitle) {
-                System.out.println("❌ Title ID " + designationId + " not found!");
-                JOptionPane.showMessageDialog(this,
-                        "Warning: Title ID " + designationId + " not found.\n"
-                        + "Title '" + titleName + "' may not match capacity '" + capacity + "'",
-                        "Load Warning", JOptionPane.WARNING_MESSAGE);
-            }
-
-            titleRs.close();
-            titleStmt.close();
-            rs.close();
-            stmt.close();
-
-            System.out.println("=== DEBUG END ===\n");
-
-        } catch (Exception e) {
-            System.out.println("❌ EXCEPTION:");
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Error loading designation: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -271,15 +157,17 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     }
 
     private void loadMarriedStatus() {
-        married.removeAllItems();
-        married.addItem(new RoleItem(1, "Married"));
-        married.addItem(new RoleItem(2, "Unmarried"));
+        marriedStatusCombo.removeAllItems();
+        marriedStatusCombo.addItem(new RoleItem(1, "Married"));
+        marriedStatusCombo.addItem(new RoleItem(2, "Unmarried"));
     }
 
     private void loadSections() {
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("SELECT id, section_name FROM section"); java.sql.ResultSet rs = stmt.executeQuery()) {
 
             section.removeAllItems();
+            section.addItem(new RoleItem(0, "-- Select Section --"));
+
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("section_name");
@@ -292,78 +180,84 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     }
 
     private void loadDesignations() {
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-                "SELECT DISTINCT capacity FROM designation ORDER BY capacity"); java.sql.ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("SELECT id, title FROM designation ORDER BY title"); java.sql.ResultSet rs = stmt.executeQuery()) {
 
-            designation1.removeAllItems();
-            designation1.addItem(new RoleItem(0, "-- Select Designation --"));
+            System.out.println("Loading designations...");
+
+            designation.removeAllItems();
+            designation.addItem(new RoleItem(0, "-- Select Designation --"));
 
             while (rs.next()) {
-                String capacity = rs.getString("capacity");
-                designation1.addItem(new RoleItem(0, capacity));
+                int id = rs.getInt("id");
+                String title = rs.getString("title");
+                System.out.println("Adding designation: " + id + " - " + title);
+                designation.addItem(new RoleItem(id, title));
             }
-
-            // Remove old listeners
-            for (java.awt.event.ActionListener al : designation1.getActionListeners()) {
-                designation1.removeActionListener(al);
-            }
-
-            // Add new listener
-            designation1.addActionListener(e -> {
-                if (designation1.getSelectedIndex() > 0) {
-                    loadTitlesBasedOnDesignation();
-                }
-            });
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading designations: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void loadTitlesBasedOnDesignation() {
-        RoleItem selected = (RoleItem) designation1.getSelectedItem();
+    private void loadCapacities() {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("SELECT id, name FROM capacity ORDER BY name"); java.sql.ResultSet rs = stmt.executeQuery()) {
 
-        System.out.println("loadTitlesBasedOnDesignation called");
-        System.out.println("Selected designation: " + (selected != null ? selected.getName() : "NULL"));
+            System.out.println("Loading capacities...");
 
-        title.removeAllItems();
+            capacity.removeAllItems();
+            capacity.addItem(new RoleItem(0, "-- Select Capacity --"));
 
-        if (selected == null || selected.getId() == 0) {
-            System.out.println("✗ No valid selection, adding default item");
-            title.addItem(new RoleItem(0, "-- Select Title --"));
-            return;
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                System.out.println("Adding capacity: " + id + " - " + name);
+                capacity.addItem(new RoleItem(id, name));
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading capacities: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void clearFields() {
+        fName.setText("");
+        initials.setText("");
+        surname.setText("");
+        NameInitial.setText("");
+        Nic.setText("");
+        DoB.setDate(null);
+        Phone.setText("");
+        epfNo.setText("");
+        father.setText("");
+        mother.setText("");
+        religion.setText("");
+        elctroateField.setText("");
+        CAddress.setText("");
+        PAddress.setText("");
+        nominee.setText("");
+        distric.setText("");
+        race.setText("");
+
+        // Reset recruited date to today
+        recruitedDate.setDate(new java.util.Date());
+
+        if (Gender.getItemCount() > 0) {
+            Gender.setSelectedIndex(0);
         }
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(
-                "SELECT id, title FROM designation WHERE capacity = ? ORDER BY title")) {
-
-            stmt.setString(1, selected.getName());
-            System.out.println("✓ Querying titles for capacity: " + selected.getName());
-
-            try (java.sql.ResultSet rs = stmt.executeQuery()) {
-                title.removeAllItems();
-
-                if (!rs.isBeforeFirst()) {
-                    System.out.println("✗ No titles found for this capacity");
-                    title.addItem(new RoleItem(0, "No titles available"));
-                    return;
-                }
-
-                int count = 0;
-                while (rs.next()) {
-                    int id = rs.getInt("id");
-                    String titleName = rs.getString("title");
-                    title.addItem(new RoleItem(id, titleName));
-                    count++;
-                    System.out.println("  Added title: ID=" + id + ", Name=" + titleName);
-                }
-
-                System.out.println("✓ Total titles loaded: " + count);
-            }
-        } catch (Exception e) {
-            System.out.println("✗ Exception in loadTitlesBasedOnDesignation:");
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading titles: " + e.getMessage());
+        if (marriedStatusCombo.getItemCount() > 0) {
+            marriedStatusCombo.setSelectedIndex(0);
+        }
+        if (designation.getItemCount() > 0) {
+            designation.setSelectedIndex(0);
+        }
+        if (section.getItemCount() > 0) {
+            section.setSelectedIndex(0);
+        }
+        if (capacity.getItemCount() > 0) {
+            capacity.setSelectedIndex(0);
         }
     }
 
@@ -386,23 +280,19 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         fName = new javax.swing.JTextField();
-        lName = new javax.swing.JTextField();
+        initials = new javax.swing.JTextField();
         DoB = new com.toedter.calendar.JDateChooser();
         Phone = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
-        Gender = new javax.swing.JComboBox<>();
+        designation = new javax.swing.JComboBox<>();
         jLabel9 = new javax.swing.JLabel();
         NameInitial = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
         mother = new javax.swing.JTextField();
         jLabel11 = new javax.swing.JLabel();
         father = new javax.swing.JTextField();
-        jLabel12 = new javax.swing.JLabel();
-        CAddress = new javax.swing.JTextField();
-        jLabel13 = new javax.swing.JLabel();
-        PAddress = new javax.swing.JTextField();
         nominee = new javax.swing.JTextField();
         jLabel14 = new javax.swing.JLabel();
         jLabel15 = new javax.swing.JLabel();
@@ -414,11 +304,23 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         section = new javax.swing.JComboBox<>();
         jLabel19 = new javax.swing.JLabel();
         epfNo = new javax.swing.JTextField();
-        married = new javax.swing.JComboBox<>();
+        marriedStatusCombo = new javax.swing.JComboBox<>();
         jLabel20 = new javax.swing.JLabel();
-        title = new javax.swing.JComboBox<>();
-        designation1 = new javax.swing.JComboBox<>();
+        capacity = new javax.swing.JComboBox<>();
+        Gender = new javax.swing.JComboBox<>();
         jLabel21 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        surname = new javax.swing.JTextField();
+        jLabel24 = new javax.swing.JLabel();
+        elctroateField = new javax.swing.JTextField();
+        jLabel12 = new javax.swing.JLabel();
+        CAddress = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        PAddress = new javax.swing.JTextField();
+        jLabel22 = new javax.swing.JLabel();
+        jLabel23 = new javax.swing.JLabel();
+        religion = new javax.swing.JTextField();
+        recruitedDate = new com.toedter.calendar.JDateChooser();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -447,14 +349,14 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         });
 
         jLabel8.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel8.setText("Gender");
+        jLabel8.setText("Designation");
 
         jLabel6.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel6.setText("Mobile");
 
         fName.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
-        lName.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        initials.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         DoB.setForeground(new java.awt.Color(255, 255, 255));
 
@@ -464,12 +366,12 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         jLabel5.setText("Date of Birth");
 
         jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel3.setText("Last Name");
+        jLabel3.setText("Initials");
 
         jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel7.setText("NIC");
 
-        Gender.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        designation.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jLabel9.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
         jLabel9.setText("Name with Initial");
@@ -493,26 +395,6 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         father.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 fatherActionPerformed(evt);
-            }
-        });
-
-        jLabel12.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel12.setText("Current Address");
-
-        CAddress.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        CAddress.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                CAddressActionPerformed(evt);
-            }
-        });
-
-        jLabel13.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel13.setText("Permanate Address");
-
-        PAddress.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        PAddress.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                PAddressActionPerformed(evt);
             }
         });
 
@@ -559,17 +441,60 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
         epfNo.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
-        married.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        marriedStatusCombo.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jLabel20.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel20.setText("Title");
+        jLabel20.setText("Capacity");
 
-        title.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        capacity.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
-        designation1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        Gender.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jLabel21.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
-        jLabel21.setText("Designation");
+        jLabel21.setText("Gender");
+
+        jLabel4.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel4.setText("Surname");
+
+        surname.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel24.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel24.setText("Elctroate");
+
+        elctroateField.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        elctroateField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                elctroateFieldActionPerformed(evt);
+            }
+        });
+
+        jLabel12.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel12.setText("Current Address");
+
+        CAddress.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        CAddress.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                CAddressActionPerformed(evt);
+            }
+        });
+
+        jLabel13.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel13.setText("Permanate Address");
+
+        PAddress.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        PAddress.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                PAddressActionPerformed(evt);
+            }
+        });
+
+        jLabel22.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel22.setText("Religion");
+
+        jLabel23.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
+        jLabel23.setText("recruited_date");
+
+        religion.setFont(new java.awt.Font("JetBrains Mono", 0, 24)); // NOI18N
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -578,170 +503,186 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel19)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel6)
-                    .addComponent(jLabel11)
-                    .addComponent(jLabel13)
-                    .addComponent(jLabel15)
-                    .addComponent(jLabel20)
-                    .addComponent(jLabel18)
-                    .addComponent(jLabel8)
-                    .addComponent(jLabel21))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(father, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(married, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(title, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(designation1, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(79, 79, 79)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel6))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(32, 32, 32)
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(21, 21, 21))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel14)
+                                .addComponent(jLabel4)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(surname, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel17)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(0, 320, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel5)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(32, 32, 32)
-                                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(jPanel1Layout.createSequentialGroup()
-                                            .addComponent(jLabel12)
-                                            .addGap(70, 70, 70)
-                                            .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                                .addComponent(jLabel10)
-                                                .addGap(196, 196, 196)
-                                                .addComponent(mother, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
-                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                    .addComponent(jLabel7)
-                                                    .addComponent(jLabel16))
-                                                .addGap(168, 168, 168)
-                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                    .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
+                                    .addComponent(jLabel10)
+                                    .addComponent(jLabel22))
+                                .addGap(200, 208, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(marriedStatusCombo, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(designation, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(religion)
+                                        .addComponent(mother, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE))))
                             .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel19)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                                .addGap(72, 72, 72)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel12)
+                                    .addComponent(jLabel24)
+                                    .addComponent(jLabel21)
+                                    .addComponent(jLabel17)
+                                    .addComponent(jLabel20))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(elctroateField, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(capacity, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                                .addGap(66, 66, 66)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jLabel9)
-                                    .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addGap(280, 280, 280)
-                                        .addComponent(NameInitial, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addGap(90, 90, 90))
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel7)
+                                    .addComponent(jLabel5)
+                                    .addComponent(jLabel11)
+                                    .addComponent(jLabel23))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(initials, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                                    .addComponent(NameInitial, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                                    .addComponent(Nic, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                                    .addComponent(DoB, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                                    .addComponent(father, javax.swing.GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                                    .addComponent(recruitedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addGap(19, 19, 19))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel18, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel15, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel14, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel13, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel16, javax.swing.GroupLayout.Alignment.LEADING))
+                        .addGap(0, 0, Short.MAX_VALUE))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(22, 22, 22)
+                .addGap(20, 20, 20)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel9)
+                    .addComponent(jLabel19)
+                    .addComponent(NameInitial, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(28, 28, 28)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel3)
+                    .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(initials, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel4)
+                        .addComponent(surname, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel7))
+                    .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(32, 32, 32)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel6)
+                        .addGap(2, 2, 2))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel5)
+                        .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(25, 25, 25)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(mother, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel10)
+                    .addComponent(jLabel11)
+                    .addComponent(father, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(26, 26, 26)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel22)
+                    .addComponent(jLabel23)
+                    .addComponent(religion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(recruitedDate, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(26, 26, 26)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel19)
-                            .addComponent(epfNo, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(28, 28, 28)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel2)
-                                .addGap(32, 32, 32)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel6)
-                                    .addComponent(Phone, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(26, 26, 26)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel11)
-                                    .addComponent(father, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel10)
-                                    .addComponent(mother, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(26, 26, 26)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel13)
-                                    .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel12))
-                                .addGap(26, 26, 26)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jLabel7)
-                                        .addComponent(Nic, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jLabel15)
-                                        .addComponent(married, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(26, 26, 26)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel16)
-                                    .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel8))
-                                .addGap(24, 24, 24)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel14)
-                                    .addComponent(designation1, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel21))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jLabel20))
+                                .addComponent(jLabel13)
+                                .addGap(39, 39, 39)
+                                .addComponent(jLabel16)
+                                .addGap(36, 36, 36)
+                                .addComponent(jLabel14)
+                                .addGap(34, 34, 34)
+                                .addComponent(jLabel15)
+                                .addGap(43, 43, 43)
+                                .addComponent(jLabel8))
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(fName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(392, 392, 392)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(title, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel17)
-                                    .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(3, 3, 3)))
-                        .addGap(26, 26, 26)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel18)
-                            .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(67, 67, 67))
+                                .addComponent(CAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(38, 38, 38)
+                                .addComponent(elctroateField, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(34, 34, 34)
+                                .addComponent(Gender, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(33, 33, 33)
+                                .addComponent(race, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(41, 41, 41)
+                                .addComponent(capacity, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(31, 31, 31)
+                        .addComponent(jLabel18))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(2, 2, 2)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(NameInitial, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel9))
-                        .addGap(28, 28, 28)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGap(57, 57, 57)
-                                .addComponent(jLabel5))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(lName, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel3))
-                                .addGap(26, 26, 26)
-                                .addComponent(DoB, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(PAddress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(38, 38, 38)
+                        .addComponent(distric, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(34, 34, 34)
+                        .addComponent(nominee, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(32, 32, 32)
+                        .addComponent(marriedStatusCombo, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(41, 41, 41)
+                        .addComponent(designation, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(30, 30, 30)
+                        .addComponent(section, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel12)
+                        .addGap(39, 39, 39)
+                        .addComponent(jLabel24)
+                        .addGap(36, 36, 36)
+                        .addComponent(jLabel21)
+                        .addGap(34, 34, 34)
+                        .addComponent(jLabel17)
+                        .addGap(43, 43, 43)
+                        .addComponent(jLabel20)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(43, 43, 43))
+                .addGap(30, 30, 30))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -752,9 +693,13 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
-                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 381, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 381, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(843, Short.MAX_VALUE))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(33, 33, 33)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(34, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -763,9 +708,12 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 745, Short.MAX_VALUE)
-                .addContainerGap())
+                .addContainerGap(924, Short.MAX_VALUE))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addContainerGap(87, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap()))
         );
 
         pack();
@@ -774,159 +722,205 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         try {
-            // Validate කරන්න සියලුම required fields fill කරලා තියෙනවාද (EMAIL නැතුව)
-            if (fName.getText().trim().isEmpty() || lName.getText().trim().isEmpty()
-                    || NameInitial.getText().trim().isEmpty() || Nic.getText().trim().isEmpty()
-                    || Phone.getText().trim().isEmpty()
-                    || DoB.getDate() == null || epfNo.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Please fill all required fields:\n"
-                        + "- First Name\n- Last Name\n- Name with Initial\n- NIC\n"
-                        + "- Phone\n- Date of Birth\n- EPF No",
-                        "Validation Error",
-                        JOptionPane.WARNING_MESSAGE);
+            // ✅ Validate required fields
+            if (epfNo.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "EPF Number is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // Phone validation (10 digits)
-            String phone = Phone.getText().trim();
-            if (!phone.matches("\\d{10}")) {
-                JOptionPane.showMessageDialog(this,
-                        "Phone number must be 10 digits",
-                        "Invalid Phone",
-                        JOptionPane.WARNING_MESSAGE);
+            // ✅ Validate Recruited Date
+            if (recruitedDate.getDate() == null) {
+                JOptionPane.showMessageDialog(this, "Recruited Date is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+            java.util.Date recruitedDateValue = recruitedDate.getDate();
 
-            // NIC validation (9 digits + V or 12 digits)
-            String nic = Nic.getText().trim();
-            if (!nic.matches("\\d{9}[Vv]|\\d{12}")) {
-                JOptionPane.showMessageDialog(this,
-                        "NIC must be in format: 123456789V or 123456789012",
-                        "Invalid NIC",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Gender - Default value (හැබැයි gender combo එකක් add කරන්න හොඳයි)
+            // ✅ Validate Gender
             RoleItem selectedGender = (RoleItem) Gender.getSelectedItem();
             if (selectedGender == null || selectedGender.getId() == 1) {
-                JOptionPane.showMessageDialog(this,
-                        "Please select a gender",
-                        "Validation Error",
-                        JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please select gender!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            String gender = selectedGender.getName();
+            String genderValue = selectedGender.getName();
 
-            // SQL query - EMAIL එක REMOVE කරලා (20 parameters only)
+            // ✅ Validate Date of Birth
+            if (DoB.getDate() == null) {
+                JOptionPane.showMessageDialog(this, "Date of Birth is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            java.util.Date dob = DoB.getDate();
+
+            // ✅ Validate NIC
+            String nicValue = Nic.getText().trim();
+            if (nicValue.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "NIC is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // ✅ Validate Phone
+            String phone = Phone.getText().trim();
+            if (phone.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Mobile number is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // ✅ Validate Section
+            RoleItem selectedSection = (RoleItem) section.getSelectedItem();
+            if (selectedSection == null || selectedSection.getId() == 0) {
+                JOptionPane.showMessageDialog(this, "Please select a section!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int sectionId = selectedSection.getId();
+
+            // ✅ Validate Designation Title
+            RoleItem selectedDesignation = (RoleItem) designation.getSelectedItem();
+            if (selectedDesignation == null || selectedDesignation.getId() == 0) {
+                JOptionPane.showMessageDialog(this, "Please select a valid designation",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int designationId = selectedDesignation.getId();
+
+            // ✅ Validate Capacity
+            RoleItem selectedCapacity = (RoleItem) capacity.getSelectedItem();
+            if (selectedCapacity == null || selectedCapacity.getId() == 0) {
+                JOptionPane.showMessageDialog(this, "Please select a valid capacity",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int capacityId = selectedCapacity.getId();
+
+            // ✅ Calculate Service End Date (60 years from DOB)
+            java.util.Calendar calService = java.util.Calendar.getInstance();
+            calService.setTime(dob);
+            calService.add(java.util.Calendar.YEAR, 60);
+            java.util.Date serviceEndDate = calService.getTime();
+
+            // ✅ Calculate Days to Service End
+            java.util.Date currentDate = new java.util.Date();
+            long diffInMillies = serviceEndDate.getTime() - currentDate.getTime();
+            long daysToServiceEnd = java.util.concurrent.TimeUnit.DAYS.convert(
+                    diffInMillies, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+            // ✅ Calculate As Today (current date)
+            java.util.Date asToday = new java.util.Date();
+
+            // ✅ Calculate Confirmation Date (3 months from recruited date)
+            java.util.Calendar calConfirmation = java.util.Calendar.getInstance();
+            calConfirmation.setTime(recruitedDateValue);
+            calConfirmation.add(java.util.Calendar.MONTH, 3);
+            java.util.Date confirmationDate = calConfirmation.getTime();
+
+            // ✅ Get religion value
+            String religionValue = religion.getText().trim();
+            if (religionValue.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Religion is required!",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // ✅ UPDATE SQL Query (not INSERT)
             String sql = "UPDATE employee SET "
-                    + "epf_no = ?, name_with_initial = ?, fname = ?, lname = ?, gender = ?, "
-                    + "dob = ?, nic = ?, mobile = ?, father = ?, mother = ?, "
-                    + "permanate_address = ?, current_address = ?, nominee = ?, "
-                    + "married_status = ?, district = ?, race = ?, "
-                    + "designation_id = ?, section_id = ? "
+                    + "name_with_initial = ?, fname = ?, initials = ?, surname = ?, "
+                    + "gender = ?, dob = ?, nic = ?, mobile = ?, father = ?, mother = ?, religion = ?, "
+                    + "electroate = ?, permanate_address = ?, current_address = ?, nominee = ?, married_status = ?, "
+                    + "district = ?, race = ?, designation_id = ?, capacity_id = ?, section_id = ?, "
+                    + "joined_date = ?, recruited_date = ?, as_today = ?, confirmation_date = ?, "
+                    + "service_end_date = ?, date_to_service_end = ?, last_modified = NOW() "
                     + "WHERE nic = ?";
 
             Connection conn = DatabaseConnection.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql);
 
-            // Set all parameters (EMAIL නැතුව)
-            stmt.setString(1, epfNo.getText().trim());
-            stmt.setString(2, NameInitial.getText().trim());
-            stmt.setString(3, fName.getText().trim());
-            stmt.setString(4, lName.getText().trim());
-            stmt.setString(5, gender);
-            stmt.setString(6, new java.text.SimpleDateFormat("yyyy-MM-dd").format(DoB.getDate()));
-            stmt.setString(7, nic.toUpperCase());
-            stmt.setString(8, phone);
-            stmt.setString(9, father.getText().trim());
-            stmt.setString(10, mother.getText().trim());
-            stmt.setString(11, PAddress.getText().trim());
-            stmt.setString(12, CAddress.getText().trim());
-            stmt.setString(13, nominee.getText().trim());
-            int marriedId = ((RoleItem) married.getSelectedItem()).getId();
-            String marriedEnumValue = (marriedId == 1) ? "Married" : "Unmarried";
-            stmt.setString(14, marriedEnumValue);
-            stmt.setString(15, distric.getText().trim());
-            stmt.setString(16, race.getText().trim());
+            int paramIndex = 1;
 
-            // Get designation ID from title combo box
-            RoleItem selectedTitle = (RoleItem) title.getSelectedItem();
-            if (selectedTitle == null || selectedTitle.getId() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Please select a valid designation title",
-                        "Validation Error",
-                        JOptionPane.WARNING_MESSAGE);
-                stmt.close();
-                conn.close();
-                return;
+            // Personal Information
+            stmt.setString(paramIndex++, NameInitial.getText().trim());
+            stmt.setString(paramIndex++, fName.getText().trim());
+            stmt.setString(paramIndex++, initials.getText().trim());
+            stmt.setString(paramIndex++, surname.getText().trim().isEmpty() ? null : surname.getText().trim());
+            stmt.setString(paramIndex++, genderValue);
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(dob));
+            stmt.setString(paramIndex++, nicValue.toUpperCase());
+            stmt.setString(paramIndex++, phone);
+            stmt.setString(paramIndex++, father.getText().trim().isEmpty() ? null : father.getText().trim());
+            stmt.setString(paramIndex++, mother.getText().trim().isEmpty() ? null : mother.getText().trim());
+            stmt.setString(paramIndex++, religionValue.isEmpty() ? null : religionValue);
+
+            // Address Information
+            stmt.setString(paramIndex++, elctroateField.getText().trim().isEmpty() ? null : elctroateField.getText().trim());
+            stmt.setString(paramIndex++, PAddress.getText().trim().isEmpty() ? null : PAddress.getText().trim());
+            stmt.setString(paramIndex++, CAddress.getText().trim().isEmpty() ? null : CAddress.getText().trim());
+            stmt.setString(paramIndex++, nominee.getText().trim().isEmpty() ? null : nominee.getText().trim());
+
+            // Status and Location
+            RoleItem selectedMarriedStatus = (RoleItem) marriedStatusCombo.getSelectedItem();
+            String marriedStatus = "0";
+            if (selectedMarriedStatus != null) {
+                marriedStatus = selectedMarriedStatus.getName().equals("Married") ? "1" : "0";
             }
-            stmt.setInt(17, selectedTitle.getId());
+            stmt.setString(paramIndex++, marriedStatus);
 
-            // Get section ID
-            RoleItem selectedSection = (RoleItem) section.getSelectedItem();
-            if (selectedSection == null || selectedSection.getId() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Please select a valid section",
-                        "Validation Error",
-                        JOptionPane.WARNING_MESSAGE);
-                stmt.close();
-                conn.close();
-                return;
-            }
-            stmt.setInt(18, selectedSection.getId());
+            stmt.setString(paramIndex++, distric.getText().trim().isEmpty() ? null : distric.getText().trim());
+            stmt.setString(paramIndex++, race.getText().trim().isEmpty() ? null : race.getText().trim());
 
-// WHERE condition - original NIC use karanna
-            stmt.setString(19, originalNIC);
+            // Foreign keys
+            stmt.setInt(paramIndex++, designationId);
+            stmt.setInt(paramIndex++, capacityId);
+            stmt.setInt(paramIndex++, sectionId);
 
-            // Execute insert
+            // Dates
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(recruitedDateValue)); // joined_date
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(recruitedDateValue)); // recruited_date
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(asToday)); // as_today
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(confirmationDate)); // confirmation_date
+            stmt.setString(paramIndex++, new SimpleDateFormat("yyyy-MM-dd").format(serviceEndDate)); // service_end_date
+            stmt.setLong(paramIndex++, daysToServiceEnd); // date_to_service_end
+
+            // WHERE clause - use original NIC to identify the record
+            stmt.setString(paramIndex++, originalNIC);
+
+            // ✅ Debug: Print parameter count
+            System.out.println("Total parameters set: " + (paramIndex - 1));
+            System.out.println("Original NIC: " + originalNIC);
+
             int res = stmt.executeUpdate();
 
             if (res > 0) {
                 JOptionPane.showMessageDialog(this,
                         "Employee Updated Successfully!\n"
-                        + "Name: " + fName.getText() + " " + lName.getText() + "\n"
-                        + "EPF No: " + epfNo.getText(),
+                        + "Name: " + fName.getText() + " " + initials.getText() + "\n"
+                        + "EPF No: " + epfNo.getText() + "\n"
+                        + "Recruited Date: " + new SimpleDateFormat("yyyy-MM-dd").format(recruitedDateValue) + "\n"
+                        + "Confirmation Date: " + new SimpleDateFormat("yyyy-MM-dd").format(confirmationDate) + "\n"
+                        + "Service End Date: " + new SimpleDateFormat("yyyy-MM-dd").format(serviceEndDate),
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // Table එක refresh කරන්න (null check කරලා)
                 if (employeeRegistrationPanel != null) {
                     employeeRegistrationPanel.refreshTable();
                 }
-
-                // Dialog එක close කරන්න
                 this.dispose();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Failed to update employee. Please try again.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
 
             stmt.close();
             conn.close();
 
-        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
-            String errorMsg = e.getMessage();
-            if (errorMsg.contains("epf_no")) {
-                JOptionPane.showMessageDialog(this,
-                        "This EPF Number already exists in the system!\n"
-                        + "Please use a different EPF Number.",
-                        "Duplicate EPF Number",
-                        JOptionPane.ERROR_MESSAGE);
-            } else if (errorMsg.contains("nic")) {
-                JOptionPane.showMessageDialog(this,
-                        "This NIC already exists in the system!\n"
-                        + "Please check the NIC number.",
-                        "Duplicate NIC",
-                        JOptionPane.ERROR_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Database constraint error:\n" + e.getMessage(),
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-            e.printStackTrace();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error registering employee:\n" + e.getMessage(),
+                    "Error updating employee: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
@@ -942,7 +936,6 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             this.dispose();
-            // Table එක refresh කරන්න (null check කරලා)
             if (employeeRegistrationPanel != null) {
                 employeeRegistrationPanel.refreshTable();
             }
@@ -957,14 +950,6 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_fatherActionPerformed
 
-    private void CAddressActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CAddressActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_CAddressActionPerformed
-
-    private void PAddressActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PAddressActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_PAddressActionPerformed
-
     private void nomineeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nomineeActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_nomineeActionPerformed
@@ -976,6 +961,18 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private void raceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_raceActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_raceActionPerformed
+
+    private void elctroateFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_elctroateFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_elctroateFieldActionPerformed
+
+    private void CAddressActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CAddressActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_CAddressActionPerformed
+
+    private void PAddressActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PAddressActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_PAddressActionPerformed
 
     /**
      * @param args the command line arguments
@@ -991,32 +988,17 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
-
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(UpdateEmployeeFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-
+                // new UpdateEmployeeFrame().setVisible(true);
             }
         });
     }
@@ -1029,11 +1011,14 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private javax.swing.JTextField Nic;
     private javax.swing.JTextField PAddress;
     private javax.swing.JTextField Phone;
-    private javax.swing.JComboBox<RoleItem> designation1;
+    private javax.swing.JComboBox<RoleItem> capacity;
+    private javax.swing.JComboBox<RoleItem> designation;
     private javax.swing.JTextField distric;
+    private javax.swing.JTextField elctroateField;
     private javax.swing.JTextField epfNo;
     private javax.swing.JTextField fName;
     private javax.swing.JTextField father;
+    private javax.swing.JTextField initials;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
@@ -1050,7 +1035,11 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel21;
+    private javax.swing.JLabel jLabel22;
+    private javax.swing.JLabel jLabel23;
+    private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
@@ -1058,12 +1047,13 @@ public class UpdateEmployeeFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField lName;
-    private javax.swing.JComboBox<RoleItem> married;
+    private javax.swing.JComboBox<RoleItem> marriedStatusCombo;
     private javax.swing.JTextField mother;
     private javax.swing.JTextField nominee;
     private javax.swing.JTextField race;
+    private com.toedter.calendar.JDateChooser recruitedDate;
+    private javax.swing.JTextField religion;
     private javax.swing.JComboBox<RoleItem> section;
-    private javax.swing.JComboBox<RoleItem> title;
+    private javax.swing.JTextField surname;
     // End of variables declaration//GEN-END:variables
 }
