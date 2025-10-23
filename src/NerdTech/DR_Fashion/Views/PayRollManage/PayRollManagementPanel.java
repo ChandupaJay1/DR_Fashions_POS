@@ -1,183 +1,12 @@
 package NerdTech.DR_Fashion.Views.PayRollManage;
 
-import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import NerdTech.DR_Fashion.Views.LoadingPanel;
+import javax.swing.*;
 
 public class PayRollManagementPanel extends javax.swing.JPanel {
 
     public PayRollManagementPanel() {
         initComponents();
-        loadEmployeeNames();
-        setupButtonActions();
-        customizeTableRenderer();
-        resetTableIfNewDay();
-        resetTableIfNewMonth();
-
-    }
-
-    private void resetTableIfNewMonth() {
-        try {
-            java.io.File file = new java.io.File("last_reset_month.txt");
-            String currentMonth = java.time.YearMonth.now().toString(); // e.g., "2025-10"
-
-            if (file.exists()) {
-                java.util.Scanner sc = new java.util.Scanner(file);
-                String lastMonth = sc.hasNextLine() ? sc.nextLine() : "";
-                sc.close();
-
-                if (!currentMonth.equals(lastMonth)) {
-                    DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-                    for (int i = 0; i < tableModel.getRowCount(); i++) {
-                        tableModel.setValueAt("", i, 1); // Reset status
-                    }
-
-                    try (java.io.FileWriter fw = new java.io.FileWriter(file)) {
-                        fw.write(currentMonth);
-                    }
-                }
-
-            } else {
-                try (java.io.FileWriter fw = new java.io.FileWriter(file)) {
-                    fw.write(currentMonth);
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void resetTableIfNewDay() {
-        try {
-            java.io.File file = new java.io.File("last_reset.txt");
-            String today = java.time.LocalDate.now().toString();
-
-            if (file.exists()) {
-                java.util.Scanner sc = new java.util.Scanner(file);
-                String lastDate = sc.hasNextLine() ? sc.nextLine() : "";
-                sc.close();
-
-                // If last date != today → clear status column
-                if (!today.equals(lastDate)) {
-                    DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-                    for (int i = 0; i < tableModel.getRowCount(); i++) {
-                        tableModel.setValueAt("", i, 1); // Clear status
-                    }
-
-                    // Update file with today's date
-                    try (java.io.FileWriter fw = new java.io.FileWriter(file)) {
-                        fw.write(today);
-                    }
-                }
-            } else {
-                // File not found → create and write today's date
-                try (java.io.FileWriter fw = new java.io.FileWriter(file)) {
-                    fw.write(today);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setupButtonActions() {
-        jButton1.addActionListener(e -> markAsPayed());
-    }
-
-    private void customizeTableRenderer() {
-        model.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
-            @Override
-            public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-
-                java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                String status = (String) table.getValueAt(row, 1);
-
-                if ("Payed".equalsIgnoreCase(status)) {
-                    // ✅ Payed row → green background, black text
-                    c.setBackground(new java.awt.Color(102, 255, 102));
-                    c.setForeground(java.awt.Color.BLACK);
-                } else if (isSelected) {
-                    // ✅ Selected row → default selection color
-                    c.setBackground(table.getSelectionBackground());
-                    c.setForeground(table.getSelectionForeground());
-                } else {
-                    // ✅ All other rows → default background and foreground
-                    c.setBackground(table.getBackground());
-                    c.setForeground(table.getForeground());
-                }
-
-                return c;
-            }
-        });
-    }
-
-    private void markAsPayed() {
-        int selectedRow = model.getSelectedRow();
-
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an employee first!");
-            return;
-        }
-
-        String name = model.getValueAt(selectedRow, 0).toString();
-        String status = "Payed";
-
-        // ✅ Update table UI
-        model.setValueAt(status, selectedRow, 1);
-        model.setSelectionBackground(new java.awt.Color(102, 255, 102)); // Green color
-
-        // ✅ Save to DB
-        try (Connection con = DatabaseConnection.getConnection()) {
-
-            String sql = "INSERT INTO monthly_payment (name, status, date) VALUES (?, ?, ?)";
-            PreparedStatement pst = con.prepareStatement(sql);
-            pst.setString(1, name);
-            pst.setString(2, status);
-            pst.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now())); // set current date
-
-            pst.executeUpdate();
-
-            JOptionPane.showMessageDialog(this, "Payment recorded for " + name);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saving payment: " + ex.getMessage());
-        }
-    }
-
-    private void loadEmployeeNames() {
-        try (Connection con = DatabaseConnection.getConnection()) {
-            PreparedStatement pst = con.prepareStatement(
-                    "SELECT e.fname, e.lname, "
-                    + "(SELECT status FROM monthly_payment WHERE name = CONCAT(e.fname, ' ', e.lname) AND MONTH(date) = MONTH(CURRENT_DATE()) AND YEAR(date) = YEAR(CURRENT_DATE()) LIMIT 1) AS status "
-                    + "FROM employee e"
-            );
-            ResultSet rs = pst.executeQuery();
-
-            DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-            tableModel.setRowCount(0); // clear table
-
-            while (rs.next()) {
-                String fullName = rs.getString("fname") + " " + rs.getString("lname");
-                String status = rs.getString("status");
-
-                if (status == null) {
-                    status = ""; // not paid
-                }
-
-                tableModel.addRow(new Object[]{fullName, status});
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading employee names: " + ex.getMessage());
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -189,6 +18,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         jScrollPane1 = new javax.swing.JScrollPane();
         model = new javax.swing.JTable();
         jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
 
         setPreferredSize(new java.awt.Dimension(1542, 664));
 
@@ -236,6 +66,14 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton2.setText("New User");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -243,17 +81,17 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1521, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1530, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 424, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(65, 65, 65)
+                                .addComponent(jButton2)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
-                .addGap(612, 612, 612)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -265,19 +103,15 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 476, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton2))
                 .addContainerGap(16, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void modelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_modelMouseClicked
-        if (evt.getClickCount() == 2) { // double-click
-            int selectedRow = model.getSelectedRow();
-            if (selectedRow != -1) {
-                String fullName = model.getValueAt(selectedRow, 0).toString();
-                openBillingDialog(fullName);
-            }
-        }
+
 
     }//GEN-LAST:event_modelMouseClicked
 
@@ -285,44 +119,66 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void openBillingDialog(String fullName) {
-        try (Connection con = DatabaseConnection.getConnection()) {
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        loadNewUserPanel();
+    }//GEN-LAST:event_jButton2ActionPerformed
 
-            String sql = "SELECT e.fname, e.lname, e.email, e.nic, e.mobile, r.position AS role_name, e.id AS emp_id "
-                    + "FROM employee e "
-                    + "LEFT JOIN role r ON e.role_id = r.id "
-                    + "WHERE CONCAT(e.fname, ' ', e.lname) = ?";
+    private void loadNewUserPanel() {
+        try {
+            // Show loading panel first
+            LoadingPanel loadingPanel = new LoadingPanel("Loading New User Panel");
 
-            PreparedStatement pst = con.prepareStatement(sql);
-            pst.setString(1, fullName);
-            ResultSet rs = pst.executeQuery();
+            // Get the parent container
+            java.awt.Container parent = this.getParent();
+            if (parent != null) {
+                // Remove current panel and show loading
+                parent.remove(this);
+                parent.add(loadingPanel);
+                parent.revalidate();
+                parent.repaint();
 
-            if (rs.next()) {
-                String name = rs.getString("fname") + " " + rs.getString("lname");
-                String email = rs.getString("email");
-                String nic = rs.getString("nic");
-                String mobile = rs.getString("mobile");
-                String role = rs.getString("role_name");
-                int empId = rs.getInt("emp_id");
+                // Use SwingWorker to load NewUserPanel in background
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        // Simulate loading time (you can remove this in production)
+                        Thread.sleep(500);
+                        return null;
+                    }
 
-                // ✅ Open BillingDFrame and set the data
-                BillingDFrame billing = new BillingDFrame(null, true);
+                    @Override
+                    protected void done() {
+                        try {
+                            // Remove loading panel and add NewUserPanel
+                            parent.remove(loadingPanel);
+                            NewUserPanel newUserPanel = new NewUserPanel();
+                            parent.add(newUserPanel);
+                            parent.revalidate();
+                            parent.repaint();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(parent,
+                                    "Error loading New User panel: " + ex.getMessage(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
 
-                billing.setEmployeeData(name, email, nic, mobile, role, empId);
-
-                billing.setLocationRelativeTo(this);
-                billing.setVisible(true);
+                worker.execute();
             }
-
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading employee data: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error loading New User panel!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;

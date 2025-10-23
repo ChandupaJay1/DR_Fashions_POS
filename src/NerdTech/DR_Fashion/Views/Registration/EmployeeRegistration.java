@@ -46,6 +46,18 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         loadContentInBackground();
 
         setupTableModel();
+
+        jScrollPane1 = new javax.swing.JScrollPane();
+        model = new javax.swing.JTable();
+
+// Scroll policies සැකසීම
+        jScrollPane1.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        model.setFont(new java.awt.Font("Calibri", 0, 12)); // NOI18N
+// ... අනෙකුත් code එක
+        jScrollPane1.setViewportView(model);
+
     }
 
     private void setupTableModel() {
@@ -68,6 +80,9 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                 return false;
             }
         });
+
+        // Auto resize mode සැකසීම
+        model.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
     }
 
     private void showLoading(String message) {
@@ -80,38 +95,48 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         setupTableModel();
 
         if (model.getColumnModel().getColumnCount() > 0) {
+            // Column widths වඩාත් සුදුසු ලෙස සැකසීම
+            int[] columnWidths = {
+                80, // EPF No
+                150, // Name with Initial  
+                120, // First Name
+                60, // Initials
+                120, // Surname
+                80, // Gender
+                100, // DOB
+                150, // NIC
+                120, // Mobile
+                120, // Father
+                120, // Mother
+                100, // Religion
+                120, // Recruited Date
+                100, // As Today
+                120, // Confirmation Date
+                120, // Service End Date
+                140, // Days to Service End
+                100, // Electroate
+                200, // Permanent Address
+                200, // Current Address
+                120, // Nominee
+                120, // Married Status
+                100, // District
+                80, // Race
+                150, // Designation
+                120, // Capacity
+                100, // Section
+                120 // Joined Date
+            };
+
             for (int i = 0; i < model.getColumnModel().getColumnCount(); i++) {
-                model.getColumnModel().getColumn(i).setResizable(false);
+                model.getColumnModel().getColumn(i).setResizable(true);
+                if (i < columnWidths.length) {
+                    model.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+                    model.getColumnModel().getColumn(i).setMinWidth(50); // අවම width
+                }
             }
-            // Set preferred widths for better visibility
-            model.getColumnModel().getColumn(0).setPreferredWidth(80);  // EPF No
-            model.getColumnModel().getColumn(1).setPreferredWidth(150); // Name with Initial
-            model.getColumnModel().getColumn(2).setPreferredWidth(120); // First Name
-            model.getColumnModel().getColumn(3).setPreferredWidth(80);  // Initials
-            model.getColumnModel().getColumn(4).setPreferredWidth(120); // Surname
-            model.getColumnModel().getColumn(5).setPreferredWidth(80);  // Gender
-            model.getColumnModel().getColumn(6).setPreferredWidth(100); // DOB
-            model.getColumnModel().getColumn(7).setPreferredWidth(150); // NIC
-            model.getColumnModel().getColumn(8).setPreferredWidth(120); // Mobile
-            model.getColumnModel().getColumn(9).setPreferredWidth(120); // Father
-            model.getColumnModel().getColumn(10).setPreferredWidth(120); // Mother
-            model.getColumnModel().getColumn(11).setPreferredWidth(100); // Religion
-            model.getColumnModel().getColumn(12).setPreferredWidth(120); // Recruited Date
-            model.getColumnModel().getColumn(13).setPreferredWidth(100); // As Today
-            model.getColumnModel().getColumn(14).setPreferredWidth(120); // Confirmation Date
-            model.getColumnModel().getColumn(15).setPreferredWidth(120); // Service End Date
-            model.getColumnModel().getColumn(16).setPreferredWidth(120); // Days to Service End
-            model.getColumnModel().getColumn(17).setPreferredWidth(100); // Electroate
-            model.getColumnModel().getColumn(18).setPreferredWidth(180); // Permanent Address
-            model.getColumnModel().getColumn(19).setPreferredWidth(180); // Current Address
-            model.getColumnModel().getColumn(20).setPreferredWidth(120); // Nominee
-            model.getColumnModel().getColumn(21).setPreferredWidth(100); // Married Status
-            model.getColumnModel().getColumn(22).setPreferredWidth(100); // District
-            model.getColumnModel().getColumn(23).setPreferredWidth(100); // Race
-            model.getColumnModel().getColumn(24).setPreferredWidth(120); // Designation
-            model.getColumnModel().getColumn(25).setPreferredWidth(120); // Capacity
-            model.getColumnModel().getColumn(26).setPreferredWidth(100); // Section
-            model.getColumnModel().getColumn(27).setPreferredWidth(120); // Joined Date
+
+            // Auto resize off කිරීම
+            model.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
         }
     }
 
