@@ -5,7 +5,7 @@
 package NerdTech.DR_Fashion.Views;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.DatabaseConnection.BidirectionalDatabaseSync;
+import NerdTech.DR_Fashion.DatabaseConnection.FullDatabaseSync;
 import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
@@ -482,8 +482,7 @@ public class Dashboard extends javax.swing.JFrame {
                 Thread.sleep(300);
 
                 // Set callback for sync status updates
-                BidirectionalDatabaseSync.setStatusCallback(
-                        new BidirectionalDatabaseSync.SyncStatusCallback() {
+                FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
                     @Override
                     public void onStatusChange(String status) {
                         publish(status);  // Send to process() method
@@ -492,7 +491,7 @@ public class Dashboard extends javax.swing.JFrame {
                 );
 
                 // Perform bidirectional sync
-                boolean success = BidirectionalDatabaseSync.performFullSync();
+                boolean success = FullDatabaseSync.performFullSync();
                 return success;
             }
 

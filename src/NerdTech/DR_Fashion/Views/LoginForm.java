@@ -3,7 +3,7 @@ package NerdTech.DR_Fashion.Views;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.DatabaseConnection.BidirectionalDatabaseSync;
+import NerdTech.DR_Fashion.DatabaseConnection.FullDatabaseSync;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import java.awt.Image;
 import java.sql.Connection;
@@ -290,7 +290,7 @@ public class LoginForm extends javax.swing.JFrame {
                     splash.setSyncStatus("Starting bidirectional sync...");
 
                     // Set callback using the correct interface
-                    BidirectionalDatabaseSync.setStatusCallback(new BidirectionalDatabaseSync.SyncStatusCallback() {
+                    FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
                         @Override
                         public void onStatusChange(String status) {
                             SwingUtilities.invokeLater(() -> {
@@ -301,7 +301,7 @@ public class LoginForm extends javax.swing.JFrame {
 
                     try {
                         // Perform full bidirectional sync
-                        boolean syncSuccess = BidirectionalDatabaseSync.performFullSync();
+                        boolean syncSuccess = FullDatabaseSync.performFullSync();
 
                         if (syncSuccess) {
                             splash.setStatus("✅ Sync completed!");
