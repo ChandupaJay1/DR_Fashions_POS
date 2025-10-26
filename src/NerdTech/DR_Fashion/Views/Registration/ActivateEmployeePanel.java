@@ -26,13 +26,11 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
     }
 
     private void setupSearchFilter() {
-        // Create and attach a row sorter
         javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
         javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter
                 = new javax.swing.table.TableRowSorter<>(tableModel);
         model.setRowSorter(rowSorter);
 
-        // Add a document listener for real-time filtering
         searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             private void filterTable() {
                 String searchText = searchTextField.getText().trim();
@@ -42,7 +40,6 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                     return;
                 }
 
-                // Custom filter — searches all columns, case-insensitive, no regex issues
                 javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object> rowFilter
                         = new javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object>() {
                     @Override
@@ -82,7 +79,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 = (javax.swing.table.DefaultTableModel) model.getModel();
         tableModel.setRowCount(0);
 
-        // Employee table එකේ inactive status එක තියෙන employees විතරක් ගන්න
+        // ✅ Query loads BOTH 'inactive' AND 'pending' status employees
         String query = "SELECT "
                 + "e.epf_no, " // 0
                 + "e.name_with_initial, " // 1
@@ -116,18 +113,28 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 + "r.resign_type, " // 29
                 + "r.resign_date, " // 30
                 + "r.reason, " // 31
-                + "r.service_duration " // 32
+                + "r.service_duration, " // 32
+                + "COALESCE(r.status, 'No Resignation') AS resignation_status, " // 33 - Renamed to avoid confusion
+                + "e.status AS employee_status " // 34 - This is what we need to see!
                 + "FROM employee e "
                 + "LEFT JOIN designation d ON e.designation_id = d.id "
                 + "LEFT JOIN section s ON e.section_id = s.id "
                 + "LEFT JOIN capacity c ON e.capacity_id = c.id "
                 + "LEFT JOIN resignation r ON e.id = r.employee_id "
-                + "WHERE e.status = 'inactive' " // මෙතන නිවැරදි කරන්න
+                + "WHERE e.status IN ('inactive', 'pending') " // ✅ Both inactive AND pending
                 + "ORDER BY e.epf_no";
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
 
+            int rowCount = 0;
             while (rs.next()) {
+                // Debug: Print what we're getting from database
+                String epfNo = rs.getString("epf_no");
+                String employeeStatus = rs.getString("employee_status");
+                String name = rs.getString("name_with_initial");
+
+                System.out.println("Loading - EPF: " + epfNo + ", Name: " + name + ", Status: " + employeeStatus);
+
                 tableModel.addRow(new Object[]{
                     rs.getString("epf_no"), // 0
                     rs.getString("name_with_initial"), // 1
@@ -158,23 +165,29 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                     rs.getString("section_name"), // 26
                     rs.getDate("joined_date"), // 27
                     rs.getString("employee"), // 28
-                    rs.getString("resign_type"), // 29 - Resignation table එකෙන්
-                    rs.getDate("resign_date"), // 30 - Resignation table එකෙන්
-                    rs.getString("reason"), // 31 - Resignation table එකෙන්
-                    rs.getString("service_duration") // 32 - Resignation table එකෙන්
+                    rs.getString("resign_type"), // 29
+                    rs.getDate("resign_date"), // 30
+                    rs.getString("reason"), // 31
+                    rs.getString("service_duration"), // 32
+                    rs.getString("resignation_status"), // 33 - Resignation status
+                    rs.getString("employee_status") // 34 - Employee status (THIS IS IMPORTANT!)
                 });
+                rowCount++;
             }
+
+            System.out.println("✅ Total loaded: " + rowCount + " employees");
+            System.out.println("✅ Table model now has: " + tableModel.getRowCount() + " rows");
 
             if (tableModel.getRowCount() == 0) {
                 JOptionPane.showMessageDialog(this,
-                        "No inactive employees found.",
+                        "No inactive or pending employees found.",
                         "Information",
                         JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Failed to load inactive employees: " + e.getMessage(),
+                    "Failed to load employees: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
@@ -192,6 +205,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
         jButton2 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         model = new javax.swing.JTable();
+        jButton3 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -223,11 +237,11 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
 
             },
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Initials", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Religion", "Recruited Date", "As Today", "Confirmation Date", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Capacity", "Section", "Joined Date", "Employee", "Resign Type", "Resign Date", "Reason", "Service Duration"
+                "epf_no", "Name with Initial", "Fname", "Initials", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Religion", "Recruited Date", "As Today", "Confirmation Date", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Capacity", "Section", "Joined Date", "Employee", "Resign Type", "Resign Date", "Reason", "Service Duration", "Status"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -235,6 +249,14 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
             }
         });
         jScrollPane1.setViewportView(model);
+
+        jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton3.setText("Inactive");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -255,8 +277,10 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                         .addGap(20, 20, 20))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(38, 38, 38)
+                        .addGap(18, 18, 18)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap())))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -278,7 +302,8 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 537, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(27, 27, 27))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
@@ -300,7 +325,6 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
             return;
         }
 
-        // NIC use කරන එක වඩා safe (column 6)
         String nic = model.getValueAt(selectedRow, 6).toString();
         String fname = model.getValueAt(selectedRow, 2).toString();
         String surname = model.getValueAt(selectedRow, 4).toString();
@@ -316,7 +340,6 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
         }
 
         try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            // NIC use කරනවා - වඩා accurate
             String sql = "UPDATE employee SET status = 'active' WHERE nic = ? AND status = 'inactive'";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, nic);
@@ -330,7 +353,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                         JOptionPane.INFORMATION_MESSAGE);
 
                 employeeRegistrationPanel.refreshTable();
-                loadInactiveEmployees();  // Refresh this table too
+                loadInactiveEmployees();
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Employee not found or already active.",
@@ -349,11 +372,136 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
         dispose();
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an employee to mark as inactive.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String nic = model.getValueAt(selectedRow, 6).toString();
+        String fname = model.getValueAt(selectedRow, 2).toString();
+        String surname = model.getValueAt(selectedRow, 4).toString();
+        String epfNo = model.getValueAt(selectedRow, 0).toString();
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to mark employee as inactive?\n\n"
+                + "Name: " + fname + " " + surname + "\n"
+                + "EPF No: " + epfNo + "\n"
+                + "NIC: " + nic + "\n\n"
+                + "Note: This will update BOTH:\n"
+                + "  • Employee status to 'inactive'\n"
+                + "  • Resignation status to 'inactive' (if resignation exists)",
+                "Confirm Inactivation",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        Connection conn = null;
+        PreparedStatement psEmployee = null;
+        PreparedStatement psResignation = null;
+        PreparedStatement psCheckEmployee = null;
+        ResultSet rsCheck = null;
+
+        try {
+            conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
+
+            // ✅ First, get the employee ID
+            String getEmployeeIdSql = "SELECT id FROM employee WHERE nic = ?";
+            psCheckEmployee = conn.prepareStatement(getEmployeeIdSql);
+            psCheckEmployee.setString(1, nic);
+            rsCheck = psCheckEmployee.executeQuery();
+
+            if (!rsCheck.next()) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee not found.",
+                        "Warning",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int employeeId = rsCheck.getInt("id");
+
+            // ✅ Update employee table status to 'inactive'
+            String updateEmployeeSql = "UPDATE employee SET status = 'inactive' WHERE nic = ?";
+            psEmployee = conn.prepareStatement(updateEmployeeSql);
+            psEmployee.setString(1, nic);
+            int employeeUpdated = psEmployee.executeUpdate();
+
+            // ✅ Update resignation table status to 'inactive' (if resignation record exists)
+            String updateResignationSql = "UPDATE resignation SET status = 'inactive' WHERE employee_id = ?";
+            psResignation = conn.prepareStatement(updateResignationSql);
+            psResignation.setInt(1, employeeId);
+            int resignationUpdated = psResignation.executeUpdate();
+
+            if (employeeUpdated > 0) {
+                String message = "Employee marked as inactive successfully!\n\n"
+                        + "Name: " + fname + " " + surname + "\n"
+                        + "EPF No: " + epfNo + "\n"
+                        + "Employee Status: Inactive\n";
+
+                if (resignationUpdated > 0) {
+                    message += "Resignation Status: Inactive ✓\n\n"
+                            + "Both employee and resignation records updated.";
+                } else {
+                    message += "Resignation Status: No resignation record found.\n\n"
+                            + "Only employee status was updated.";
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        message,
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Refresh tables
+                employeeRegistrationPanel.refreshTable();
+                loadInactiveEmployees();
+
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Employee not found.",
+                        "Warning",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Update failed: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            // Close resources
+            try {
+                if (rsCheck != null) {
+                    rsCheck.close();
+                }
+                if (psCheckEmployee != null) {
+                    psCheckEmployee.close();
+                }
+                if (psEmployee != null) {
+                    psEmployee.close();
+                }
+                if (psResignation != null) {
+                    psResignation.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }//GEN-LAST:event_jButton3ActionPerformed
+
     public static void main(String args[]) {
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                EmployeeRegistration empReg = new EmployeeRegistration(); // mock panel eka
+                EmployeeRegistration empReg = new EmployeeRegistration();
                 ActivateEmployeePanel dialog = new ActivateEmployeePanel(new javax.swing.JFrame(), true, empReg);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override
@@ -364,12 +512,12 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 dialog.setVisible(true);
             }
         });
-
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;

@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +30,7 @@ public class ResignTableDFrame extends javax.swing.JDialog {
         this.joinedDate = joinedDate;
         this.employeeRegistrationPanel = employeeRegistrationPanel;
         initComponents();
+        populateStatusComboBox();
 
         System.out.println("=== ResignTableDFrame Debug Info ===");
         System.out.println("Employee ID: " + employeeId);
@@ -38,12 +40,20 @@ public class ResignTableDFrame extends javax.swing.JDialog {
     }
 
     /**
+     * ✅ ComboBox එකට Status values add කරන්න
+     */
+    private void populateStatusComboBox() {
+        statusComboBox.removeAllItems();
+        statusComboBox.addItem("Inactive");
+        statusComboBox.addItem("Pending");
+    }
+
+    /**
      * ✅ Calculate service duration between two dates Returns format: "X Years,
      * Y Months, Z Days"
      */
     private String calculateServiceDuration(String startDate, String endDate) {
         try {
-            // Validate inputs
             if (startDate == null || startDate.trim().isEmpty() || startDate.equalsIgnoreCase("null")) {
                 System.err.println("❌ ERROR: startDate is null or empty");
                 return "N/A - Missing Start Date";
@@ -57,23 +67,20 @@ public class ResignTableDFrame extends javax.swing.JDialog {
             System.out.println("📅 Start Date: " + startDate);
             System.out.println("📅 End Date: " + endDate);
 
-            // Try multiple date formats
             LocalDate start = null;
             LocalDate end = null;
 
-            // Format 1: yyyy-MM-dd
+            // Try multiple date formats
             try {
                 DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 start = LocalDate.parse(startDate.trim(), formatter1);
                 end = LocalDate.parse(endDate.trim(), formatter1);
             } catch (Exception e1) {
-                // Format 2: dd-MM-yyyy
                 try {
                     DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd-MM-yyyy");
                     start = LocalDate.parse(startDate.trim(), formatter2);
                     end = LocalDate.parse(endDate.trim(), formatter2);
                 } catch (Exception e2) {
-                    // Format 3: dd/MM/yyyy
                     try {
                         DateTimeFormatter formatter3 = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                         start = LocalDate.parse(startDate.trim(), formatter3);
@@ -90,7 +97,6 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                 return "Date Parsing Failed";
             }
 
-            // Calculate period
             Period period = Period.between(start, end);
 
             int years = period.getYears();
@@ -135,10 +141,14 @@ public class ResignTableDFrame extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        resignTypeTextField = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
-        jTextField3 = new javax.swing.JTextField();
+        reasonTextField = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        resignDateChooser = new com.toedter.calendar.JDateChooser();
+        statusComboBox = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -148,12 +158,12 @@ public class ResignTableDFrame extends javax.swing.JDialog {
         jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel2.setText("Resign Type");
 
-        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        resignTypeTextField.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jLabel4.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel4.setText("Reason");
 
-        jTextField3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        reasonTextField.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton1.setText("Delete");
@@ -162,6 +172,15 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                 jButton1ActionPerformed(evt);
             }
         });
+
+        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel3.setText("Resign Date");
+
+        jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel5.setText("Status");
+
+        statusComboBox.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        statusComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -176,19 +195,30 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                             .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 321, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addComponent(jLabel2)
-                                        .addGap(143, 143, 143))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                            .addComponent(jLabel2)
+                                            .addGap(143, 143, 143))
+                                        .addGroup(layout.createSequentialGroup()
+                                            .addComponent(jLabel4)
+                                            .addGap(198, 198, 198)))
                                     .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel4)
-                                        .addGap(198, 198, 198)))
+                                        .addComponent(jLabel5)
+                                        .addGap(257, 257, 257)))
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                    .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
-                                    .addComponent(jTextField1)))))
+                                    .addComponent(reasonTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE)
+                                    .addComponent(resignTypeTextField)))))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(213, 213, 213)
-                        .addComponent(jButton1)))
-                .addContainerGap(22, Short.MAX_VALUE))
+                        .addGap(214, 214, 214)
+                        .addComponent(jButton1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel3)
+                        .addGap(202, 202, 202)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(statusComboBox, 0, 299, Short.MAX_VALUE)
+                            .addComponent(resignDateChooser, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -200,12 +230,20 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                 .addGap(36, 36, 36)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(resignTypeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 48, Short.MAX_VALUE)
+                    .addComponent(reasonTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel3)
+                    .addComponent(resignDateChooser, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel5)
+                    .addComponent(statusComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -215,16 +253,18 @@ public class ResignTableDFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // Validate inputs
-        String resignType = jTextField1.getText().trim();
-        String reason = jTextField3.getText().trim();
+        // ✅ Validate inputs
+        String resignType = resignTypeTextField.getText().trim();
+        String reason = reasonTextField.getText().trim();
+        java.util.Date selectedDate = resignDateChooser.getDate();
+        String selectedStatus = (String) statusComboBox.getSelectedItem();
 
         if (resignType.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Please enter Resign Type!",
                     "Validation Error",
                     JOptionPane.WARNING_MESSAGE);
-            jTextField1.requestFocus();
+            resignTypeTextField.requestFocus();
             return;
         }
 
@@ -233,15 +273,39 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                     "Please enter Reason!",
                     "Validation Error",
                     JOptionPane.WARNING_MESSAGE);
-            jTextField3.requestFocus();
+            reasonTextField.requestFocus();
             return;
         }
+
+        // ✅ Validate date selection
+        if (selectedDate == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a Resign Date!",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // ✅ Validate status selection
+        if (selectedStatus == null || selectedStatus.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a Status!",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // ✅ Convert date to string
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String resignDate = sdf.format(selectedDate);
 
         // Confirm action
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to resign this employee?\n"
                 + "EPF No: " + epfNo + "\n"
                 + "Resign Type: " + resignType + "\n"
+                + "Resign Date: " + resignDate + "\n"
+                + "Status: " + selectedStatus + "\n"
                 + "Reason: " + reason,
                 "Confirm Resignation",
                 JOptionPane.YES_NO_OPTION,
@@ -259,10 +323,6 @@ public class ResignTableDFrame extends javax.swing.JDialog {
             conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
             conn.setAutoCommit(false); // Start transaction
 
-            // ✅ Get today's date for resignation
-            LocalDate today = LocalDate.now();
-            String resignDate = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
             // ✅ Validate joined date before calculation
             if (joinedDate == null || joinedDate.trim().isEmpty() || joinedDate.equalsIgnoreCase("null")) {
                 JOptionPane.showMessageDialog(this,
@@ -276,29 +336,42 @@ public class ResignTableDFrame extends javax.swing.JDialog {
             // ✅ Calculate service duration automatically
             System.out.println("\n=== Starting Service Duration Calculation ===");
             System.out.println("Joined Date from Constructor: " + joinedDate);
-            System.out.println("Resign Date (Today): " + resignDate);
+            System.out.println("Resign Date (Selected): " + resignDate);
 
             String serviceDuration = calculateServiceDuration(joinedDate, resignDate);
 
             System.out.println("Final Service Duration: " + serviceDuration);
             System.out.println("===========================================\n");
 
-            // 1. Insert into resignation table with auto-calculated service_duration
-            String insertSql = "INSERT INTO resignation (employee_id, resign_type, resign_date, reason, service_duration) VALUES (?, ?, ?, ?, ?)";
+            // 1. ✅ Insert into resignation table with selected status
+            String insertSql = "INSERT INTO resignation (employee_id, resign_type, resign_date, reason, service_duration, status) VALUES (?, ?, ?, ?, ?, ?)";
             psInsert = conn.prepareStatement(insertSql);
             psInsert.setInt(1, employeeId);
             psInsert.setString(2, resignType);
             psInsert.setString(3, resignDate);
             psInsert.setString(4, reason);
-            psInsert.setString(5, serviceDuration); // ✅ Auto-calculated duration
+            psInsert.setString(5, serviceDuration);
+            psInsert.setString(6, selectedStatus); // ✅ Selected status save වෙනවා
 
             int insertResult = psInsert.executeUpdate();
 
             if (insertResult > 0) {
-                // 2. Update employee status to inactive
-                String updateSql = "UPDATE employee SET status = 'inactive' WHERE id = ?";
+                // 2. ✅ Update employee status based on selected status in resignation
+                String employeeStatus = "";
+
+                // Select කරන status එක අනුව employee status set කරන්න
+                if (selectedStatus.equalsIgnoreCase("Inactive")) {
+                    employeeStatus = "inactive";
+                } else if (selectedStatus.equalsIgnoreCase("Pending")) {
+                    employeeStatus = "pending";
+                } else {
+                    employeeStatus = "inactive"; // Default
+                }
+
+                String updateSql = "UPDATE employee SET status = ? WHERE id = ?";
                 psUpdate = conn.prepareStatement(updateSql);
-                psUpdate.setInt(1, employeeId);
+                psUpdate.setString(1, employeeStatus);
+                psUpdate.setInt(2, employeeId);
 
                 int updateResult = psUpdate.executeUpdate();
 
@@ -309,6 +382,8 @@ public class ResignTableDFrame extends javax.swing.JDialog {
                             "Employee resigned successfully!\n\n"
                             + "EPF No: " + epfNo + "\n"
                             + "Resign Date: " + resignDate + "\n"
+                            + "Resignation Status: " + selectedStatus + "\n"
+                            + "Employee Status: " + employeeStatus + "\n"
                             + "Service Duration: " + serviceDuration,
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE);
@@ -372,11 +447,6 @@ public class ResignTableDFrame extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -393,12 +463,9 @@ public class ResignTableDFrame extends javax.swing.JDialog {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(ResignTableDFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                // Test with sample data
                 EmployeeRegistration empReg = new EmployeeRegistration();
                 ResignTableDFrame dialog = new ResignTableDFrame(new javax.swing.JFrame(), true, 1, "EPF001", "2020-01-15", empReg);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -416,9 +483,13 @@ public class ResignTableDFrame extends javax.swing.JDialog {
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField3;
+    private javax.swing.JTextField reasonTextField;
+    private com.toedter.calendar.JDateChooser resignDateChooser;
+    private javax.swing.JTextField resignTypeTextField;
+    private javax.swing.JComboBox<String> statusComboBox;
     // End of variables declaration//GEN-END:variables
 }

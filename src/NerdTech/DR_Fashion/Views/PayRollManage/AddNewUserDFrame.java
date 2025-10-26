@@ -13,22 +13,18 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
     private String epfNo;
     private String employeeName;
-    private int employeeId; // Added to store employee ID
+    private int employeeId;
 
-    /**
-     * Creates new form AddNewUserDFrame
-     */
     public AddNewUserDFrame(java.awt.Frame parent, boolean modal, String epfNo, String employeeName) throws Exception {
         super(parent, modal);
         this.epfNo = epfNo;
         this.employeeName = employeeName;
         initComponents();
         setTitle("Add Salary Details for: " + employeeName + " (" + epfNo + ")");
-        loadEmployeeId(); // Load employee ID first
-        loadExistingSalaryData(); // Load existing data if available
+        loadEmployeeId();
+        loadExistingSalaryData();
     }
 
-    // NEW METHOD: Get employee ID from EPF number
     private void loadEmployeeId() throws Exception {
         try {
             Connection connection = DatabaseConnection.getConnection();
@@ -64,11 +60,11 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            // Check if salary table exists and has data for this employee
-            String query = "SELECT basic_salary, grading_incentive, attendance_incentive, production_incentive "
+            String query = "SELECT basic_salary, grading_incentive, attendance_incentive, production_incentive, "
+                    + "peoples_bank_account_no, hnb_bank_account_no "
                     + "FROM salary WHERE employee_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, employeeId); // Use employee_id instead of epf_no
+            statement.setInt(1, employeeId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -77,6 +73,16 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 jTextField2.setText(String.valueOf(resultSet.getDouble("grading_incentive")));
                 jTextField3.setText(String.valueOf(resultSet.getDouble("attendance_incentive")));
                 jTextField4.setText(String.valueOf(resultSet.getDouble("production_incentive")));
+
+                String peoplesBank = resultSet.getString("peoples_bank_account_no");
+                String hnbBank = resultSet.getString("hnb_bank_account_no");
+
+                if (peoplesBank != null) {
+                    peoples_bank_account_no.setText(peoplesBank);
+                }
+                if (hnbBank != null) {
+                    hnb_bank_account_no.setText(hnbBank);
+                }
             }
 
             resultSet.close();
@@ -84,7 +90,6 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             connection.close();
 
         } catch (SQLException e) {
-            // If table doesn't exist or no data, leave fields empty
             System.out.println("No existing salary data found for Employee ID: " + employeeId);
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,6 +111,10 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         jTextField3 = new javax.swing.JTextField();
         jTextField4 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jLabel6 = new javax.swing.JLabel();
+        peoples_bank_account_no = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        hnb_bank_account_no = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -140,6 +149,16 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             }
         });
 
+        jLabel6.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel6.setText("Peoples Bank Account No");
+
+        peoples_bank_account_no.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel7.setText("Hnb Bank Account No");
+
+        hnb_bank_account_no.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -156,13 +175,17 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                                 .addComponent(jButton1))
                             .addComponent(jLabel3)
                             .addComponent(jLabel4)
-                            .addComponent(jLabel5))
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel6)
+                            .addComponent(jLabel7))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(jTextField1)
                             .addComponent(jTextField2)
                             .addComponent(jTextField3)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE))))
+                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE)
+                            .addComponent(peoples_bank_account_no)
+                            .addComponent(hnb_bank_account_no))))
                 .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
@@ -188,9 +211,17 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel5)
                     .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(51, 51, 51)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel6)
+                    .addComponent(peoples_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel7)
+                    .addComponent(hnb_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
                 .addComponent(jButton1)
-                .addContainerGap(17, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         pack();
@@ -202,7 +233,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
     private void saveSalaryDetails() {
         try {
-            // Validate input
+            // Validate input - salary fields required, bank accounts optional
             if (jTextField1.getText().trim().isEmpty()
                     || jTextField2.getText().trim().isEmpty()
                     || jTextField3.getText().trim().isEmpty()
@@ -215,11 +246,23 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 return;
             }
 
-            // Parse values
+            // Parse salary values
             double basicSalary = Double.parseDouble(jTextField1.getText().trim());
             double gradingIncentive = Double.parseDouble(jTextField2.getText().trim());
             double attendanceIncentive = Double.parseDouble(jTextField3.getText().trim());
             double productionIncentive = Double.parseDouble(jTextField4.getText().trim());
+
+            // Get bank account numbers (can be empty)
+            String peoplesBank = peoples_bank_account_no.getText().trim();
+            String hnbBank = hnb_bank_account_no.getText().trim();
+
+            // If empty, set to null for database
+            if (peoplesBank.isEmpty()) {
+                peoplesBank = null;
+            }
+            if (hnbBank.isEmpty()) {
+                hnbBank = null;
+            }
 
             Connection connection = DatabaseConnection.getConnection();
 
@@ -230,9 +273,11 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             PreparedStatement statement;
 
             if (recordExists) {
-                // Update existing record
+                // Update existing record with bank accounts
                 query = "UPDATE salary SET basic_salary = ?, grading_incentive = ?, "
-                        + "attendance_incentive = ?, production_incentive = ?, last_modified = CURRENT_TIMESTAMP "
+                        + "attendance_incentive = ?, production_incentive = ?, "
+                        + "peoples_bank_account_no = ?, hnb_bank_account_no = ?, "
+                        + "last_modified = CURRENT_TIMESTAMP "
                         + "WHERE employee_id = ?";
 
                 statement = connection.prepareStatement(query);
@@ -240,19 +285,24 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 statement.setDouble(2, gradingIncentive);
                 statement.setDouble(3, attendanceIncentive);
                 statement.setDouble(4, productionIncentive);
-                statement.setInt(5, employeeId); // Use employee_id
+                statement.setString(5, peoplesBank);
+                statement.setString(6, hnbBank);
+                statement.setInt(7, employeeId);
             } else {
-                // Insert new record
+                // Insert new record with bank accounts
                 query = "INSERT INTO salary (employee_id, basic_salary, grading_incentive, "
-                        + "attendance_incentive, production_incentive, last_modified) "
-                        + "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                        + "attendance_incentive, production_incentive, peoples_bank_account_no, "
+                        + "hnb_bank_account_no, last_modified) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
                 statement = connection.prepareStatement(query);
-                statement.setInt(1, employeeId); // Use employee_id
+                statement.setInt(1, employeeId);
                 statement.setDouble(2, basicSalary);
                 statement.setDouble(3, gradingIncentive);
                 statement.setDouble(4, attendanceIncentive);
                 statement.setDouble(5, productionIncentive);
+                statement.setString(6, peoplesBank);
+                statement.setString(7, hnbBank);
             }
 
             int rowsAffected = statement.executeUpdate();
@@ -270,7 +320,6 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                         javax.swing.JOptionPane.ERROR_MESSAGE);
             }
 
-            // Close resources
             statement.close();
             connection.close();
 
@@ -298,7 +347,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         try {
             String checkQuery = "SELECT COUNT(*) FROM salary WHERE employee_id = ?";
             PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
-            checkStmt.setInt(1, employeeId); // Use employee_id instead of epf_no
+            checkStmt.setInt(1, employeeId);
             ResultSet rs = checkStmt.executeQuery();
             rs.next();
             int count = rs.getInt(1);
@@ -312,12 +361,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         }
     }
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -334,9 +378,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(AddNewUserDFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 AddNewUserDFrame dialog = null;
@@ -358,16 +400,20 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField hnb_bank_account_no;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JTextField jTextField4;
+    private javax.swing.JTextField peoples_bank_account_no;
     // End of variables declaration//GEN-END:variables
 }

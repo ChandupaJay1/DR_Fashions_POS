@@ -189,7 +189,7 @@ public class AttendencePanel extends javax.swing.JPanel {
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
-        String query = "SELECT e.id, CONCAT(e.fname, ' ', e.lname) AS full_name, "
+        String query = "SELECT e.id, CONCAT(e.fname, ' ', e.surname) AS full_name, "
                 + "a.status, a.attendance_date, a.come_in, a.come_off "
                 + "FROM employee e "
                 + "LEFT JOIN attendence a ON e.id = a.employee_id AND a.attendance_date = ? "
@@ -235,7 +235,7 @@ public class AttendencePanel extends javax.swing.JPanel {
     }
 
     private int getEmployeeIdByName(String name) {
-        String query = "SELECT id FROM employee WHERE CONCAT(fname, ' ', lname) = ?";
+        String query = "SELECT id FROM employee WHERE CONCAT(fname, ' ', surname) = ?";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, name);
@@ -361,10 +361,10 @@ public class AttendencePanel extends javax.swing.JPanel {
                         .addGap(33, 33, 33))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 401, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(850, Short.MAX_VALUE))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 198, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 219, Short.MAX_VALUE)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 198, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(144, 144, 144)
                         .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 198, javax.swing.GroupLayout.PREFERRED_SIZE)
