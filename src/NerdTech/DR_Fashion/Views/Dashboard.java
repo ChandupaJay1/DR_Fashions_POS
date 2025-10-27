@@ -62,7 +62,7 @@ public class Dashboard extends javax.swing.JFrame {
                 // Manager limited access
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
-                jButton1.setEnabled(false);
+                jButton1.setEnabled(true);
                 jButton3.setEnabled(false);
                 jButton4.setEnabled(false); // Cannot backup
                 jButton7.setEnabled(false);

@@ -81,10 +81,11 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            // Advanced search query - searches across multiple fields
+            // Advanced search query - including BRA columns
             String query = "SELECT e.epf_no, e.fname, sec.section_name, d.title, e.nic, "
                     + "sal.basic_salary, sal.grading_incentive, sal.attendance_incentive, "
-                    + "sal.production_incentive, sal.peoples_bank_account_no, sal.hnb_bank_account_no "
+                    + "sal.production_incentive, sal.bra_1, sal.bra_2, "
+                    + "sal.peoples_bank_account_no, sal.hnb_bank_account_no "
                     + "FROM employee e "
                     + "LEFT JOIN section sec ON e.section_id = sec.id "
                     + "LEFT JOIN designation d ON e.designation_id = d.id "
@@ -102,7 +103,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
             PreparedStatement statement = connection.prepareStatement(query);
             String searchPattern = "%" + searchText + "%";
 
-            // Set the search pattern for all search fields
             for (int i = 1; i <= 5; i++) {
                 statement.setString(i, searchPattern);
             }
@@ -119,7 +119,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                 String designation = resultSet.getString("title");
                 String nic = resultSet.getString("nic");
 
-                // Get salary details
                 Double basicSalary = resultSet.getDouble("basic_salary");
                 if (resultSet.wasNull()) {
                     basicSalary = null;
@@ -140,11 +139,19 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     productionIncentive = null;
                 }
 
-                // Get bank account numbers
+                Double bra1 = resultSet.getDouble("bra_1");
+                if (resultSet.wasNull()) {
+                    bra1 = null;
+                }
+
+                Double bra2 = resultSet.getDouble("bra_2");
+                if (resultSet.wasNull()) {
+                    bra2 = null;
+                }
+
                 String peoplesBank = resultSet.getString("peoples_bank_account_no");
                 String hnbBank = resultSet.getString("hnb_bank_account_no");
 
-                // Add row to table with all columns
                 model.addRow(new Object[]{
                     epfNo,
                     name,
@@ -155,6 +162,8 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     gradingIncentive,
                     attendanceIncentive,
                     productionIncentive,
+                    bra1,
+                    bra2,
                     peoplesBank,
                     hnbBank
                 });
@@ -192,14 +201,15 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            // Load only employees who HAVE salary details
+            // Load only employees who HAVE salary details - including BRA columns
             String query = "SELECT e.epf_no, e.fname, sec.section_name, d.title, e.nic, "
                     + "sal.basic_salary, sal.grading_incentive, sal.attendance_incentive, "
-                    + "sal.production_incentive, sal.peoples_bank_account_no, sal.hnb_bank_account_no "
+                    + "sal.production_incentive, sal.bra_1, sal.bra_2, "
+                    + "sal.peoples_bank_account_no, sal.hnb_bank_account_no "
                     + "FROM employee e "
                     + "LEFT JOIN section sec ON e.section_id = sec.id "
                     + "LEFT JOIN designation d ON e.designation_id = d.id "
-                    + "INNER JOIN salary sal ON e.id = sal.employee_id " // INNER JOIN - only with salary
+                    + "INNER JOIN salary sal ON e.id = sal.employee_id "
                     + "WHERE (e.status = 'active' OR e.status IS NULL) "
                     + "ORDER BY e.epf_no";
 
@@ -237,11 +247,22 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     productionIncentive = null;
                 }
 
+                // Get BRA values
+                Double bra1 = resultSet.getDouble("bra_1");
+                if (resultSet.wasNull()) {
+                    bra1 = null;
+                }
+
+                Double bra2 = resultSet.getDouble("bra_2");
+                if (resultSet.wasNull()) {
+                    bra2 = null;
+                }
+
                 // Get bank account numbers
                 String peoplesBank = resultSet.getString("peoples_bank_account_no");
                 String hnbBank = resultSet.getString("hnb_bank_account_no");
 
-                // Add row to table with all columns
+                // Add row to table with all columns including BRA
                 model.addRow(new Object[]{
                     epfNo,
                     name,
@@ -252,6 +273,8 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     gradingIncentive,
                     attendanceIncentive,
                     productionIncentive,
+                    bra1,
+                    bra2,
                     peoplesBank,
                     hnbBank
                 });
@@ -302,17 +325,17 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Grading Lncentive", "Attendance Incentive", "Production Incentive", "Peoples Bank Account No", "Hnb Bank Account No"
+                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Grading Lncentive", "Attendance Incentive", "Production Incentive", "BRA 1", "BRA 2", "Peoples Bank Account No", "Hnb Bank Account No"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {

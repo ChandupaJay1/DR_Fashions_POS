@@ -264,6 +264,10 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 hnbBank = null;
             }
 
+            // BRA values - automatic values
+            double bra1 = 1000.0;
+            double bra2 = 2500.0;
+
             Connection connection = DatabaseConnection.getConnection();
 
             // Check if record already exists for this employee
@@ -273,10 +277,11 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             PreparedStatement statement;
 
             if (recordExists) {
-                // Update existing record with bank accounts
+                // Update existing record with bank accounts and BRA values
                 query = "UPDATE salary SET basic_salary = ?, grading_incentive = ?, "
                         + "attendance_incentive = ?, production_incentive = ?, "
                         + "peoples_bank_account_no = ?, hnb_bank_account_no = ?, "
+                        + "bra_1 = ?, bra_2 = ?, "
                         + "last_modified = CURRENT_TIMESTAMP "
                         + "WHERE employee_id = ?";
 
@@ -287,13 +292,15 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 statement.setDouble(4, productionIncentive);
                 statement.setString(5, peoplesBank);
                 statement.setString(6, hnbBank);
-                statement.setInt(7, employeeId);
+                statement.setDouble(7, bra1);
+                statement.setDouble(8, bra2);
+                statement.setInt(9, employeeId);
             } else {
-                // Insert new record with bank accounts
+                // Insert new record with bank accounts and BRA values
                 query = "INSERT INTO salary (employee_id, basic_salary, grading_incentive, "
                         + "attendance_incentive, production_incentive, peoples_bank_account_no, "
-                        + "hnb_bank_account_no, last_modified) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                        + "hnb_bank_account_no, bra_1, bra_2, last_modified) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
                 statement = connection.prepareStatement(query);
                 statement.setInt(1, employeeId);
@@ -303,6 +310,8 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 statement.setDouble(5, productionIncentive);
                 statement.setString(6, peoplesBank);
                 statement.setString(7, hnbBank);
+                statement.setDouble(8, bra1);
+                statement.setDouble(9, bra2);
             }
 
             int rowsAffected = statement.executeUpdate();
