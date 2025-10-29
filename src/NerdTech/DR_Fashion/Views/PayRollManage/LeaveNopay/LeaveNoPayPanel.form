@@ -16,17 +16,17 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
+                  <Component id="jScrollPane1" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                          <Component id="jSeparator1" min="-2" pref="428" max="-2" attributes="0"/>
+                          <Component id="jSeparator1" min="-2" pref="544" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace min="0" pref="1049" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="893" max="32767" attributes="0"/>
                   </Group>
-                  <Component id="jScrollPane1" alignment="0" pref="1477" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -41,7 +41,7 @@
               <Component id="jSeparator1" min="-2" pref="10" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jScrollPane1" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="179" max="32767" attributes="0"/>
+              <EmptySpace pref="124" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -52,7 +52,7 @@
         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
           <Font name="JetBrains Mono" size="36" style="1"/>
         </Property>
-        <Property name="text" type="java.lang.String" value="Incentive Details"/>
+        <Property name="text" type="java.lang.String" value="Leave &amp; No Pay Details"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JSeparator" name="jSeparator1">
@@ -67,21 +67,81 @@
         <Component class="javax.swing.JTable" name="jTable1">
           <Properties>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="10" rowCount="4">
+              <Table columnCount="20" rowCount="4">
                 <Column editable="false" title="EPF No" type="java.lang.Object"/>
                 <Column editable="false" title="Name" type="java.lang.Object"/>
                 <Column editable="false" title="Section" type="java.lang.Object"/>
                 <Column editable="false" title="Designation" type="java.lang.Object"/>
                 <Column editable="false" title="NIC" type="java.lang.Object"/>
-                <Column editable="false" title="Attendance Incentive" type="java.lang.Object"/>
-                <Column editable="false" title="Grading Incentive" type="java.lang.Object"/>
-                <Column editable="false" title="Production Incentive I" type="java.lang.Object"/>
-                <Column editable="false" title="Production Incentive II" type="java.lang.Object"/>
-                <Column editable="false" title="Total Incentive" type="java.lang.Object"/>
+                <Column editable="false" title="Leave Count" type="java.lang.Object"/>
+                <Column editable="false" title="Leave" type="java.lang.Object"/>
+                <Column editable="false" title="Leave Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Day" type="java.lang.Object"/>
+                <Column editable="false" title="Hour" type="java.lang.Object"/>
+                <Column editable="false" title="Total" type="java.lang.Object"/>
+                <Column editable="false" title="Day Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Hour Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Short Working Days" type="java.lang.Object"/>
+                <Column editable="false" title="Short Working Days Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Vacation Day" type="java.lang.Object"/>
+                <Column editable="false" title="Total Day" type="java.lang.Object"/>
+                <Column editable="false" title="Arreas" type="java.lang.Object"/>
+                <Column editable="false" title="Advance" type="java.lang.Object"/>
               </Table>
             </Property>
             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
               <TableColumnModel selectionModel="0">
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
                 <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                   <Title/>
                   <Editor/>

@@ -28,6 +28,9 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         model = new javax.swing.JTable();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
 
         setPreferredSize(new java.awt.Dimension(1542, 664));
 
@@ -43,7 +46,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                 {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Name", "Status", "nullsdvds", "nullsdvds", "nullsdvds", "dsv", "dsvd", "sdvdsv", "dsvdsv", "dsvdsvds", "sdvvds", "sdvsdv", "sdvsdvds", "dsvdsv", "sdvds", "sdvdsvdsv", "sdvdsv", "sdvdsvd", "sdvdsv", "dsvdsvd", "sdvdsv", "sdvdsvd"
+                "EPF No", "Name", "Section", "Designation", "NIC", "Basic", "BRA 01", "BRA 02", "Total Basic", "dsvdsvds", "sdvvds", "sdvsdv", "sdvsdvds", "dsvdsv", "sdvds", "sdvdsvdsv", "sdvdsv", "sdvdsvd", "sdvdsv", "dsvdsvd", "sdvdsv", "sdvdsvd"
             }
         ) {
             boolean[] canEdit = new boolean [] {
@@ -81,6 +84,30 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton1.setText("Days & Amount");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton4.setText("Over Time");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+
+        jButton5.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton5.setText("Leave & No Pay");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -96,7 +123,13 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jButton2)
                                 .addGap(18, 18, 18)
-                                .addComponent(jButton3)))
+                                .addComponent(jButton3)
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton1)
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton4)
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton5)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -112,13 +145,15 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton2)
-                    .addComponent(jButton3))
+                    .addComponent(jButton3)
+                    .addComponent(jButton1)
+                    .addComponent(jButton4)
+                    .addComponent(jButton5))
                 .addContainerGap(42, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void modelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_modelMouseClicked
-
 
     }//GEN-LAST:event_modelMouseClicked
 
@@ -129,6 +164,198 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         loadIncentivePanel();
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        loadDaysAmountPanel();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        loadOverTimePanel();
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        loadLeaveNoPayPanel();
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void loadLeaveNoPayPanel() {
+        try {
+            // 1️⃣ Create and show the loading panel
+            LoadingPanel loadingPanel = new LoadingPanel("Loading Leave & No Pay Panel...");
+
+            // 2️⃣ Get parent container (the main panel holder)
+            java.awt.Container parent = this.getParent();
+            if (parent != null) {
+                // Remove current panel and show loading
+                parent.remove(this);
+                parent.add(loadingPanel);
+                parent.revalidate();
+                parent.repaint();
+
+                // 3️⃣ Load LeaveNoPayPanel in background (non-blocking)
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        // Optional: small artificial delay to show loading screen
+                        Thread.sleep(500);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            // Remove loading panel
+                            parent.remove(loadingPanel);
+
+                            // Load the LeaveNoPayPanel
+                            NerdTech.DR_Fashion.Views.PayRollManage.LeaveNopay.LeaveNoPayPanel leaveNoPayPanel
+                                    = new NerdTech.DR_Fashion.Views.PayRollManage.LeaveNopay.LeaveNoPayPanel();
+
+                            // Add and refresh
+                            parent.add(leaveNoPayPanel);
+                            parent.revalidate();
+                            parent.repaint();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(parent,
+                                    "Error loading Leave & No Pay Panel: " + ex.getMessage(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+
+                // Execute background task
+                worker.execute();
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading Leave & No Pay Panel!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadOverTimePanel() {
+        try {
+            // 1️⃣ Create and show the loading panel
+            LoadingPanel loadingPanel = new LoadingPanel("Loading Over Time Panel...");
+
+            // 2️⃣ Get parent container (the main panel holder)
+            java.awt.Container parent = this.getParent();
+            if (parent != null) {
+                // Remove current panel and show loading
+                parent.remove(this);
+                parent.add(loadingPanel);
+                parent.revalidate();
+                parent.repaint();
+
+                // 3️⃣ Load OverTimePanel in background (non-blocking)
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        // Optional: small artificial delay to show loading screen
+                        Thread.sleep(500);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            // Remove loading panel
+                            parent.remove(loadingPanel);
+
+                            // Load the OverTimePanel
+                            NerdTech.DR_Fashion.Views.PayRollManage.OverTime.OverTimePanel overTimePanel
+                                    = new NerdTech.DR_Fashion.Views.PayRollManage.OverTime.OverTimePanel();
+
+                            // Add and refresh
+                            parent.add(overTimePanel);
+                            parent.revalidate();
+                            parent.repaint();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(parent,
+                                    "Error loading Over Time Panel: " + ex.getMessage(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+
+                // Execute background task
+                worker.execute();
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading Over Time Panel!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadDaysAmountPanel() {
+        try {
+            // 1️⃣ Create and show the loading panel
+            LoadingPanel loadingPanel = new LoadingPanel("Loading Days & Amount Panel...");
+
+            // 2️⃣ Get parent container (the main panel holder)
+            java.awt.Container parent = this.getParent();
+            if (parent != null) {
+                // Remove current panel and show loading
+                parent.remove(this);
+                parent.add(loadingPanel);
+                parent.revalidate();
+                parent.repaint();
+
+                // 3️⃣ Load Days_Amount_Panel in background (non-blocking)
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        // Optional: small artificial delay to show loading screen
+                        Thread.sleep(500);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            // Remove loading panel
+                            parent.remove(loadingPanel);
+
+                            // Load the Days_Amount_Panel
+                            NerdTech.DR_Fashion.Views.PayRollManage.Days_Amount_Panel.Days_Amount_Panel daysAmountPanel
+                                    = new NerdTech.DR_Fashion.Views.PayRollManage.Days_Amount_Panel.Days_Amount_Panel();
+
+                            // Add and refresh
+                            parent.add(daysAmountPanel);
+                            parent.revalidate();
+                            parent.repaint();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(parent,
+                                    "Error loading Days & Amount Panel: " + ex.getMessage(),
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+
+                // Execute background task
+                worker.execute();
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading Days & Amount Panel!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private void loadIncentivePanel() {
         try {
@@ -244,8 +471,11 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;

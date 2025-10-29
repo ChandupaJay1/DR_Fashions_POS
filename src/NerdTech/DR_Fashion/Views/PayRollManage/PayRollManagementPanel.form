@@ -33,6 +33,12 @@
                               <Component id="jButton2" min="-2" max="-2" attributes="0"/>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Component id="jButton3" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="jButton1" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="jButton4" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Component id="jButton5" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -55,6 +61,9 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="jButton2" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jButton3" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jButton1" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jButton4" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jButton5" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace pref="42" max="32767" attributes="0"/>
           </Group>
@@ -86,15 +95,15 @@
             </Property>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
               <Table columnCount="22" rowCount="4">
+                <Column editable="false" title="EPF No" type="java.lang.Object"/>
                 <Column editable="false" title="Name" type="java.lang.Object"/>
-                <Column editable="false" title="Status" type="java.lang.Object"/>
-                <Column editable="true" title="nullsdvds" type="java.lang.Object"/>
-                <Column editable="true" title="nullsdvds" type="java.lang.Object"/>
-                <Column editable="true" title="nullsdvds" type="java.lang.Object"/>
-                <Column editable="true" title="dsv" type="java.lang.Object"/>
-                <Column editable="true" title="dsvd" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="dsvdsv" type="java.lang.Object"/>
+                <Column editable="true" title="Section" type="java.lang.Object"/>
+                <Column editable="true" title="Designation" type="java.lang.Object"/>
+                <Column editable="true" title="NIC" type="java.lang.Object"/>
+                <Column editable="true" title="Basic" type="java.lang.Object"/>
+                <Column editable="true" title="BRA 01" type="java.lang.Object"/>
+                <Column editable="true" title="BRA 02" type="java.lang.Object"/>
+                <Column editable="true" title="Total Basic" type="java.lang.Object"/>
                 <Column editable="true" title="dsvdsvds" type="java.lang.Object"/>
                 <Column editable="true" title="sdvvds" type="java.lang.Object"/>
                 <Column editable="true" title="sdvsdv" type="java.lang.Object"/>
@@ -254,6 +263,39 @@
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton3ActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="jButton1">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="JetBrains Mono" size="24" style="1"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Days &amp; Amount"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton1ActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="jButton4">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="JetBrains Mono" size="24" style="1"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Over Time"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton4ActionPerformed"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JButton" name="jButton5">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="JetBrains Mono" size="24" style="1"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Leave &amp; No Pay"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton5ActionPerformed"/>
       </Events>
     </Component>
   </SubComponents>

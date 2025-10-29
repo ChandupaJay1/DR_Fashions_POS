@@ -29,8 +29,9 @@ public class IncentivePanel extends javax.swing.JPanel {
         });
     }
 
-    // Load employee data
+    // Load employee data only (no incentives initially)
     private void loadEmployeeData() {
+        System.out.println("\n=== Loading Employee Data ===");
         DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
         model.setRowCount(0); // Clear table
 
@@ -49,17 +50,27 @@ public class IncentivePanel extends javax.swing.JPanel {
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
 
+            int employeeCount = 0;
             while (rs.next()) {
+                String epfNo = rs.getString("EPF No");
+
                 Object[] row = {
-                    rs.getString("EPF No"),
+                    epfNo,
                     rs.getString("Name"),
                     rs.getString("Section"),
                     rs.getString("Designation"),
                     rs.getString("NIC"),
-                    "", "", "", "", "" // Incentive columns
+                    "", "", "", "", "" // Empty incentive columns
                 };
                 model.addRow(row);
+                employeeCount++;
+
+                // Load incentive data for this employee (if exists)
+                loadIncentiveForEmployee(epfNo, model.getRowCount() - 1);
             }
+
+            System.out.println("Total employees loaded: " + employeeCount);
+            System.out.println("=========================\n");
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading employee data: " + e.getMessage(),
@@ -68,20 +79,73 @@ public class IncentivePanel extends javax.swing.JPanel {
         }
     }
 
-    // Update incentives in table
-    // IncentivePanel.java එකේ
-    public void updateIncentiveInTable(String epfNo, String attendance, String grading, String prod1, String prod2, String total) {
-        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
-        for (int i = 0; i < model.getRowCount(); i++) {
-            if (model.getValueAt(i, 0).toString().equals(epfNo)) {
-                model.setValueAt(attendance, i, 5); // Attendance Incentive
-                model.setValueAt(grading, i, 6);    // Grading Incentive
-                model.setValueAt(prod1, i, 7);      // Production I
-                model.setValueAt(prod2, i, 8);      // Production II
-                model.setValueAt(total, i, 9);      // Total Incentive
-                break;
+    // Load incentive data for a specific employee
+    private void loadIncentiveForEmployee(String epfNo, int rowIndex) {
+        // වත්මන මාසයේ latest attendance record එක හොයාගන්නවා
+        String query = """
+            SELECT 
+                COALESCE(i.attendance_incentive, 0) AS 'Attendance',
+                COALESCE(i.grading_incentive, 0) AS 'Grading',
+                COALESCE(i.production1_incentive, 0) AS 'Production1',
+                COALESCE(i.production2_incentive, 0) AS 'Production2',
+                COALESCE(i.total_incentive, 0) AS 'Total'
+            FROM employee e
+            LEFT JOIN attendence a ON e.id = a.employee_id 
+                AND MONTH(a.attendance_date) = MONTH(CURRENT_DATE()) 
+                AND YEAR(a.attendance_date) = YEAR(CURRENT_DATE())
+            LEFT JOIN incentive i ON a.id = i.attendence_id
+            WHERE e.epf_no = ?
+            ORDER BY a.attendance_date DESC
+            LIMIT 1
+        """;
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, epfNo);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+
+                double attendance = rs.getDouble("Attendance");
+                double grading = rs.getDouble("Grading");
+                double production1 = rs.getDouble("Production1");
+                double production2 = rs.getDouble("Production2");
+                double total = rs.getDouble("Total");
+
+                // Debug output (optional - remove if too much output)
+                if (attendance > 0 || grading > 0 || production1 > 0 || production2 > 0) {
+                    System.out.println("📊 EPF " + epfNo + " - Att: " + attendance
+                            + ", Grad: " + grading
+                            + ", Prod1: " + production1
+                            + ", Prod2: " + production2
+                            + ", Total: " + total);
+                }
+
+                model.setValueAt(formatIncentive(attendance), rowIndex, 5);
+                model.setValueAt(formatIncentive(grading), rowIndex, 6);
+                model.setValueAt(formatIncentive(production1), rowIndex, 7);
+                model.setValueAt(formatIncentive(production2), rowIndex, 8);
+                model.setValueAt(formatIncentive(total), rowIndex, 9);
             }
+        } catch (Exception e) {
+            System.err.println("❌ Error loading incentive for EPF " + epfNo + ": " + e.getMessage());
         }
+    }
+
+    // Format incentive values (0.00 වෙනුවට "" පෙන්වන්න)
+    private String formatIncentive(double value) {
+        if (value == 0) {
+            return "";
+        }
+        return String.format("%.2f", value);
+    }
+
+    // Update incentives in table - now just refreshes the whole table
+    public void updateIncentiveInTable(String epfNo, String attendance, String grading, String prod1, String prod2, String total) {
+        System.out.println("\n=== 🔄 Refreshing Table After Save ===");
+        loadEmployeeData(); // Refresh entire table from database
+        System.out.println("✅ Table refreshed successfully!\n");
     }
 
     @SuppressWarnings("unchecked")
