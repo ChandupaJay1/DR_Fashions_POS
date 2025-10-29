@@ -1,5 +1,6 @@
 package NerdTech.DR_Fashion.Views.PayRollManage;
 
+import NerdTech.DR_Fashion.Views.PayRollManage.NewUser.NewUserPanel;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
 import javax.swing.*;
@@ -17,6 +18,42 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         setupScrollBars();
         initializeDatabaseConnection();
         loadPayrollData();
+    }
+
+    private void openEPFDFrame(int selectedRow) {
+        try {
+            // Get selected row data
+            String epfNo = model.getValueAt(selectedRow, 0).toString();
+            String name = model.getValueAt(selectedRow, 1).toString();
+
+            // Get existing values from table
+            String totalForEPF = model.getValueAt(selectedRow, 44) != null
+                    ? model.getValueAt(selectedRow, 44).toString() : "0";
+            String epf12 = model.getValueAt(selectedRow, 45) != null
+                    ? model.getValueAt(selectedRow, 45).toString() : "0";
+            String etf3 = model.getValueAt(selectedRow, 46) != null
+                    ? model.getValueAt(selectedRow, 46).toString() : "0";
+            String epf8 = model.getValueAt(selectedRow, 47) != null
+                    ? model.getValueAt(selectedRow, 47).toString() : "0";
+            String totalEPFETF = model.getValueAt(selectedRow, 48) != null
+                    ? model.getValueAt(selectedRow, 48).toString() : "0";
+            String grossSalary = model.getValueAt(selectedRow, 49) != null
+                    ? model.getValueAt(selectedRow, 49).toString() : "0";
+            String netSalary = model.getValueAt(selectedRow, 50) != null
+                    ? model.getValueAt(selectedRow, 50).toString() : "0";
+
+            // Open EPF Frame with data
+            AddEPFDFrame epfFrame = new AddEPFDFrame(null, true, epfNo, name,
+                    totalForEPF, epf12, etf3, epf8, totalEPFETF, grossSalary, netSalary);
+            epfFrame.setLocationRelativeTo(this);
+            epfFrame.setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error opening EPF details: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void initializeDatabaseConnection() {
@@ -40,85 +77,83 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         }
 
         try {
-            // Simple query එකක් අත්හදා බලමු පළමුව
+            // Modified query to avoid duplicates - use DISTINCT and proper joins
             String query = """
-                SELECT 
-                    e.epf_no AS 'EPF No',
-                    e.name_with_initial AS 'Name',
-                    s.section_name AS 'Section',
-                    d.title AS 'Designation',
-                    e.nic AS 'NIC',
-                    COALESCE(sal.basic_salary, '0') AS 'Basic Salary',
-                    
-                    -- Incentive Columns
-                    COALESCE(inc.attendance_incentive, '0') AS 'Attendance Incentive',
-                    COALESCE(inc.grading_incentive, '0') AS 'Grading Incentive',
-                    COALESCE(inc.production1_incentive, '0') AS 'Production Incentive I',
-                    COALESCE(inc.production2_incentive, '0') AS 'Production Incentive II',
-                    COALESCE(inc.total_incentive, '0') AS 'Total Incentive',
-                    
-                    -- Day & Amount Columns
-                    COALESCE(day.working_day, '0') AS 'Working Day',
-                    COALESCE(day.sunday, '0') AS 'Sunday',
-                    COALESCE(day.poya_day, '0') AS 'Poya Day',
-                    COALESCE(day.holiday, '0') AS 'Holiday',
-                    COALESCE(day.total_day, '0') AS 'Total Day',
-                    COALESCE(day.working_day_amount, '0') AS 'Working Day Amount',
-                    COALESCE(day.sunday_amount, '0') AS 'Sunday Amount',
-                    COALESCE(day.poya_day_amount, '0') AS 'Poya Day Amount',
-                    COALESCE(day.holiday_amount, '0') AS 'Holiday Amount',
-                    COALESCE(day.total_day_amount, '0') AS 'Total Day Amount',
-                    
-                    -- Overtime Columns
-                    COALESCE(ot.normal, '0') AS 'Normal',
-                    COALESCE(ot.extra, '0') AS 'Extra',
-                    COALESCE(ot.trible, '0') AS 'Trible',
-                    COALESCE(ot.total, '0') AS 'Total',
-                    COALESCE(ot.normal_amount, '0') AS 'Normal Amount',
-                    COALESCE(ot.extra_amount, '0') AS 'Extra Amount',
-                    COALESCE(ot.trible_amount, '0') AS 'Trible Amount',
-                    COALESCE(ot.total_amount, '0') AS 'Total Amount',
-                    
-                    -- Leave & No Pay Columns (backticks භාවිතා කරන්න reserved keyword සඳහා)
-                    COALESCE(lv.leave_count, '0') AS 'Leave Count',
-                    COALESCE(lv.leave, '0') AS 'Leave',
-                    COALESCE(lv.leave_amount, '0') AS 'Leave Amount',
-                    COALESCE(lv.day, '0') AS 'Day',
-                    COALESCE(lv.hour, '0') AS 'Hour',
-                    COALESCE(lv.total, '0') AS 'Total',
-                    COALESCE(lv.day_amount, '0') AS 'Day Amount',
-                    COALESCE(lv.hour_amount, '0') AS 'Hour Amount',
-                    COALESCE(lv.total_amount, '0') AS 'Total Amount',
-                    COALESCE(lv.short_working_day, '0') AS 'Short Working Days',
-                    COALESCE(lv.short_working_day_amount, '0') AS 'Short Working Days Amount',
-                    COALESCE(lv.vacation_day, '0') AS 'Vacation Day',
-                    COALESCE(lv.total_day, '0') AS 'Total Day',
-                    COALESCE(lv.arreas, '0') AS 'Arreas',
-                    COALESCE(lv.advance, '0') AS 'Advance',
-                    
-                    -- EPF/ETF Columns
-                    COALESCE(sal.total_basic, '0') AS 'Total For EPF',
-                    '0' AS 'EPF 12%',
-                    '0' AS 'ETF 3%',
-                    '0' AS 'EPF 8%',
-                    '0' AS 'Total EPF/ETF',
-                    
-                    -- Salary Columns
-                    '0' AS 'Gross Salary',
-                    '0' AS 'Net Salary'
-                    
-                FROM employee e
-                LEFT JOIN section s ON e.section_id = s.id
-                LEFT JOIN designation d ON e.designation_id = d.id
-                LEFT JOIN salary sal ON e.id = sal.employee_id
-                LEFT JOIN attendence a ON e.id = a.employee_id 
-                LEFT JOIN incentive inc ON a.id = inc.attendence_id
-                LEFT JOIN day ON a.id = day.attendence_id
-                LEFT JOIN overtime ot ON a.id = ot.attendence_id
-                LEFT JOIN `leave` lv ON a.id = lv.attendence_id  -- backticks භාවිතා කරන්න
-                WHERE e.status = 'active'
-                ORDER BY e.epf_no
-                """;
+            SELECT DISTINCT
+                e.epf_no AS 'EPF No',
+                e.name_with_initial AS 'Name',
+                s.section_name AS 'Section',
+                d.title AS 'Designation',
+                e.nic AS 'NIC',
+                COALESCE(sal.basic_salary, '0') AS 'Basic Salary',
+                
+                -- Incentive Columns (get latest incentive)
+                COALESCE((SELECT attendance_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Attendance Incentive',
+                COALESCE((SELECT grading_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Grading Incentive',
+                COALESCE((SELECT production1_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive I',
+                COALESCE((SELECT production2_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive II',
+                COALESCE((SELECT total_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Incentive',
+                
+                -- Day & Amount Columns (get latest day)
+                COALESCE((SELECT working_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day',
+                COALESCE((SELECT sunday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday',
+                COALESCE((SELECT poya_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day',
+                COALESCE((SELECT holiday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday',
+                COALESCE((SELECT total_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
+                COALESCE((SELECT working_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day Amount',
+                COALESCE((SELECT sunday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday Amount',
+                COALESCE((SELECT poya_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day Amount',
+                COALESCE((SELECT holiday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday Amount',
+                COALESCE((SELECT total_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day Amount',
+                
+                -- Overtime Columns (get latest overtime)
+                COALESCE((SELECT normal FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal',
+                COALESCE((SELECT extra FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra',
+                COALESCE((SELECT trible FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible',
+                COALESCE((SELECT total FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
+                COALESCE((SELECT normal_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal Amount',
+                COALESCE((SELECT extra_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra Amount',
+                COALESCE((SELECT trible_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible Amount',
+                COALESCE((SELECT total_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
+                
+                -- Leave & No Pay Columns (get latest leave)
+                COALESCE((SELECT leave_count FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Count',
+                COALESCE((SELECT `leave` FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave',
+                COALESCE((SELECT leave_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Amount',
+                COALESCE((SELECT day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day',
+                COALESCE((SELECT hour FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour',
+                COALESCE((SELECT total FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
+                COALESCE((SELECT day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day Amount',
+                COALESCE((SELECT hour_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour Amount',
+                COALESCE((SELECT total_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
+                COALESCE((SELECT short_working_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days',
+                COALESCE((SELECT short_working_day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days Amount',
+                COALESCE((SELECT vacation_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Vacation Day',
+                COALESCE((SELECT total_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
+                COALESCE((SELECT arreas FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Arreas',
+                COALESCE((SELECT advance FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Advance',
+                
+                -- EPF/ETF Columns from epf table
+                COALESCE(epf.total_efp, '0') AS 'Total For EPF',
+                COALESCE(epf.epf_12, '0') AS 'EPF 12%',
+                COALESCE(epf.epf_3, '0') AS 'ETF 3%',
+                COALESCE(epf.epf_8, '0') AS 'EPF 8%',
+                COALESCE(epf.`total_epf/etf`, '0') AS 'Total EPF/ETF',
+                
+                -- Salary Columns from epf table
+                COALESCE(epf.gross_salary, '0') AS 'Gross Salary',
+                COALESCE(epf.net_salary, '0') AS 'Net Salary'
+                
+            FROM employee e
+            LEFT JOIN section s ON e.section_id = s.id
+            LEFT JOIN designation d ON e.designation_id = d.id
+            LEFT JOIN salary sal ON e.id = sal.employee_id
+            LEFT JOIN attendence a ON e.id = a.employee_id 
+                AND a.attendance_date = (SELECT MAX(attendance_date) FROM attendence WHERE employee_id = e.id)
+            LEFT JOIN epf ON e.id = epf.id
+            WHERE e.status = 'active'
+            ORDER BY e.epf_no
+            """;
 
             System.out.println("Executing query..."); // Debug message
 
@@ -287,7 +322,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -391,6 +426,12 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void modelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_modelMouseClicked
+        if (evt.getClickCount() == 2) { // Double click check
+            int selectedRow = model.getSelectedRow();
+            if (selectedRow != -1) {
+                openEPFDFrame(selectedRow);
+            }
+        }
 
     }//GEN-LAST:event_modelMouseClicked
 

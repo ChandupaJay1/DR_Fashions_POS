@@ -97,55 +97,55 @@
               <Table columnCount="51" rowCount="4">
                 <Column editable="false" title="EPF No" type="java.lang.Object"/>
                 <Column editable="false" title="Name" type="java.lang.Object"/>
-                <Column editable="true" title="Section" type="java.lang.Object"/>
-                <Column editable="true" title="Designation" type="java.lang.Object"/>
-                <Column editable="true" title="NIC" type="java.lang.Object"/>
-                <Column editable="true" title="Basic Salary" type="java.lang.Object"/>
-                <Column editable="true" title="Attendance Incentive" type="java.lang.Object"/>
-                <Column editable="true" title="Grading Incentive" type="java.lang.Object"/>
-                <Column editable="true" title="Production Incentive I" type="java.lang.Object"/>
-                <Column editable="true" title="Production Incentive II" type="java.lang.Object"/>
-                <Column editable="true" title="Total Incentive" type="java.lang.Object"/>
-                <Column editable="true" title="Working Day" type="java.lang.Object"/>
-                <Column editable="true" title="Sunday" type="java.lang.Object"/>
-                <Column editable="true" title="Poya Day" type="java.lang.Object"/>
-                <Column editable="true" title="Holiday" type="java.lang.Object"/>
-                <Column editable="true" title="Total Day" type="java.lang.Object"/>
-                <Column editable="true" title="Working Day Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Sunday Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Poya Day Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Holiday Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Total Day Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Section" type="java.lang.Object"/>
+                <Column editable="false" title="Designation" type="java.lang.Object"/>
+                <Column editable="false" title="NIC" type="java.lang.Object"/>
+                <Column editable="false" title="Basic Salary" type="java.lang.Object"/>
+                <Column editable="false" title="Attendance Incentive" type="java.lang.Object"/>
+                <Column editable="false" title="Grading Incentive" type="java.lang.Object"/>
+                <Column editable="false" title="Production Incentive I" type="java.lang.Object"/>
+                <Column editable="false" title="Production Incentive II" type="java.lang.Object"/>
+                <Column editable="false" title="Total Incentive" type="java.lang.Object"/>
+                <Column editable="false" title="Working Day" type="java.lang.Object"/>
+                <Column editable="false" title="Sunday" type="java.lang.Object"/>
+                <Column editable="false" title="Poya Day" type="java.lang.Object"/>
+                <Column editable="false" title="Holiday" type="java.lang.Object"/>
+                <Column editable="false" title="Total Day" type="java.lang.Object"/>
+                <Column editable="false" title="Working Day Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Sunday Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Poya Day Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Holiday Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Total Day Amount" type="java.lang.Object"/>
                 <Column editable="true" title="Normal" type="java.lang.Object"/>
-                <Column editable="true" title="Extra" type="java.lang.Object"/>
-                <Column editable="true" title="Trible" type="java.lang.Object"/>
-                <Column editable="true" title="Total" type="java.lang.Object"/>
-                <Column editable="true" title="Normal Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Extra Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Trible Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Leave" type="java.lang.Object"/>
-                <Column editable="true" title="Leave Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Day" type="java.lang.Object"/>
-                <Column editable="true" title="Hour" type="java.lang.Object"/>
-                <Column editable="true" title="Total" type="java.lang.Object"/>
-                <Column editable="true" title="Day Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Hour Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
-                <Column editable="true" title="Short Working Days" type="java.lang.Object"/>
-                <Column editable="true" title="Short Working Days Amount " type="java.lang.Object"/>
-                <Column editable="true" title="Vacation Day" type="java.lang.Object"/>
-                <Column editable="true" title="Total Day" type="java.lang.Object"/>
-                <Column editable="true" title="Arreas" type="java.lang.Object"/>
-                <Column editable="true" title="Advance" type="java.lang.Object"/>
-                <Column editable="true" title="Total For EPF" type="java.lang.Object"/>
-                <Column editable="true" title="EPF 12% " type="java.lang.Object"/>
-                <Column editable="true" title="ETF 3%" type="java.lang.Object"/>
-                <Column editable="true" title="EPF 8%" type="java.lang.Object"/>
-                <Column editable="true" title="Total EPF/ETF" type="java.lang.Object"/>
-                <Column editable="true" title="Gross Salary" type="java.lang.Object"/>
-                <Column editable="true" title="Net Salary" type="java.lang.Object"/>
+                <Column editable="false" title="Extra" type="java.lang.Object"/>
+                <Column editable="false" title="Trible" type="java.lang.Object"/>
+                <Column editable="false" title="Total" type="java.lang.Object"/>
+                <Column editable="false" title="Normal Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Extra Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Trible Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Leave" type="java.lang.Object"/>
+                <Column editable="false" title="Leave Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Day" type="java.lang.Object"/>
+                <Column editable="false" title="Hour" type="java.lang.Object"/>
+                <Column editable="false" title="Total" type="java.lang.Object"/>
+                <Column editable="false" title="Day Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Hour Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="false" title="Short Working Days" type="java.lang.Object"/>
+                <Column editable="false" title="Short Working Days Amount " type="java.lang.Object"/>
+                <Column editable="false" title="Vacation Day" type="java.lang.Object"/>
+                <Column editable="false" title="Total Day" type="java.lang.Object"/>
+                <Column editable="false" title="Arreas" type="java.lang.Object"/>
+                <Column editable="false" title="Advance" type="java.lang.Object"/>
+                <Column editable="false" title="Total For EPF" type="java.lang.Object"/>
+                <Column editable="false" title="EPF 12% " type="java.lang.Object"/>
+                <Column editable="false" title="ETF 3%" type="java.lang.Object"/>
+                <Column editable="false" title="EPF 8%" type="java.lang.Object"/>
+                <Column editable="false" title="Total EPF/ETF" type="java.lang.Object"/>
+                <Column editable="false" title="Gross Salary" type="java.lang.Object"/>
+                <Column editable="false" title="Net Salary" type="java.lang.Object"/>
               </Table>
             </Property>
             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">

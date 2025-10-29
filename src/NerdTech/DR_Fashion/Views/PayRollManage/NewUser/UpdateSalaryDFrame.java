@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
  */
-package NerdTech.DR_Fashion.Views.PayRollManage;
+package NerdTech.DR_Fashion.Views.PayRollManage.NewUser;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import java.sql.*;

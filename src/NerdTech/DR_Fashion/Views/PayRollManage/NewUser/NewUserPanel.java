@@ -1,4 +1,4 @@
-package NerdTech.DR_Fashion.Views.PayRollManage;
+package NerdTech.DR_Fashion.Views.PayRollManage.NewUser;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import java.sql.*;
