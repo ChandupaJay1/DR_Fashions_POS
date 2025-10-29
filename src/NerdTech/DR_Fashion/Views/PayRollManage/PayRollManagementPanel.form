@@ -91,32 +91,61 @@
         <Component class="javax.swing.JTable" name="model">
           <Properties>
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-              <Font name="JetBrains Mono" size="18" style="0"/>
+              <Font name="JetBrains Mono" size="12" style="0"/>
             </Property>
             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="22" rowCount="4">
+              <Table columnCount="51" rowCount="4">
                 <Column editable="false" title="EPF No" type="java.lang.Object"/>
                 <Column editable="false" title="Name" type="java.lang.Object"/>
                 <Column editable="true" title="Section" type="java.lang.Object"/>
                 <Column editable="true" title="Designation" type="java.lang.Object"/>
                 <Column editable="true" title="NIC" type="java.lang.Object"/>
-                <Column editable="true" title="Basic" type="java.lang.Object"/>
-                <Column editable="true" title="BRA 01" type="java.lang.Object"/>
-                <Column editable="true" title="BRA 02" type="java.lang.Object"/>
-                <Column editable="true" title="Total Basic" type="java.lang.Object"/>
-                <Column editable="true" title="dsvdsvds" type="java.lang.Object"/>
-                <Column editable="true" title="sdvvds" type="java.lang.Object"/>
-                <Column editable="true" title="sdvsdv" type="java.lang.Object"/>
-                <Column editable="true" title="sdvsdvds" type="java.lang.Object"/>
-                <Column editable="true" title="dsvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="sdvds" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsvd" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="dsvdsvd" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsv" type="java.lang.Object"/>
-                <Column editable="true" title="sdvdsvd" type="java.lang.Object"/>
+                <Column editable="true" title="Basic Salary" type="java.lang.Object"/>
+                <Column editable="true" title="Attendance Incentive" type="java.lang.Object"/>
+                <Column editable="true" title="Grading Incentive" type="java.lang.Object"/>
+                <Column editable="true" title="Production Incentive I" type="java.lang.Object"/>
+                <Column editable="true" title="Production Incentive II" type="java.lang.Object"/>
+                <Column editable="true" title="Total Incentive" type="java.lang.Object"/>
+                <Column editable="true" title="Working Day" type="java.lang.Object"/>
+                <Column editable="true" title="Sunday" type="java.lang.Object"/>
+                <Column editable="true" title="Poya Day" type="java.lang.Object"/>
+                <Column editable="true" title="Holiday" type="java.lang.Object"/>
+                <Column editable="true" title="Total Day" type="java.lang.Object"/>
+                <Column editable="true" title="Working Day Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Sunday Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Poya Day Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Holiday Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Total Day Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Normal" type="java.lang.Object"/>
+                <Column editable="true" title="Extra" type="java.lang.Object"/>
+                <Column editable="true" title="Trible" type="java.lang.Object"/>
+                <Column editable="true" title="Total" type="java.lang.Object"/>
+                <Column editable="true" title="Normal Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Extra Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Trible Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Leave" type="java.lang.Object"/>
+                <Column editable="true" title="Leave Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Day" type="java.lang.Object"/>
+                <Column editable="true" title="Hour" type="java.lang.Object"/>
+                <Column editable="true" title="Total" type="java.lang.Object"/>
+                <Column editable="true" title="Day Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Hour Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Total Amount" type="java.lang.Object"/>
+                <Column editable="true" title="Short Working Days" type="java.lang.Object"/>
+                <Column editable="true" title="Short Working Days Amount " type="java.lang.Object"/>
+                <Column editable="true" title="Vacation Day" type="java.lang.Object"/>
+                <Column editable="true" title="Total Day" type="java.lang.Object"/>
+                <Column editable="true" title="Arreas" type="java.lang.Object"/>
+                <Column editable="true" title="Advance" type="java.lang.Object"/>
+                <Column editable="true" title="Total For EPF" type="java.lang.Object"/>
+                <Column editable="true" title="EPF 12% " type="java.lang.Object"/>
+                <Column editable="true" title="ETF 3%" type="java.lang.Object"/>
+                <Column editable="true" title="EPF 8%" type="java.lang.Object"/>
+                <Column editable="true" title="Total EPF/ETF" type="java.lang.Object"/>
+                <Column editable="true" title="Gross Salary" type="java.lang.Object"/>
+                <Column editable="true" title="Net Salary" type="java.lang.Object"/>
               </Table>
             </Property>
             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
@@ -127,6 +156,151 @@
                   <Renderer/>
                 </Column>
                 <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="false">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                  <Title/>
+                  <Editor/>
+                  <Renderer/>
+                </Column>
+                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                   <Title/>
                   <Editor/>
                   <Renderer/>

@@ -1,20 +1,257 @@
 package NerdTech.DR_Fashion.Views.PayRollManage;
 
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.sql.*;
+import java.util.Vector;
 
 public class PayRollManagementPanel extends javax.swing.JPanel {
 
+    private Connection connection;
+    private DefaultTableModel tableModel;
+
     public PayRollManagementPanel() {
         initComponents();
-        setupScrollBars(); // මේක add කරන්න
+        setupScrollBars();
+        initializeDatabaseConnection();
+        loadPayrollData();
+    }
+
+    private void initializeDatabaseConnection() {
+        try {
+            // ඔබේ existing database connection එක භාවිතා කරන්න
+            connection = DatabaseConnection.getConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Database Connection Error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadPayrollData() {
+        if (connection == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Database connection is not available",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            // Simple query එකක් අත්හදා බලමු පළමුව
+            String query = """
+                SELECT 
+                    e.epf_no AS 'EPF No',
+                    e.name_with_initial AS 'Name',
+                    s.section_name AS 'Section',
+                    d.title AS 'Designation',
+                    e.nic AS 'NIC',
+                    COALESCE(sal.basic_salary, '0') AS 'Basic Salary',
+                    
+                    -- Incentive Columns
+                    COALESCE(inc.attendance_incentive, '0') AS 'Attendance Incentive',
+                    COALESCE(inc.grading_incentive, '0') AS 'Grading Incentive',
+                    COALESCE(inc.production1_incentive, '0') AS 'Production Incentive I',
+                    COALESCE(inc.production2_incentive, '0') AS 'Production Incentive II',
+                    COALESCE(inc.total_incentive, '0') AS 'Total Incentive',
+                    
+                    -- Day & Amount Columns
+                    COALESCE(day.working_day, '0') AS 'Working Day',
+                    COALESCE(day.sunday, '0') AS 'Sunday',
+                    COALESCE(day.poya_day, '0') AS 'Poya Day',
+                    COALESCE(day.holiday, '0') AS 'Holiday',
+                    COALESCE(day.total_day, '0') AS 'Total Day',
+                    COALESCE(day.working_day_amount, '0') AS 'Working Day Amount',
+                    COALESCE(day.sunday_amount, '0') AS 'Sunday Amount',
+                    COALESCE(day.poya_day_amount, '0') AS 'Poya Day Amount',
+                    COALESCE(day.holiday_amount, '0') AS 'Holiday Amount',
+                    COALESCE(day.total_day_amount, '0') AS 'Total Day Amount',
+                    
+                    -- Overtime Columns
+                    COALESCE(ot.normal, '0') AS 'Normal',
+                    COALESCE(ot.extra, '0') AS 'Extra',
+                    COALESCE(ot.trible, '0') AS 'Trible',
+                    COALESCE(ot.total, '0') AS 'Total',
+                    COALESCE(ot.normal_amount, '0') AS 'Normal Amount',
+                    COALESCE(ot.extra_amount, '0') AS 'Extra Amount',
+                    COALESCE(ot.trible_amount, '0') AS 'Trible Amount',
+                    COALESCE(ot.total_amount, '0') AS 'Total Amount',
+                    
+                    -- Leave & No Pay Columns (backticks භාවිතා කරන්න reserved keyword සඳහා)
+                    COALESCE(lv.leave_count, '0') AS 'Leave Count',
+                    COALESCE(lv.leave, '0') AS 'Leave',
+                    COALESCE(lv.leave_amount, '0') AS 'Leave Amount',
+                    COALESCE(lv.day, '0') AS 'Day',
+                    COALESCE(lv.hour, '0') AS 'Hour',
+                    COALESCE(lv.total, '0') AS 'Total',
+                    COALESCE(lv.day_amount, '0') AS 'Day Amount',
+                    COALESCE(lv.hour_amount, '0') AS 'Hour Amount',
+                    COALESCE(lv.total_amount, '0') AS 'Total Amount',
+                    COALESCE(lv.short_working_day, '0') AS 'Short Working Days',
+                    COALESCE(lv.short_working_day_amount, '0') AS 'Short Working Days Amount',
+                    COALESCE(lv.vacation_day, '0') AS 'Vacation Day',
+                    COALESCE(lv.total_day, '0') AS 'Total Day',
+                    COALESCE(lv.arreas, '0') AS 'Arreas',
+                    COALESCE(lv.advance, '0') AS 'Advance',
+                    
+                    -- EPF/ETF Columns
+                    COALESCE(sal.total_basic, '0') AS 'Total For EPF',
+                    '0' AS 'EPF 12%',
+                    '0' AS 'ETF 3%',
+                    '0' AS 'EPF 8%',
+                    '0' AS 'Total EPF/ETF',
+                    
+                    -- Salary Columns
+                    '0' AS 'Gross Salary',
+                    '0' AS 'Net Salary'
+                    
+                FROM employee e
+                LEFT JOIN section s ON e.section_id = s.id
+                LEFT JOIN designation d ON e.designation_id = d.id
+                LEFT JOIN salary sal ON e.id = sal.employee_id
+                LEFT JOIN attendence a ON e.id = a.employee_id 
+                LEFT JOIN incentive inc ON a.id = inc.attendence_id
+                LEFT JOIN day ON a.id = day.attendence_id
+                LEFT JOIN overtime ot ON a.id = ot.attendence_id
+                LEFT JOIN `leave` lv ON a.id = lv.attendence_id  -- backticks භාවිතා කරන්න
+                WHERE e.status = 'active'
+                ORDER BY e.epf_no
+                """;
+
+            System.out.println("Executing query..."); // Debug message
+
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+
+            // Table model එක clear කරන්න
+            tableModel = (DefaultTableModel) model.getModel();
+            tableModel.setRowCount(0);
+
+            // Data rows add කරන්න
+            int rowCount = 0;
+            while (rs.next()) {
+                Vector<Object> row = new Vector<>();
+                for (int i = 1; i <= 51; i++) {
+                    Object value = rs.getObject(i);
+                    row.add(value != null ? value : "0");
+                }
+                tableModel.addRow(row);
+                rowCount++;
+            }
+
+            // Column widths set කරන්න
+            setColumnWidths();
+
+            rs.close();
+            stmt.close();
+
+            System.out.println("Loaded " + rowCount + " rows"); // Debug message
+
+            if (rowCount > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Payroll data loaded successfully! " + rowCount + " records found.",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "No payroll data found for active employees.",
+                        "Info", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading payroll data: " + e.getMessage()
+                    + "\nPlease check if all required tables exist in the database.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+
+            // Fallback: අත්හදා බලන්න සරල query එකක්
+            loadBasicEmployeeData();
+        }
+    }
+
+    // Fallback method: සරල employee data load කිරීමට
+    private void loadBasicEmployeeData() {
+        try {
+            String simpleQuery = """
+                SELECT 
+                    e.epf_no AS 'EPF No',
+                    e.name_with_initial AS 'Name',
+                    s.section_name AS 'Section',
+                    d.title AS 'Designation',
+                    e.nic AS 'NIC',
+                    COALESCE(sal.basic_salary, '0') AS 'Basic Salary'
+                FROM employee e
+                LEFT JOIN section s ON e.section_id = s.id
+                LEFT JOIN designation d ON e.designation_id = d.id
+                LEFT JOIN salary sal ON e.id = sal.employee_id
+                WHERE e.status = 'active'
+                ORDER BY e.epf_no
+                LIMIT 50
+                """;
+
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(simpleQuery);
+
+            tableModel = (DefaultTableModel) model.getModel();
+            tableModel.setRowCount(0);
+
+            // Only add basic columns
+            while (rs.next()) {
+                Vector<Object> row = new Vector<>();
+                row.add(rs.getObject("EPF No"));
+                row.add(rs.getObject("Name"));
+                row.add(rs.getObject("Section"));
+                row.add(rs.getObject("Designation"));
+                row.add(rs.getObject("NIC"));
+                row.add(rs.getObject("Basic Salary"));
+
+                // අනෙක් columns සඳහා empty values add කරන්න
+                for (int i = 6; i < 51; i++) {
+                    row.add("0");
+                }
+
+                tableModel.addRow(row);
+            }
+
+            rs.close();
+            stmt.close();
+
+            JOptionPane.showMessageDialog(this,
+                    "Basic employee data loaded. Some payroll details may be missing.",
+                    "Info", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading basic employee data: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void setColumnWidths() {
+        try {
+            // Column widths set කරන්න
+            model.getColumnModel().getColumn(0).setPreferredWidth(80);  // EPF No
+            model.getColumnModel().getColumn(1).setPreferredWidth(150); // Name
+            model.getColumnModel().getColumn(2).setPreferredWidth(100); // Section
+            model.getColumnModel().getColumn(3).setPreferredWidth(120); // Designation
+            model.getColumnModel().getColumn(4).setPreferredWidth(120); // NIC
+            model.getColumnModel().getColumn(5).setPreferredWidth(100); // Basic Salary
+
+            // අනෙක් columns වලට අවශ්‍ය widths set කරන්න
+            for (int i = 6; i < model.getColumnCount(); i++) {
+                model.getColumnModel().getColumn(i).setPreferredWidth(90);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupScrollBars() {
         jScrollPane1.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         jScrollPane1.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-
-        // Table එකේ auto resize off කරන්න
         model.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     }
 
@@ -37,20 +274,20 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("PayRoll Management");
 
-        model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        model.setFont(new java.awt.Font("JetBrains Mono", 0, 12)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "EPF No", "Name", "Section", "Designation", "NIC", "Basic", "BRA 01", "BRA 02", "Total Basic", "dsvdsvds", "sdvvds", "sdvsdv", "sdvsdvds", "dsvdsv", "sdvds", "sdvdsvdsv", "sdvdsv", "sdvdsvd", "sdvdsv", "dsvdsvd", "sdvdsv", "sdvdsvd"
+                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Attendance Incentive", "Grading Incentive", "Production Incentive I", "Production Incentive II", "Total Incentive", "Working Day", "Sunday", "Poya Day", "Holiday", "Total Day", "Working Day Amount", "Sunday Amount", "Poya Day Amount", "Holiday Amount", "Total Day Amount", "Normal", "Extra", "Trible", "Total", "Normal Amount", "Extra Amount", "Trible Amount", "Total Amount", "Total Amount", "Leave", "Leave Amount", "Day", "Hour", "Total", "Day Amount", "Hour Amount", "Total Amount", "Short Working Days", "Short Working Days Amount ", "Vacation Day", "Total Day", "Arreas", "Advance", "Total For EPF", "EPF 12% ", "ETF 3%", "EPF 8%", "Total EPF/ETF", "Gross Salary", "Net Salary"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true
+                false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
