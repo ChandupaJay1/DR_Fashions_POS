@@ -3,6 +3,19 @@ package NerdTech.DR_Fashion.Views.PayRollManage;
 import NerdTech.DR_Fashion.Views.PayRollManage.NewUser.NewUserPanel;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.LoadingPanel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.sql.*;
@@ -303,6 +316,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
+        jButton6 = new javax.swing.JButton();
 
         setPreferredSize(new java.awt.Dimension(1542, 664));
 
@@ -380,6 +394,14 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton6.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton6.setText("Print");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -401,7 +423,9 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                                 .addGap(18, 18, 18)
                                 .addComponent(jButton4)
                                 .addGap(18, 18, 18)
-                                .addComponent(jButton5)))
+                                .addComponent(jButton5)
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton6)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -420,7 +444,8 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
                     .addComponent(jButton3)
                     .addComponent(jButton1)
                     .addComponent(jButton4)
-                    .addComponent(jButton5))
+                    .addComponent(jButton5)
+                    .addComponent(jButton6))
                 .addContainerGap(42, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -454,6 +479,915 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         loadLeaveNoPayPanel();
     }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        printPayroll();
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void printPayroll() {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an employee to print payroll",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Get selected employee data
+            String epfNo = model.getValueAt(selectedRow, 0).toString();
+            String name = model.getValueAt(selectedRow, 1).toString();
+            String section = model.getValueAt(selectedRow, 2).toString();
+            String designation = model.getValueAt(selectedRow, 3).toString();
+            String nic = model.getValueAt(selectedRow, 4).toString();
+
+            // Earnings
+            String basicSalary = formatCurrency(model.getValueAt(selectedRow, 5).toString());
+            String gradingIncentive = formatCurrency(model.getValueAt(selectedRow, 7).toString());
+            String sundayAmount = formatCurrency(model.getValueAt(selectedRow, 17).toString());
+            String holidayAmount = formatCurrency(model.getValueAt(selectedRow, 19).toString());
+            String poyadayAmount = formatCurrency(model.getValueAt(selectedRow, 18).toString());
+            String overtimeAmount = formatCurrency(model.getValueAt(selectedRow, 28).toString());
+            String attendanceIncentive = formatCurrency(model.getValueAt(selectedRow, 6).toString());
+            String productionIncentives = formatCurrency(model.getValueAt(selectedRow, 8).toString());
+            String arrears = formatCurrency(model.getValueAt(selectedRow, 42).toString());
+
+            // Deductions
+            String epf12 = formatCurrency(model.getValueAt(selectedRow, 45).toString());
+            String etf3 = formatCurrency(model.getValueAt(selectedRow, 46).toString());
+            String epf8 = formatCurrency(model.getValueAt(selectedRow, 47).toString());
+            String advance = formatCurrency(model.getValueAt(selectedRow, 43).toString());
+            String shortWorkingDays = formatCurrency(model.getValueAt(selectedRow, 38).toString());
+            String noPayDays = "0.00";
+            String noPayHours = "0.00";
+
+            // Totals
+            String grossSalary = formatCurrency(model.getValueAt(selectedRow, 49).toString());
+            String totalForEPF = formatCurrency(model.getValueAt(selectedRow, 44).toString());
+            String netSalary = formatCurrency(model.getValueAt(selectedRow, 50).toString());
+
+            // Data section
+            String daysWorked = formatNumber(model.getValueAt(selectedRow, 11).toString());
+            String leave = formatNumber(model.getValueAt(selectedRow, 30).toString());
+            String sundayDays = formatNumber(model.getValueAt(selectedRow, 12).toString());
+            String holidayDays = formatNumber(model.getValueAt(selectedRow, 14).toString());
+            String poyadayDays = formatNumber(model.getValueAt(selectedRow, 13).toString());
+            String normalOT = formatNumber(model.getValueAt(selectedRow, 21).toString());
+            String extraOT = formatNumber(model.getValueAt(selectedRow, 22).toString());
+            String tribleOT = formatNumber(model.getValueAt(selectedRow, 23).toString());
+
+            // Create and show stylish print preview
+            showStylishPrintPreview(epfNo, name, section, designation, nic,
+                    basicSalary, gradingIncentive, sundayAmount, holidayAmount, poyadayAmount, overtimeAmount,
+                    attendanceIncentive, productionIncentives, arrears,
+                    epf12, etf3, epf8, advance, shortWorkingDays, noPayDays, noPayHours,
+                    grossSalary, totalForEPF, netSalary,
+                    daysWorked, leave, sundayDays, holidayDays, poyadayDays, normalOT, extraOT, tribleOT);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error printing payroll: " + e.getMessage(),
+                    "Print Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showStylishPrintPreview(String epfNo, String name, String section, String designation, String nic,
+            String basicSalary, String gradingIncentive, String sunday, String holiday,
+            String poyaday, String overtime, String attendanceIncentive, String productionIncentives,
+            String arrears, String epf12, String etf3, String epf8, String advance,
+            String shortWorkingDays, String noPayDays, String noPayHours, String grossSalary,
+            String totalForEPF, String netSalary, String daysWorked, String leave,
+            String sundayDays, String holidayDays, String poyadayDays, String normalOT,
+            String extraOT, String tribleOT) {
+
+        // Create a professional panel with white background
+        JPanel printPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+
+                // Draw white background
+                g2d.setColor(Color.WHITE);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+
+                // Draw subtle border
+                g2d.setColor(new Color(200, 200, 200));
+                g2d.drawRect(5, 5, getWidth() - 10, getHeight() - 10);
+            }
+        };
+
+        printPanel.setLayout(new BorderLayout());
+        printPanel.setPreferredSize(new Dimension(400, 600)); // A4 half size
+        printPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Main content panel
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Header - DR FASHIONS with professional styling
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+
+        JLabel headerLabel = new JLabel("DR FASHIONS", JLabel.CENTER);
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 22));
+        headerLabel.setForeground(Color.BLACK);
+        headerLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.BLACK));
+
+        headerPanel.add(headerLabel, BorderLayout.CENTER);
+
+        // Employee details table
+        JPanel detailsPanel = createProfessionalTablePanel("EMPLOYEE DETAILS", new String[][]{
+            {"EPF No:", epfNo, "Name:", name},
+            {"Section:", section, "Designation:", designation},
+            {"NIC Number:", nic, "Month:", "September 25"}
+        });
+
+        // Earnings & Deductions table
+        JPanel earningsDeductionsPanel = createProfessionalEarningsDeductionsPanel(
+                basicSalary, gradingIncentive, sunday, holiday, poyaday, overtime,
+                attendanceIncentive, productionIncentives, arrears,
+                epf12, etf3, epf8, advance, shortWorkingDays, noPayDays, noPayHours
+        );
+
+        // Salary Summary
+        JPanel salarySummaryPanel = createProfessionalTablePanel("SALARY SUMMARY", new String[][]{
+            {"Gross Salary:", grossSalary, "Total For EPF:", totalForEPF},
+            {"Net Salary:", netSalary, "", ""}
+        });
+
+        // Attendance Data
+        JPanel attendancePanel = createProfessionalTablePanel("ATTENDANCE DATA", new String[][]{
+            {"Days Worked:", daysWorked, "Normal OT:", normalOT},
+            {"Leave:", leave, "Extra OT:", extraOT},
+            {"Sunday:", sundayDays, "Trible OT:", tribleOT},
+            {"Holiday:", holidayDays, "", ""},
+            {"Poyaday:", poyadayDays, "", ""}
+        });
+
+        // Footer
+        JPanel footerPanel = new JPanel(new BorderLayout());
+        footerPanel.setOpaque(false);
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+
+        JLabel footerLabel = new JLabel("Authorized Signature: _________________________");
+        footerLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        footerLabel.setForeground(Color.BLACK);
+        footerLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        footerPanel.add(footerLabel, BorderLayout.CENTER);
+
+        // Add all components to content panel
+        contentPanel.add(headerPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        contentPanel.add(detailsPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        contentPanel.add(earningsDeductionsPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        contentPanel.add(salarySummaryPanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        contentPanel.add(attendancePanel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        contentPanel.add(footerPanel);
+
+        printPanel.add(contentPanel, BorderLayout.CENTER);
+
+        // Create scroll pane for preview
+        JScrollPane scrollPane = new JScrollPane(printPanel);
+        scrollPane.setPreferredSize(new Dimension(450, 650));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        // Show print dialog
+        int option = JOptionPane.showConfirmDialog(this, scrollPane,
+                "Payroll Print Preview - " + name,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (option == JOptionPane.OK_OPTION) {
+            printStylishPanel(printPanel, name + " - Payroll Slip");
+        }
+    }
+
+    private JPanel createProfessionalEarningsDeductionsPanel(String basicSalary, String gradingIncentive, String sunday,
+            String holiday, String poyaday, String overtime,
+            String attendanceIncentive, String productionIncentives,
+            String arrears, String epf12, String etf3, String epf8,
+            String advance, String shortWorkingDays, String noPayDays,
+            String noPayHours) {
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setOpaque(false);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(100, 100, 100), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+
+        // Title
+        JLabel titleLabel = new JLabel("EARNINGS & DEDUCTIONS");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+        // Content panel with two columns
+        JPanel contentPanel = new JPanel(new GridLayout(1, 2, 15, 0));
+        contentPanel.setOpaque(false);
+
+        // Earnings Panel
+        JPanel earningsPanel = createProfessionalColumnPanel("EARNINGS", new String[][]{
+            {"Basic Salary:", basicSalary},
+            {"Grading Incentive:", gradingIncentive},
+            {"Sunday:", sunday},
+            {"Holiday:", holiday},
+            {"Poyaday:", poyaday},
+            {"Overtime:", overtime},
+            {"Attendance Incentive:", attendanceIncentive},
+            {"Production Incentives:", productionIncentives},
+            {"Arrears:", arrears}
+        });
+
+        // Deductions Panel
+        JPanel deductionsPanel = createProfessionalColumnPanel("DEDUCTIONS", new String[][]{
+            {"EPF 12%:", epf12},
+            {"ETF 3%:", etf3},
+            {"EPF 8%:", epf8},
+            {"Advance:", advance},
+            {"Short Working Days:", shortWorkingDays},
+            {"No Pay Days:", noPayDays},
+            {"No Pay Hours:", noPayHours}
+        });
+
+        contentPanel.add(earningsPanel);
+        contentPanel.add(deductionsPanel);
+
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        return mainPanel;
+    }
+
+    private JPanel createProfessionalColumnPanel(String title, String[][] data) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
+        // Column title
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
+        // Data panel
+        JPanel dataPanel = new JPanel(new GridLayout(0, 2, 5, 3));
+        dataPanel.setOpaque(false);
+        dataPanel.setBorder(BorderFactory.createEmptyBorder(8, 5, 5, 5));
+
+        for (String[] row : data) {
+            JLabel label = new JLabel(row[0]);
+            label.setFont(new Font("Arial", Font.PLAIN, 9));
+            label.setForeground(Color.BLACK);
+
+            JLabel value = new JLabel(row[1]);
+            value.setFont(new Font("Arial", Font.PLAIN, 9));
+            value.setForeground(Color.DARK_GRAY);
+            value.setHorizontalAlignment(SwingConstants.RIGHT);
+
+            dataPanel.add(label);
+            dataPanel.add(value);
+        }
+
+        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(dataPanel, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createProfessionalTablePanel(String title, String[][] data) {
+        JPanel panel = new JPanel(new GridLayout(0, 4, 8, 4));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(100, 100, 100), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+
+        // Title
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Create a wrapper panel for the title to span all columns
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
+        // Add data rows
+        for (String[] row : data) {
+            for (int i = 0; i < 4; i++) {
+                String text = i < row.length ? row[i] : "";
+                JLabel label = new JLabel(text);
+
+                if (i % 2 == 0) {
+                    // Labels - bold and left aligned
+                    label.setFont(new Font("Arial", Font.BOLD, 10));
+                    label.setForeground(Color.BLACK);
+                    label.setHorizontalAlignment(SwingConstants.LEFT);
+                } else {
+                    // Values - plain and right aligned
+                    label.setFont(new Font("Arial", Font.PLAIN, 10));
+                    label.setForeground(Color.DARK_GRAY);
+                    label.setHorizontalAlignment(SwingConstants.RIGHT);
+                }
+
+                panel.add(label);
+            }
+        }
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(titlePanel, BorderLayout.NORTH);
+        wrapper.add(panel, BorderLayout.CENTER);
+
+        return wrapper;
+    }
+
+    private JPanel createTablePanel(String title, String[][] data) {
+        JPanel panel = new JPanel(new GridLayout(0, 4, 5, 3));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.WHITE, 1),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+
+        // Title
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Create a wrapper panel for the title to span all columns
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
+        // Add data rows
+        for (String[] row : data) {
+            for (int i = 0; i < 4; i++) {
+                String text = i < row.length ? row[i] : "";
+                JLabel label = new JLabel(text);
+                label.setFont(new Font("Arial", i % 2 == 0 ? Font.BOLD : Font.PLAIN, 10));
+                label.setForeground(Color.WHITE);
+
+                if (i % 2 == 1 && !text.isEmpty()) {
+                    // Right align values
+                    label.setHorizontalAlignment(SwingConstants.RIGHT);
+                }
+
+                panel.add(label);
+            }
+        }
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(titlePanel, BorderLayout.NORTH);
+        wrapper.add(panel, BorderLayout.CENTER);
+
+        return wrapper;
+    }
+
+    private JPanel createEarningsDeductionsPanel(String basicSalary, String gradingIncentive, String sunday,
+            String holiday, String poyaday, String overtime,
+            String attendanceIncentive, String productionIncentives,
+            String arrears, String epf12, String etf3, String epf8,
+            String advance, String shortWorkingDays, String noPayDays,
+            String noPayHours) {
+
+        JPanel panel = new JPanel(new GridLayout(0, 4, 5, 3));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.WHITE, 1),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+
+        // Title
+        JLabel titleLabel = new JLabel("EARNINGS & DEDUCTIONS");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Column headers
+        JLabel earningsHeader = new JLabel("EARNINGS");
+        earningsHeader.setFont(new Font("Arial", Font.BOLD, 12));
+        earningsHeader.setForeground(Color.WHITE);
+        earningsHeader.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JLabel earningsAmountHeader = new JLabel("AMOUNT");
+        earningsAmountHeader.setFont(new Font("Arial", Font.BOLD, 12));
+        earningsAmountHeader.setForeground(Color.WHITE);
+        earningsAmountHeader.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        JLabel deductionsHeader = new JLabel("DEDUCTIONS");
+        deductionsHeader.setFont(new Font("Arial", Font.BOLD, 12));
+        deductionsHeader.setForeground(Color.WHITE);
+        deductionsHeader.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JLabel deductionsAmountHeader = new JLabel("AMOUNT");
+        deductionsAmountHeader.setFont(new Font("Arial", Font.BOLD, 12));
+        deductionsAmountHeader.setForeground(Color.WHITE);
+        deductionsAmountHeader.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        // Add headers
+        panel.add(earningsHeader);
+        panel.add(earningsAmountHeader);
+        panel.add(deductionsHeader);
+        panel.add(deductionsAmountHeader);
+
+        // Add earnings and deductions data
+        String[][] earningsData = {
+            {"Basic Salary:", basicSalary},
+            {"Grading Incentive:", gradingIncentive},
+            {"Sunday:", sunday},
+            {"Holiday:", holiday},
+            {"Poyaday:", poyaday},
+            {"Overtime:", overtime},
+            {"Attendance Incentive:", attendanceIncentive},
+            {"Production Incentives:", productionIncentives},
+            {"Arrears:", arrears}
+        };
+
+        String[][] deductionsData = {
+            {"EPF 12%:", epf12},
+            {"ETF 3%:", etf3},
+            {"EPF 8%:", epf8},
+            {"Advance:", advance},
+            {"Short Working Days:", shortWorkingDays},
+            {"No Pay Days:", noPayDays},
+            {"No Pay Hours:", noPayHours}
+        };
+
+        int maxRows = Math.max(earningsData.length, deductionsData.length);
+
+        for (int i = 0; i < maxRows; i++) {
+            // Earnings column
+            if (i < earningsData.length) {
+                JLabel earningLabel = new JLabel(earningsData[i][0]);
+                earningLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+                earningLabel.setForeground(Color.WHITE);
+                panel.add(earningLabel);
+
+                JLabel earningAmount = new JLabel(earningsData[i][1]);
+                earningAmount.setFont(new Font("Arial", Font.PLAIN, 9));
+                earningAmount.setForeground(Color.WHITE);
+                earningAmount.setHorizontalAlignment(SwingConstants.RIGHT);
+                panel.add(earningAmount);
+            } else {
+                panel.add(new JLabel(""));
+                panel.add(new JLabel(""));
+            }
+
+            // Deductions column
+            if (i < deductionsData.length) {
+                JLabel deductionLabel = new JLabel(deductionsData[i][0]);
+                deductionLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+                deductionLabel.setForeground(Color.WHITE);
+                panel.add(deductionLabel);
+
+                JLabel deductionAmount = new JLabel(deductionsData[i][1]);
+                deductionAmount.setFont(new Font("Arial", Font.PLAIN, 9));
+                deductionAmount.setForeground(Color.WHITE);
+                deductionAmount.setHorizontalAlignment(SwingConstants.RIGHT);
+                panel.add(deductionAmount);
+            } else {
+                panel.add(new JLabel(""));
+                panel.add(new JLabel(""));
+            }
+        }
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
+        wrapper.add(titlePanel, BorderLayout.NORTH);
+        wrapper.add(panel, BorderLayout.CENTER);
+
+        return wrapper;
+    }
+
+    private void printStylishPanel(JPanel panel, String jobName) {
+        try {
+            PrinterJob job = PrinterJob.getPrinterJob();
+            job.setJobName(jobName);
+
+            // Set page format for A4 half size
+            PageFormat pf = job.defaultPage();
+            Paper paper = new Paper();
+            double width = 8.27 * 72; // A4 width in points
+            double height = 5.83 * 72; // A4 half height
+            paper.setSize(width, height);
+            paper.setImageableArea(18, 18, width - 36, height - 36); // Smaller margins
+            pf.setPaper(paper);
+            pf.setOrientation(PageFormat.PORTRAIT);
+
+            job.setPrintable(new Printable() {
+                @Override
+                public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
+                    if (pageIndex > 0) {
+                        return Printable.NO_SUCH_PAGE;
+                    }
+
+                    Graphics2D g2d = (Graphics2D) graphics;
+                    g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+
+                    // Scale to fit the page
+                    double scaleX = pageFormat.getImageableWidth() / panel.getWidth();
+                    double scaleY = pageFormat.getImageableHeight() / panel.getHeight();
+                    double scale = Math.min(scaleX, scaleY);
+                    g2d.scale(scale, scale);
+
+                    // Print the panel
+                    panel.print(g2d);
+                    return Printable.PAGE_EXISTS;
+                }
+            }, pf);
+
+            if (job.printDialog()) {
+                job.print();
+                JOptionPane.showMessageDialog(this,
+                        "Payroll slip printed successfully!",
+                        "Print Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (PrinterException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error printing: " + ex.getMessage(),
+                    "Print Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String formatCurrency(String value) {
+        try {
+            double amount = Double.parseDouble(value);
+            return String.format("%,.2f", amount);
+        } catch (Exception e) {
+            return "0.00";
+        }
+    }
+
+    private String formatNumber(String value) {
+        try {
+            double num = Double.parseDouble(value);
+            return num % 1 == 0 ? String.format("%.0f", num) : String.format("%.1f", num);
+        } catch (Exception e) {
+            return "0";
+        }
+    }
+
+    private void showPrintPreview(String epfNo, String name, String section, String designation, String nic,
+            String basicSalary, String gradingIncentive, String sunday, String holiday,
+            String poyaday, String overtime, String attendanceIncentive, String productionIncentives,
+            String arrears, String epf12, String etf3, String epf8, String advance,
+            String shortWorkingDays, String noPayDays, String noPayHours, String grossSalary,
+            String totalForEPF, String netSalary, String daysWorked, String leave,
+            String sundayDays, String holidayDays, String poyadayDays, String normalOT,
+            String extraOT, String tribleOT) {
+
+        // Create a custom panel for printing
+        JPanel printPanel = new JPanel();
+        printPanel.setLayout(new BorderLayout());
+        printPanel.setBackground(Color.WHITE);
+        printPanel.setPreferredSize(new Dimension(400, 600)); // A4 half size
+
+        // Header
+        JLabel headerLabel = new JLabel("DR FASHIONS", JLabel.CENTER);
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        // Employee details panel
+        JPanel detailsPanel = new JPanel(new GridLayout(0, 2, 5, 2));
+        detailsPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        addDetailRow(detailsPanel, "EPF No", epfNo);
+        addDetailRow(detailsPanel, "Name", name);
+        addDetailRow(detailsPanel, "Section", section);
+        addDetailRow(detailsPanel, "Designation", designation);
+        addDetailRow(detailsPanel, "NIC Number", nic);
+        addDetailRow(detailsPanel, "Month", "September 25");
+
+        // Earnings and Deductions panel
+        JPanel earningsDeductionsPanel = new JPanel(new GridLayout(0, 2, 10, 2));
+        earningsDeductionsPanel.setBorder(BorderFactory.createTitledBorder("Earnings & Deductions"));
+
+        // Earnings column
+        JPanel earningsPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        earningsPanel.setBorder(BorderFactory.createTitledBorder("Earnings"));
+        addAmountRow(earningsPanel, "Basic Salary", basicSalary);
+        addAmountRow(earningsPanel, "Grading Incentive", gradingIncentive);
+        addAmountRow(earningsPanel, "Sunday", sunday);
+        addAmountRow(earningsPanel, "Holiday", holiday);
+        addAmountRow(earningsPanel, "Poyaday", poyaday);
+        addAmountRow(earningsPanel, "Overtime", overtime);
+        addAmountRow(earningsPanel, "Attendance Incentive", attendanceIncentive);
+        addAmountRow(earningsPanel, "Production Incentives", productionIncentives);
+        addAmountRow(earningsPanel, "Arrears", arrears);
+
+        // Deductions column
+        JPanel deductionsPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        deductionsPanel.setBorder(BorderFactory.createTitledBorder("Deductions"));
+        addAmountRow(deductionsPanel, "EPF 12%", epf12);
+        addAmountRow(deductionsPanel, "ETF 3%", etf3);
+        addAmountRow(deductionsPanel, "EPF 8%", epf8);
+        addAmountRow(deductionsPanel, "Advance", advance);
+        addAmountRow(deductionsPanel, "Short Working Days", shortWorkingDays);
+        addAmountRow(deductionsPanel, "No Pay Days", noPayDays);
+        addAmountRow(deductionsPanel, "No Pay Hours", noPayHours);
+
+        earningsDeductionsPanel.add(earningsPanel);
+        earningsDeductionsPanel.add(deductionsPanel);
+
+        // Totals panel
+        JPanel totalsPanel = new JPanel(new GridLayout(0, 2, 10, 5));
+        totalsPanel.setBorder(BorderFactory.createTitledBorder("Salary Summary"));
+        addAmountRow(totalsPanel, "Gross Salary", grossSalary);
+        addAmountRow(totalsPanel, "Total For EPF", totalForEPF);
+        addAmountRow(totalsPanel, "Net Salary", netSalary);
+
+        // Data panel
+        JPanel dataPanel = new JPanel(new GridLayout(0, 4, 5, 2));
+        dataPanel.setBorder(BorderFactory.createTitledBorder("Attendance Data"));
+
+        addDataRow(dataPanel, "Days Worked", daysWorked, "Normal OT", normalOT);
+        addDataRow(dataPanel, "Leave", leave, "Extra OT", extraOT);
+        addDataRow(dataPanel, "Sunday", sundayDays, "Trible OT", tribleOT);
+        addDataRow(dataPanel, "Holiday", holidayDays, "", "");
+        addDataRow(dataPanel, "Poyaday", poyadayDays, "", "");
+
+        // Footer
+        JPanel footerPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        addDetailRow(footerPanel, "EPF No", epfNo);
+        addDetailRow(footerPanel, "Name", name);
+        addDetailRow(footerPanel, "NIC Number", nic);
+        addDetailRow(footerPanel, "Month", "September 25");
+        addDetailRow(footerPanel, "Salary Amount", netSalary);
+
+        JLabel signatureLabel = new JLabel("Signature: ___________________");
+        signatureLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        footerPanel.add(signatureLabel);
+
+        // Add all panels to main print panel
+        printPanel.add(headerLabel, BorderLayout.NORTH);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.add(detailsPanel);
+        contentPanel.add(earningsDeductionsPanel);
+        contentPanel.add(totalsPanel);
+        contentPanel.add(dataPanel);
+        contentPanel.add(footerPanel);
+
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setPreferredSize(new Dimension(380, 500));
+        printPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Show print dialog
+        int option = JOptionPane.showConfirmDialog(this, printPanel,
+                "Payroll Print Preview - " + name,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (option == JOptionPane.OK_OPTION) {
+            printPanel(printPanel, name + " - Payroll");
+        }
+    }
+
+    private void addDetailRow(JPanel panel, String label, String value) {
+        JLabel labelLabel = new JLabel(label + ":");
+        labelLabel.setFont(new Font("Arial", Font.BOLD, 10));
+
+        JLabel valueLabel = new JLabel(value);
+        valueLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+
+        panel.add(labelLabel);
+        panel.add(valueLabel);
+    }
+
+    private void addAmountRow(JPanel panel, String label, String amount) {
+        JLabel labelLabel = new JLabel(label + ":");
+        labelLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+
+        JLabel amountLabel = new JLabel(amount);
+        amountLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+        amountLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        panel.add(labelLabel);
+        panel.add(amountLabel);
+    }
+
+    private void addDataRow(JPanel panel, String label1, String value1, String label2, String value2) {
+        JLabel label1Label = new JLabel(label1);
+        label1Label.setFont(new Font("Arial", Font.PLAIN, 9));
+
+        JLabel value1Label = new JLabel(value1);
+        value1Label.setFont(new Font("Arial", Font.PLAIN, 9));
+
+        JLabel label2Label = new JLabel(label2);
+        label2Label.setFont(new Font("Arial", Font.PLAIN, 9));
+
+        JLabel value2Label = new JLabel(value2);
+        value2Label.setFont(new Font("Arial", Font.PLAIN, 9));
+
+        panel.add(label1Label);
+        panel.add(value1Label);
+        panel.add(label2Label);
+        panel.add(value2Label);
+    }
+
+    private void printPanel(JPanel panel, String jobName) {
+        try {
+            // Create printer job
+            PrinterJob job = PrinterJob.getPrinterJob();
+            job.setJobName(jobName);
+
+            // Set page format for A4 half size
+            PageFormat pf = job.defaultPage();
+            Paper paper = new Paper();
+            double width = 8.27 * 72; // A4 width in points (1 inch = 72 points)
+            double height = 5.83 * 72; // A4 half height
+            paper.setSize(width, height);
+            paper.setImageableArea(36, 36, width - 72, height - 72); // 0.5 inch margins
+            pf.setPaper(paper);
+            pf.setOrientation(PageFormat.PORTRAIT);
+
+            job.setPrintable(new Printable() {
+                @Override
+                public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
+                    if (pageIndex > 0) {
+                        return Printable.NO_SUCH_PAGE;
+                    }
+
+                    Graphics2D g2d = (Graphics2D) graphics;
+                    g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+
+                    // Scale to fit the page
+                    double scaleX = pageFormat.getImageableWidth() / panel.getWidth();
+                    double scaleY = pageFormat.getImageableHeight() / panel.getHeight();
+                    double scale = Math.min(scaleX, scaleY);
+                    g2d.scale(scale, scale);
+
+                    panel.print(g2d);
+                    return Printable.PAGE_EXISTS;
+                }
+            }, pf);
+
+            if (job.printDialog()) {
+                job.print();
+                JOptionPane.showMessageDialog(this,
+                        "Payroll printed successfully!",
+                        "Print Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (PrinterException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error printing: " + ex.getMessage(),
+                    "Print Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String createPayrollPrintContent(String... params) {
+        return String.format(
+                "╔══════════════════════════════════════════════════════════════════════╗\n"
+                + "║                             DR FASHIONS                             ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ EPF No    │ %-50s ║\n"
+                + "║ Name      │ %-50s ║\n"
+                + "║ Section   │ %-50s ║\n"
+                + "║ Designation│ %-49s ║\n"
+                + "║ NIC Number│ %-49s ║\n"
+                + "║ Month     │ September 25%-37s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ %-35s ║ %-25s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ %-35s ║ %-25s ║\n"
+                + "║ Basic Salary (Including BRA) │ %-25s ║ EPF 12%%        │ %-10s ║\n"
+                + "║ Grading Incentive           │ %-25s ║ ETF 3%%         │ %-10s ║\n"
+                + "║ Sunday                      │ %-25s ║ EPF 8%%         │ %-10s ║\n"
+                + "║ Holiday                     │ %-25s ║ Advance         │ %-10s ║\n"
+                + "║ Poyaday                     │ %-25s ║ Short Working Days│ %-8s ║\n"
+                + "║ Overtime                    │ %-25s ║ No Pay Days     │ %-8s ║\n"
+                + "║ Attendance Incentive        │ %-25s ║ No Pay Hours    │ %-8s ║\n"
+                + "║ Production Incentives       │ %-25s ║                 │ %-10s ║\n"
+                + "║ Arrears                     │ %-25s ║                 │ %-10s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ Gross Salary                │ %-25s ║                 │ %-10s ║\n"
+                + "║ Total For EPF               │ %-25s ║                 │ %-10s ║\n"
+                + "║                             │ %-25s ║                 │ %-10s ║\n"
+                + "║ Net Salary                  │ %-25s ║                 │ %-10s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ %-35s ║ %-25s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ Days Worked    │ %-8s ║ Normal OT      │ %-8s ║\n"
+                + "║ Leave          │ %-8s ║ Extra OT       │ %-8s ║\n"
+                + "║ Sunday         │ %-8s ║ Trible OT      │ %-8s ║\n"
+                + "║ Holiday        │ %-8s ║                │ %-8s ║\n"
+                + "║ Poyaday        │ %-8s ║                │ %-8s ║\n"
+                + "╠══════════════════════════════════════════════════════════════════════╣\n"
+                + "║ EPF No: %-58s ║\n"
+                + "║ Name: %-60s ║\n"
+                + "║ NIC Number: %-54s ║\n"
+                + "║ Month: September 25%-42s ║\n"
+                + "║ Salary Amount: %-50s ║\n"
+                + "║                                                                      ║\n"
+                + "║ Signature: _________________________                                 ║\n"
+                + "╚══════════════════════════════════════════════════════════════════════╝",
+                // Parameters
+                params[0], params[1], params[2], params[3], params[4], "",
+                "Earnings", "Deductions",
+                "", "",
+                params[5], params[13], // Basic Salary, EPF 12%
+                params[6], params[14], // Grading Incentive, ETF 3%
+                params[7], params[15], // Sunday, EPF 8%
+                params[8], params[16], // Holiday, Advance
+                params[9], params[17], // Poyaday, Short Working Days
+                params[10], params[18], // Overtime, No Pay Days
+                params[11], params[19], // Attendance Incentive, No Pay Hours
+                params[12], "", // Production Incentives
+                params[13], "", // Arrears
+                params[20], "", // Gross Salary
+                params[21], "", // Total For EPF
+                "", "",
+                params[22], "", // Net Salary
+                "Data", "",
+                params[23], params[29], // Days Worked, Normal OT
+                params[24], params[30], // Leave, Extra OT
+                params[25], params[31], // Sunday Days, Trible OT
+                params[26], "", // Holiday Days
+                params[27], "", // Poyaday Days
+                params[0], params[1], params[4], "", params[22]
+        );
+    }
+
+    private void printTextContent(String content) {
+        try {
+            // Create a temporary file
+            java.io.File tempFile = java.io.File.createTempFile("payroll", ".txt");
+            try (java.io.PrintWriter writer = new java.io.PrintWriter(tempFile, "UTF-8")) {
+                writer.print(content);
+            }
+
+            // Print using system default printer
+            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+            if (desktop.isSupported(java.awt.Desktop.Action.PRINT)) {
+                desktop.print(tempFile);
+                JOptionPane.showMessageDialog(this,
+                        "Payroll sent to printer successfully!",
+                        "Print Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                // Fallback: Show print dialog with text area
+                showPrintDialog(content);
+            }
+
+            // Delete temp file after printing (you might want to keep it for debugging)
+            tempFile.deleteOnExit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to dialog
+            showPrintDialog(content);
+        }
+    }
+
+    private void showPrintDialog(String content) {
+        JTextArea textArea = new JTextArea(content);
+        textArea.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 10));
+        textArea.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new java.awt.Dimension(600, 700));
+
+        // Print option
+        int option = JOptionPane.showConfirmDialog(this, scrollPane,
+                "Payroll Print Preview - Copy this content manually",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (option == JOptionPane.OK_OPTION) {
+            try {
+                textArea.print();
+            } catch (java.awt.print.PrinterException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Error printing: " + ex.getMessage(),
+                        "Print Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
 
     private void loadLeaveNoPayPanel() {
         try {
@@ -754,6 +1688,7 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;

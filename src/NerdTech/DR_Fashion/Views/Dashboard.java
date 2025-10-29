@@ -35,8 +35,8 @@ import java.sql.SQLException;
 public class Dashboard extends javax.swing.JFrame {
 
     private LoadingPanel loadingPanel;
-
     private String role;
+    private String currentPanelName = "Dashboard";
 
     public Dashboard(String full_name, String role) {
         initComponents();
@@ -45,7 +45,6 @@ public class Dashboard extends javax.swing.JFrame {
         DisplayLabel.setText("Hi, " + full_name);
         setAccessByRole();
         loadDashboardPanelByDefault();
-
     }
 
     private void setAccessByRole() {
@@ -57,19 +56,21 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton1.setEnabled(true); // Attendance
                 jButton3.setEnabled(true); // Stock
                 jButton4.setEnabled(true); // Backup
+                jButtonSync.setEnabled(true); // Sync
             }
-            case "hr" -> {  // Changed from "HR_Manager" to "hr_manager"
-                // Manager limited access
+            case "hr" -> {
+                // HR limited access
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
                 jButton1.setEnabled(true);
                 jButton3.setEnabled(false);
-                jButton4.setEnabled(false); // Cannot backup
+                jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
                 jButton10.setEnabled(false);
+                jButtonSync.setEnabled(true); // HR can also sync
             }
-            case "stores" -> {  // Changed from "Stores" to "stores"
-                // Employee minimal access
+            case "stores" -> {
+                // Stores minimal access
                 jButton2.setEnabled(true);
                 jButton1.setEnabled(false);
                 jButton6.setEnabled(false);
@@ -77,6 +78,7 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
                 jButton10.setEnabled(true);
+                jButtonSync.setEnabled(false); // Stores cannot sync
             }
             default -> {
                 // If unknown role
@@ -93,7 +95,6 @@ public class Dashboard extends javax.swing.JFrame {
     }
 
     private void loadPanelWithLoading(String panelName, PanelLoader loader) {
-
         currentPanelName = panelName;
 
         // Show loading immediately
@@ -426,7 +427,7 @@ public class Dashboard extends javax.swing.JFrame {
         loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
     }//GEN-LAST:event_jButton7ActionPerformed
 
-    private String currentPanelName = "Dashboard";
+   
 
     private void refreshCurrentPanel() {
         switch (currentPanelName) {
@@ -479,20 +480,26 @@ public class Dashboard extends javax.swing.JFrame {
             @Override
             protected Boolean doInBackground() throws Exception {
                 // Small delay for UX
-                Thread.sleep(300);
+                Thread.sleep(500);
 
-                // Set callback for sync status updates
-                FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
-                    @Override
-                    public void onStatusChange(String status) {
-                        publish(status);  // Send to process() method
-                    }
+                try {
+                    // Set callback for sync status updates
+                    FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
+                        @Override
+                        public void onStatusChange(String status) {
+                            publish(status);  // Send to process() method
+                        }
+                    });
+
+                    // Perform bidirectional sync
+                    boolean success = FullDatabaseSync.performFullSync();
+                    return success;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    publish("❌ Sync Error: " + e.getMessage());
+                    return false;
                 }
-                );
-
-                // Perform bidirectional sync
-                boolean success = FullDatabaseSync.performFullSync();
-                return success;
             }
 
             @Override
@@ -501,6 +508,9 @@ public class Dashboard extends javax.swing.JFrame {
                 if (!chunks.isEmpty()) {
                     String latestStatus = chunks.get(chunks.size() - 1);
                     System.out.println("[SYNC STATUS] " + latestStatus);
+
+                    // You can update the loading panel with status if needed
+                    // loadingPanel.setStatus(latestStatus);
                 }
             }
 
@@ -533,6 +543,8 @@ public class Dashboard extends javax.swing.JFrame {
                         errorMsg = "Database connection error: " + cause.getMessage();
                     } else if (cause instanceof java.net.ConnectException) {
                         errorMsg = "Cannot connect to online database.\nPlease check your internet connection.";
+                    } else if (cause instanceof ClassNotFoundException) {
+                        errorMsg = "Database driver not found. Please check your classpath.";
                     } else {
                         errorMsg = cause != null ? cause.getMessage() : ex.getMessage();
                     }
@@ -553,6 +565,13 @@ public class Dashboard extends javax.swing.JFrame {
                             "⚠️ Sync was interrupted!",
                             "Sync Interrupted",
                             JOptionPane.WARNING_MESSAGE);
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "❌ Unexpected error during sync!\n\n" + ex.getMessage(),
+                            "Sync Error",
+                            JOptionPane.ERROR_MESSAGE);
 
                 } finally {
                     // Restore Dashboard panel after sync
