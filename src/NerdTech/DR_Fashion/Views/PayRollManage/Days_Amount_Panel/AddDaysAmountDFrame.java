@@ -4,10 +4,11 @@
  */
 package NerdTech.DR_Fashion.Views.PayRollManage.Days_Amount_Panel;
 
-/**
- *
- * @author MG_Pathum
- */
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 public class AddDaysAmountDFrame extends javax.swing.JDialog {
 
     private int epfNo;
@@ -36,6 +37,130 @@ public class AddDaysAmountDFrame extends javax.swing.JDialog {
         jTextField3.setText(String.valueOf(sundayAmount));
         jTextField2.setText(String.valueOf(poyaDayAmount));
         jTextField4.setText(String.valueOf(holidayAmount));
+
+        // Auto calculation setup කරන්න
+        setupAutoCalculation();
+
+        // Dialog open වෙද්දිම amounts calculate කරන්න
+        calculateAmounts();
+    }
+
+    /**
+     * Auto calculation setup කිරීම
+     */
+    private void setupAutoCalculation() {
+        // Sunday days field එකට listener එකතු කිරීම
+        jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+
+        // Poya days field එකට listener එකතු කිරීම
+        jTextField6.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+
+        // Holiday days field එකට listener එකතු කිරීම
+        jTextField7.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+    }
+
+    // Amounts ගණනය කිරීමේ method එක - UPDATED
+    private void calculateAmounts() {
+        try {
+            // Basic salary එක database එකෙන් ගන්න
+            double basicSalary = getBasicSalaryFromDatabase();
+            if (basicSalary == 0) {
+                return; // Basic salary නැත්නම් stop කරන්න
+            }
+
+            // Working day amount ගණනය කිරීම (මාසයේ දින 26ක් ලෙස)
+            double dailyRate = basicSalary / 26;
+            jTextField1.setText(String.format("%.2f", dailyRate));
+
+            // Sunday amount ගණනය කිරීම (1.5 ගුණයක්)
+            if (!jTextField5.getText().trim().isEmpty()) {
+                int sundayDays = Integer.parseInt(jTextField5.getText().trim());
+                double sundayAmount = dailyRate * 1.5 * sundayDays;
+                jTextField3.setText(String.format("%.2f", sundayAmount));
+            } else {
+                jTextField3.setText("0.00");
+            }
+
+            // Poya Day amount ගණනය කිරීම (2න් බෙදන්න) - UPDATED
+            if (!jTextField6.getText().trim().isEmpty()) {
+                int poyaDays = Integer.parseInt(jTextField6.getText().trim());
+                // Poya Day amount = (Basic Salary / 26) × Poya Days ÷ 2
+                double poyaDayAmount = dailyRate * poyaDays / 2;
+                jTextField2.setText(String.format("%.2f", poyaDayAmount));
+            } else {
+                jTextField2.setText("0.00");
+            }
+
+            // Holiday amount ගණනය කිරීම (1 ගුණයක්)
+            if (!jTextField7.getText().trim().isEmpty()) {
+                int holidayDays = Integer.parseInt(jTextField7.getText().trim());
+                double holidayAmount = dailyRate * 1 * holidayDays;
+                jTextField4.setText(String.format("%.2f", holidayAmount));
+            } else {
+                jTextField4.setText("0.00");
+            }
+
+        } catch (NumberFormatException e) {
+            // දින ගණන ඇතුලත් කර නැති විට හෝ invalid numbers
+            jTextField3.setText("0.00");
+            jTextField2.setText("0.00");
+            jTextField4.setText("0.00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error calculating amounts: " + e.getMessage(),
+                    "Calculation Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Database එකෙන් basic salary එක ලබා ගන්න
+     */
+    private double getBasicSalaryFromDatabase() {
+        double basicSalary = 0.0;
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            String query = "SELECT basic_salary FROM salary WHERE employee_id = (SELECT id FROM employee WHERE epf_no = ?)";
+            PreparedStatement pst = conn.prepareStatement(query);
+            pst.setInt(1, epfNo);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                basicSalary = rs.getDouble("basic_salary");
+            } else {
+                // Salary record එක නැතිවිට warning message එකක් දක්වන්න
+                basicSalary = 0.0;
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "Basic salary not found for EPF: " + epfNo + "\nPlease set basic salary first!",
+                        "Salary Not Found",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+            }
+
+            rs.close();
+            pst.close();
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error retrieving basic salary: " + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+        return basicSalary;
     }
 
     /**
@@ -230,9 +355,6 @@ public class AddDaysAmountDFrame extends javax.swing.JDialog {
         saveDaysAndAmounts();
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">

@@ -4,9 +4,13 @@
  */
 package NerdTech.DR_Fashion.Views.PayRollManage.OverTime;
 
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import javax.swing.JOptionPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class AddOverTime extends javax.swing.JDialog {
 
@@ -47,6 +51,136 @@ public class AddOverTime extends javax.swing.JDialog {
 
         // Set dialog location to center of parent
         setLocationRelativeTo(parent);
+
+        // Auto calculation setup කරන්න
+        setupAutoCalculation();
+
+        // Dialog open වෙද්දිම amounts calculate කරන්න
+        calculateAmounts();
+
+        // Ensure dialog shows fully and nicely centered
+        pack();
+        setSize(1328, 500); // You can adjust width and height
+        setLocationRelativeTo(parent);
+
+    }
+
+    /**
+     * Auto calculation setup කිරීම
+     */
+    private void setupAutoCalculation() {
+        // Normal hours field එකට listener එකතු කිරීම
+        jTextField6.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+
+        // Extra hours field එකට listener එකතු කිරීම
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+
+        // Trible hours field එකට listener එකතු කිරීම
+        jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                calculateAmounts();
+            }
+        });
+    }
+
+    /**
+     * Amounts ගණනය කිරීමේ method එක
+     */
+    private void calculateAmounts() {
+        try {
+            // Basic salary එක database එකෙන් ගන්න
+            double basicSalary = getBasicSalaryFromDatabase();
+            if (basicSalary == 0) {
+                return; // Basic salary නැත්නම් stop කරන්න
+            }
+
+            // Hourly rate ගණනය කිරීම (මාසයේ පැය 200ක් ලෙස)
+            double hourlyRate = basicSalary / 200;
+
+            // Normal Amount ගණනය කිරීම (1.5 ගුණයක්)
+            if (!jTextField6.getText().trim().isEmpty()) {
+                double normalHours = Double.parseDouble(jTextField6.getText().trim());
+                double normalAmount = hourlyRate * 1.5 * normalHours;
+                jTextField3.setText(String.format("%.2f", normalAmount));
+            } else {
+                jTextField3.setText("0.00");
+            }
+
+            // Extra Amount ගණනය කිරීම (2 ගුණයක්)
+            if (!jTextField1.getText().trim().isEmpty()) {
+                double extraHours = Double.parseDouble(jTextField1.getText().trim());
+                double extraAmount = hourlyRate * 2 * extraHours;
+                jTextField4.setText(String.format("%.2f", extraAmount));
+            } else {
+                jTextField4.setText("0.00");
+            }
+
+            // Trible Amount ගණනය කිරීම (3 ගුණයක්)
+            if (!jTextField2.getText().trim().isEmpty()) {
+                double tribleHours = Double.parseDouble(jTextField2.getText().trim());
+                double tribleAmount = hourlyRate * 3 * tribleHours;
+                jTextField5.setText(String.format("%.2f", tribleAmount));
+            } else {
+                jTextField5.setText("0.00");
+            }
+
+        } catch (NumberFormatException e) {
+            // පැය ගණන ඇතුලත් කර නැති විට හෝ invalid numbers
+            jTextField3.setText("0.00");
+            jTextField4.setText("0.00");
+            jTextField5.setText("0.00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error calculating amounts: " + e.getMessage(),
+                    "Calculation Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Database එකෙන් basic salary එක ලබා ගන්න
+     */
+    private double getBasicSalaryFromDatabase() {
+        double basicSalary = 0.0;
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            String query = "SELECT basic_salary FROM salary WHERE employee_id = (SELECT id FROM employee WHERE epf_no = ?)";
+            PreparedStatement pst = conn.prepareStatement(query);
+            pst.setString(1, epfNo);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                basicSalary = rs.getDouble("basic_salary");
+            } else {
+                // Salary record එක නැතිවිට warning message එකක් දක්වන්න
+                basicSalary = 0.0;
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "Basic salary not found for EPF: " + epfNo + "\nPlease set basic salary first!",
+                        "Salary Not Found",
+                        javax.swing.JOptionPane.WARNING_MESSAGE);
+            }
+
+            rs.close();
+            pst.close();
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error retrieving basic salary: " + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+        return basicSalary;
     }
 
     private void setupLabels() {
@@ -59,6 +193,7 @@ public class AddOverTime extends javax.swing.JDialog {
         jLabel4.setText("Normal Amount (Rs):");
         jLabel5.setText("Extra Amount (Rs):");
         jLabel6.setText("Trible Amount (Rs):");
+        jLabel7.setText("Normal Hours:");
 
         setupEmergencyButtonFix();
 
@@ -84,61 +219,104 @@ public class AddOverTime extends javax.swing.JDialog {
     }
 
     /**
-     * ⭐⭐⭐ SAVE BUTTON METHOD - 100% WORKING
-     */
-    /**
-     * Save overtime data method
+     * Save overtime data method (Fixed for attendence_id)
      */
     private void saveOvertimeData() {
         System.out.println("💾 SAVE METHOD TRIGGERED!");
 
         try {
-            // 1. Get values from text fields
+            double normal = parseDouble(jTextField6.getText());
             double extra = parseDouble(jTextField1.getText());
             double trible = parseDouble(jTextField2.getText());
             double normalAmount = parseDouble(jTextField3.getText());
             double extraAmount = parseDouble(jTextField4.getText());
             double tribleAmount = parseDouble(jTextField5.getText());
 
-            System.out.println("📊 Values captured:");
-            System.out.println("  Extra Hours: " + extra);
-            System.out.println("  Trible Hours: " + trible);
-            System.out.println("  Normal Amount: " + normalAmount);
-            System.out.println("  Extra Amount: " + extraAmount);
-            System.out.println("  Trible Amount: " + tribleAmount);
-
-            // 2. Validate
-            if (extra < 0 || trible < 0 || normalAmount < 0 || extraAmount < 0 || tribleAmount < 0) {
+            // Validate
+            if (normal < 0 || extra < 0 || trible < 0) {
                 JOptionPane.showMessageDialog(this, "Negative values not allowed!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // 3. Check parent panel
-            if (parentPanel == null) {
-                JOptionPane.showMessageDialog(this, "Parent panel error!", "Error", JOptionPane.ERROR_MESSAGE);
+            // ✅ First, find attendence_id for this employee
+            int attendenceId = -1;
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                    "SELECT id FROM attendence WHERE employee_id = (SELECT id FROM employee WHERE epf_no = ?) ORDER BY id DESC LIMIT 1")) {
+
+                ps.setString(1, epfNo);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    attendenceId = rs.getInt("id");
+                }
+                rs.close();
+            }
+
+            if (attendenceId == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "No attendance record found for EPF: " + epfNo + "\nPlease mark attendance first!",
+                        "Attendance Missing", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // 4. Update parent panel (this will now save to database too)
-            System.out.println("🔄 Calling parent update method...");
-            parentPanel.updateOvertimeData(selectedRow, extra, trible, normalAmount, extraAmount, tribleAmount);
+            // ✅ Try update existing overtime
+            Connection conn = DatabaseConnection.getConnection();
+            String sql = """
+            UPDATE overtime 
+            SET normal_hours=?, extra_hours=?, trible_hours=?, 
+                normal_amount=?, extra_amount=?, trible_amount=? 
+            WHERE attendence_id=?
+        """;
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setDouble(1, normal);
+            pst.setDouble(2, extra);
+            pst.setDouble(3, trible);
+            pst.setDouble(4, normalAmount);
+            pst.setDouble(5, extraAmount);
+            pst.setDouble(6, tribleAmount);
+            pst.setInt(7, attendenceId);
 
-            // 5. Success message
-            JOptionPane.showMessageDialog(this,
-                    "Overtime data saved successfully to database!",
-                    "Success",
+            int rows = pst.executeUpdate();
+            pst.close();
+            conn.close();
+
+            if (rows > 0) {
+                System.out.println("✅ Overtime record updated successfully for attendance_id: " + attendenceId);
+            } else {
+                System.out.println("⚠ No existing record found — inserting new overtime entry...");
+                conn = DatabaseConnection.getConnection();
+                sql = """
+                INSERT INTO overtime (attendence_id, normal_hours, extra_hours, trible_hours, 
+                                      normal_amount, extra_amount, trible_amount)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
+                pst = conn.prepareStatement(sql);
+                pst.setInt(1, attendenceId);
+                pst.setDouble(2, normal);
+                pst.setDouble(3, extra);
+                pst.setDouble(4, trible);
+                pst.setDouble(5, normalAmount);
+                pst.setDouble(6, extraAmount);
+                pst.setDouble(7, tribleAmount);
+                pst.executeUpdate();
+                pst.close();
+                conn.close();
+            }
+
+            // ✅ Refresh parent table if available
+            if (parentPanel != null) {
+                parentPanel.updateOvertimeData(selectedRow, normal, extra, trible, normalAmount, extraAmount, tribleAmount);
+            }
+
+            JOptionPane.showMessageDialog(this, "Overtime data saved successfully!", "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            // 6. Close dialog
             this.dispose();
 
-            System.out.println("✅ Save completed successfully!");
-
         } catch (Exception e) {
-            System.err.println("❌ Save error: " + e.getMessage());
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     "Error saving data: " + e.getMessage(),
-                    "Error",
+                    "Database Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -174,6 +352,8 @@ public class AddOverTime extends javax.swing.JDialog {
         jTextField4 = new javax.swing.JTextField();
         jTextField5 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jLabel7 = new javax.swing.JLabel();
+        jTextField6 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -213,6 +393,11 @@ public class AddOverTime extends javax.swing.JDialog {
             }
         });
 
+        jLabel7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel7.setText("Normal");
+
+        jTextField6.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -223,24 +408,30 @@ public class AddOverTime extends javax.swing.JDialog {
                     .addComponent(jLabel1)
                     .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 501, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel4)
-                            .addComponent(jLabel6))
-                        .addGap(86, 86, 86)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 263, Short.MAX_VALUE)
-                            .addComponent(jTextField3)
-                            .addComponent(jTextField5))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 91, Short.MAX_VALUE)
+                                .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 269, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel7))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 269, Short.MAX_VALUE)
+                                    .addComponent(jTextField6))))
                         .addGap(108, 108, 108)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel5))
-                        .addGap(107, 107, 107)
+                            .addComponent(jLabel6)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel2))
+                        .addGap(96, 96, 96)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField2)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 269, Short.MAX_VALUE))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 269, Short.MAX_VALUE)
+                            .addComponent(jTextField3)
+                            .addComponent(jTextField1))))
+                .addContainerGap(14, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jButton1)
@@ -256,20 +447,22 @@ public class AddOverTime extends javax.swing.JDialog {
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jLabel3)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel7)
+                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
-                    .addComponent(jLabel5)
                     .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel3)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel6)
-                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 52, Short.MAX_VALUE)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel5)
+                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -281,7 +474,6 @@ public class AddOverTime extends javax.swing.JDialog {
         System.out.println("🎯🎯🎯 SAVE BUTTON CLICKED! 🎯🎯🎯");
         saveOvertimeData();
     }//GEN-LAST:event_jButton1ActionPerformed
-
     public static void main(String args[]) {
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -329,11 +521,13 @@ public class AddOverTime extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField jTextField5;
+    private javax.swing.JTextField jTextField6;
     // End of variables declaration//GEN-END:variables
 }
