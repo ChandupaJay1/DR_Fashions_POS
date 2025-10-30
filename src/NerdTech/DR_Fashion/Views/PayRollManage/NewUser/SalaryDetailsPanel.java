@@ -325,17 +325,17 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Grading Lncentive", "Attendance Incentive", "Production Incentive", "BRA 1", "BRA 2", "Peoples Bank Account No", "Hnb Bank Account No"
+                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Attendance Incentive", "Production Incentive", "BRA 1", "BRA 2", "Peoples Bank Account No", "Hnb Bank Account No"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
