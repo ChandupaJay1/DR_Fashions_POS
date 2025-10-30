@@ -19,7 +19,6 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
     private String epfNo;
     private String name;
     private IncentivePanel parentPanel;
-    private double attendanceIncentive = 0;
     private int attendanceId = -1;
     private int employeeId = -1;
 
@@ -30,36 +29,26 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
         this.name = name;
         this.parentPanel = parentPanel;
 
-        // Set title with employee name
         setTitle("Add Incentive - " + name + " (" + epfNo + ")");
 
         loadEmployeeDetails();
         loadExistingIncentives();
     }
 
-    // Load employee details and calculate attendance incentive
+    /**
+     * Load employee details and get attendance ID
+     */
     private void loadEmployeeDetails() {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // Get employee ID and capacity
-            String employeeSQL = "SELECT e.id, e.capacity_id, c.name AS capacity_name "
-                    + "FROM employee e "
-                    + "INNER JOIN capacity c ON e.capacity_id = c.id "
-                    + "WHERE e.epf_no = ?";
+            // Get employee ID
+            String employeeSQL = "SELECT id FROM employee WHERE epf_no = ?";
             PreparedStatement psEmployee = conn.prepareStatement(employeeSQL);
             psEmployee.setString(1, epfNo);
             ResultSet rsEmployee = psEmployee.executeQuery();
 
-            boolean isWorker = false;
             if (rsEmployee.next()) {
                 employeeId = rsEmployee.getInt("id");
-                String capacity = rsEmployee.getString("capacity_name");
-                isWorker = "Worker".equalsIgnoreCase(capacity);
-
-                System.out.println("=== Employee Details ===");
-                System.out.println("EPF No: " + epfNo);
                 System.out.println("Employee ID: " + employeeId);
-                System.out.println("Capacity: " + capacity);
-                System.out.println("Is Worker: " + isWorker);
             } else {
                 JOptionPane.showMessageDialog(this,
                         "❌ Employee not found!",
@@ -68,60 +57,27 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
                 return;
             }
 
-            // Get the most recent attendance record for this employee
-            String attendanceSQL = "SELECT id, attendance_date "
-                    + "FROM attendence "
-                    + "WHERE employee_id = ? "
-                    + "ORDER BY attendance_date DESC LIMIT 1";
+            // Get the most recent attendance record for current month
+            String attendanceSQL = """
+                SELECT id, attendance_date 
+                FROM attendence 
+                WHERE employee_id = ? 
+                AND MONTH(attendance_date) = MONTH(CURRENT_DATE()) 
+                AND YEAR(attendance_date) = YEAR(CURRENT_DATE())
+                ORDER BY attendance_date DESC 
+                LIMIT 1
+            """;
             PreparedStatement psAttendance = conn.prepareStatement(attendanceSQL);
             psAttendance.setInt(1, employeeId);
             ResultSet rsAttendance = psAttendance.executeQuery();
 
             if (rsAttendance.next()) {
                 attendanceId = rsAttendance.getInt("id");
-                System.out.println("Latest Attendance ID: " + attendanceId);
-                System.out.println("Latest Attendance Date: " + rsAttendance.getDate("attendance_date"));
+                System.out.println("Latest Attendance ID (Current Month): " + attendanceId);
+                System.out.println("Attendance Date: " + rsAttendance.getDate("attendance_date"));
             } else {
-                System.out.println("⚠️ No attendance record found");
+                System.out.println("⚠️ No attendance record found for current month");
             }
-
-            // Calculate attendance incentive only for Workers
-            if (isWorker) {
-                String presentDaysSQL = """
-                SELECT COUNT(*) AS present_days 
-                FROM attendence 
-                WHERE employee_id = ? 
-                AND status = 'Present' 
-                AND MONTH(attendance_date) = MONTH(CURRENT_DATE()) 
-                AND YEAR(attendance_date) = YEAR(CURRENT_DATE())
-            """;
-                PreparedStatement psPresentDays = conn.prepareStatement(presentDaysSQL);
-                psPresentDays.setInt(1, employeeId);
-                ResultSet rsPresentDays = psPresentDays.executeQuery();
-
-                if (rsPresentDays.next()) {
-                    int presentDays = rsPresentDays.getInt("present_days");
-
-                    // Attendance Incentive Logic:
-                    // - Present days >= 26: 6000
-                    // - Present days < 26: 0
-                    attendanceIncentive = (presentDays >= 26) ? 6000.0 : 0.0;
-
-                    System.out.println("=== Attendance Calculation ===");
-                    System.out.println("Present Days (Current Month): " + presentDays);
-                    System.out.println("Attendance Incentive: Rs. " + attendanceIncentive);
-                    System.out.println("Status: " + (presentDays >= 26 ? "✅ Eligible (≥26 days)" : "❌ Not Eligible (<26 days)"));
-                } else {
-                    attendanceIncentive = 0.0;
-                    System.out.println("⚠️ No present days found for current month");
-                }
-            } else {
-                attendanceIncentive = 0.0;
-                System.out.println("=== Attendance Calculation ===");
-                System.out.println("Employee is not a Worker - Attendance Incentive: Rs. 0.00");
-            }
-
-            System.out.println("========================\n");
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -132,10 +88,12 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
         }
     }
 
-    // Load existing incentive data if available
+    /**
+     * Load existing incentive data if available
+     */
     private void loadExistingIncentives() {
         if (attendanceId == -1) {
-            System.out.println("No attendance record found - creating new incentive");
+            System.out.println("No attendance record found - fields will remain empty");
             return;
         }
 
@@ -151,7 +109,7 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                // Load existing values into text fields
+                // Load existing values (excluding attendance_incentive - it's auto-calculated)
                 String grading = rs.getString("grading_incentive");
                 String prod1 = rs.getString("production1_incentive");
                 String prod2 = rs.getString("production2_incentive");
@@ -163,97 +121,222 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
                 System.out.println("Loaded existing incentives: G=" + grading + ", P1=" + prod1 + ", P2=" + prod2);
             }
         } catch (Exception e) {
-            // No existing record - fields remain empty
             System.out.println("No existing incentive record found");
         }
     }
 
-    // Save incentive to DB
+    /**
+     * Calculate attendance incentive based on business logic Returns 6000 if:
+     * 1. Employee is a Worker AND 2. Present days in current month >= 26
+     * Otherwise returns 0
+     */
+    private double calculateAttendanceIncentive() {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+
+            // Check if employee is a Worker
+            String capacitySQL = """
+                SELECT c.name AS capacity_name
+                FROM employee e
+                INNER JOIN capacity c ON e.capacity_id = c.id
+                WHERE e.id = ?
+            """;
+            PreparedStatement psCapacity = conn.prepareStatement(capacitySQL);
+            psCapacity.setInt(1, employeeId);
+            ResultSet rsCapacity = psCapacity.executeQuery();
+
+            boolean isWorker = false;
+            String capacity = "";
+
+            if (rsCapacity.next()) {
+                capacity = rsCapacity.getString("capacity_name");
+                isWorker = "Worker".equalsIgnoreCase(capacity);
+            }
+
+            System.out.println("\n=== Attendance Incentive Calculation ===");
+            System.out.println("Capacity: " + capacity);
+            System.out.println("Is Worker: " + isWorker);
+
+            // If not a Worker, return 0 immediately
+            if (!isWorker) {
+                System.out.println("Result: Rs. 0.00 (Not a Worker)");
+                System.out.println("=======================================\n");
+                return 0.0;
+            }
+
+            // Count present days in current month
+            String presentDaysSQL = """
+                SELECT COUNT(*) AS present_days 
+                FROM attendence 
+                WHERE employee_id = ? 
+                AND status = 'Present' 
+                AND MONTH(attendance_date) = MONTH(CURRENT_DATE()) 
+                AND YEAR(attendance_date) = YEAR(CURRENT_DATE())
+            """;
+            PreparedStatement psPresentDays = conn.prepareStatement(presentDaysSQL);
+            psPresentDays.setInt(1, employeeId);
+            ResultSet rsPresentDays = psPresentDays.executeQuery();
+
+            if (rsPresentDays.next()) {
+                int presentDays = rsPresentDays.getInt("present_days");
+                double incentive = (presentDays >= 26) ? 6000.0 : 0.0;
+
+                System.out.println("Present Days (Current Month): " + presentDays);
+                System.out.println("Eligible: " + (presentDays >= 26 ? "YES (≥26 days)" : "NO (<26 days)"));
+                System.out.println("Attendance Incentive: Rs. " + incentive);
+                System.out.println("=======================================\n");
+
+                return incentive;
+            }
+
+            System.out.println("No attendance records found");
+            System.out.println("Result: Rs. 0.00");
+            System.out.println("=======================================\n");
+            return 0.0;
+
+        } catch (Exception e) {
+            System.err.println("Error calculating attendance incentive: " + e.getMessage());
+            e.printStackTrace();
+            return 0.0;
+        }
+    }
+
+    /**
+     * Save incentive data with auto-calculated attendance incentive
+     */
     private void saveIncentive() {
         if (attendanceId == -1) {
             JOptionPane.showMessageDialog(this,
-                    "❌ No attendance record found for this employee!\nPlease mark attendance first.",
+                    "❌ No attendance record found for this employee in current month!\nPlease mark attendance first.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try (Connection conn = DatabaseConnection.getConnection()) {
+        try {
+            // Get manual input values
             double grading = jTextFieldGrading.getText().trim().isEmpty() ? 0 : Double.parseDouble(jTextFieldGrading.getText().trim());
             double prod1 = jTextFieldProd1.getText().trim().isEmpty() ? 0 : Double.parseDouble(jTextFieldProd1.getText().trim());
             double prod2 = jTextFieldProd2.getText().trim().isEmpty() ? 0 : Double.parseDouble(jTextFieldProd2.getText().trim());
 
-            // Calculate total: Production I + Production II ONLY
-            // Note: Attendance and Grading are saved separately but NOT included in total
+            // ⭐ AUTO-CALCULATE attendance incentive
+            double attendanceIncentive = calculateAttendanceIncentive();
+
+            // Calculate total (Production1 + Production2 only, as per your logic)
             double total = prod1 + prod2;
 
             System.out.println("=== Saving Incentive ===");
-            System.out.println("Attendance: " + attendanceIncentive + " (not in total)");
-            System.out.println("Grading: " + grading + " (not in total)");
-            System.out.println("Production 1: " + prod1);
-            System.out.println("Production 2: " + prod2);
-            System.out.println("Total Incentive (Prod1 + Prod2): " + total);
+            System.out.println("Grading: Rs. " + grading);
+            System.out.println("Production 1: Rs. " + prod1);
+            System.out.println("Production 2: Rs. " + prod2);
+            System.out.println("Attendance (Auto): Rs. " + attendanceIncentive);
+            System.out.println("Total: Rs. " + total);
             System.out.println("========================");
 
-            // Check if record exists
-            String checkSQL = "SELECT id FROM incentive WHERE attendence_id = ?";
-            PreparedStatement psCheck = conn.prepareStatement(checkSQL);
-            psCheck.setInt(1, attendanceId);
-            ResultSet rsCheck = psCheck.executeQuery();
+            Connection conn = null;
+            PreparedStatement psCheck = null;
+            PreparedStatement ps = null;
+            ResultSet rsCheck = null;
 
-            String sql;
-            PreparedStatement ps;
+            try {
+                conn = DatabaseConnection.getConnection();
 
-            if (rsCheck.next()) {
-                // UPDATE existing record
-                sql = """
-                UPDATE incentive 
-                SET grading_incentive = ?, 
-                    production1_incentive = ?, 
-                    production2_incentive = ?, 
-                    attendance_incentive = ?, 
-                    total_incentive = ?
-                WHERE attendence_id = ?
-            """;
-                ps = conn.prepareStatement(sql);
-                ps.setDouble(1, grading);
-                ps.setDouble(2, prod1);
-                ps.setDouble(3, prod2);
-                ps.setDouble(4, attendanceIncentive);
-                ps.setDouble(5, total);  // Production 1 + Production 2 only
-                ps.setInt(6, attendanceId);
+                // Check if record exists
+                String checkSQL = "SELECT id FROM incentive WHERE attendence_id = ?";
+                psCheck = conn.prepareStatement(checkSQL);
+                psCheck.setInt(1, attendanceId);
+                rsCheck = psCheck.executeQuery();
 
-                System.out.println("Updating existing record...");
-            } else {
-                // INSERT new record
-                sql = """
-                INSERT INTO incentive
-                (attendence_id, grading_incentive, production1_incentive, production2_incentive, attendance_incentive, total_incentive)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """;
-                ps = conn.prepareStatement(sql);
-                ps.setInt(1, attendanceId);
-                ps.setDouble(2, grading);
-                ps.setDouble(3, prod1);
-                ps.setDouble(4, prod2);
-                ps.setDouble(5, attendanceIncentive);
-                ps.setDouble(6, total);  // Production 1 + Production 2 only
+                String sql;
+                boolean isUpdate = rsCheck.next();
 
-                System.out.println("Inserting new record...");
-            }
-
-            int result = ps.executeUpdate();
-            if (result > 0) {
-                System.out.println("✅ Incentive saved successfully!");
-                JOptionPane.showMessageDialog(this, "✅ Incentive saved successfully!");
-
-                // Refresh parent panel table
-                if (parentPanel != null) {
-                    parentPanel.updateIncentiveInTable(epfNo, "", "", "", "", "");
+                if (isUpdate) {
+                    // UPDATE existing record
+                    sql = """
+                        UPDATE incentive SET 
+                            grading_incentive = ?, 
+                            production1_incentive = ?, 
+                            production2_incentive = ?, 
+                            attendance_incentive = ?, 
+                            total_incentive = ? 
+                        WHERE attendence_id = ?
+                    """;
+                    ps = conn.prepareStatement(sql);
+                    ps.setDouble(1, grading);
+                    ps.setDouble(2, prod1);
+                    ps.setDouble(3, prod2);
+                    ps.setDouble(4, attendanceIncentive);
+                    ps.setDouble(5, total);
+                    ps.setInt(6, attendanceId);
+                    System.out.println("📝 Updating existing record...");
+                } else {
+                    // INSERT new record
+                    sql = """
+                        INSERT INTO incentive 
+                        (attendence_id, grading_incentive, production1_incentive, 
+                         production2_incentive, attendance_incentive, total_incentive) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """;
+                    ps = conn.prepareStatement(sql);
+                    ps.setInt(1, attendanceId);
+                    ps.setDouble(2, grading);
+                    ps.setDouble(3, prod1);
+                    ps.setDouble(4, prod2);
+                    ps.setDouble(5, attendanceIncentive);
+                    ps.setDouble(6, total);
+                    System.out.println("➕ Inserting new record...");
                 }
 
-                dispose();
+                int result = ps.executeUpdate();
+
+                if (result > 0) {
+                    System.out.println("✅ Database save successful!");
+
+                    // Close resources immediately
+                    if (rsCheck != null) {
+                        rsCheck.close();
+                    }
+                    if (psCheck != null) {
+                        psCheck.close();
+                    }
+                    if (ps != null) {
+                        ps.close();
+                    }
+                    if (conn != null) {
+                        conn.close();
+                    }
+
+                    System.out.println("🔒 Database connections closed");
+
+                    // Show success message
+                    JOptionPane.showMessageDialog(this,
+                            "✅ Incentive saved successfully!\n\n"
+                            + "Attendance Incentive: Rs. " + String.format("%.2f", attendanceIncentive));
+
+                    // Close dialog - WindowListener will handle refresh
+                    System.out.println("🚪 Disposing dialog...");
+                    dispose();
+                }
+
+            } finally {
+                // Safety cleanup
+                try {
+                    if (rsCheck != null) {
+                        rsCheck.close();
+                    }
+                    if (psCheck != null) {
+                        psCheck.close();
+                    }
+                    if (ps != null) {
+                        ps.close();
+                    }
+                    if (conn != null) {
+                        conn.close();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
+
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
                     "❌ Please enter valid numbers only!",
@@ -261,8 +344,8 @@ public class AddIncentiveDFrame extends javax.swing.JDialog {
                     JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "❌ Error saving incentive: " + e.getMessage(),
-                    "Database Error",
+                    "❌ Error: " + e.getMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

@@ -60,8 +60,8 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            String query = "SELECT basic_salary, grading_incentive, attendance_incentive, production_incentive, "
-                    + "peoples_bank_account_no, hnb_bank_account_no "
+            // Query to load existing salary data
+            String query = "SELECT basic_salary, peoples_bank_account_no, hnb_bank_account_no "
                     + "FROM salary WHERE employee_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, employeeId);
@@ -69,10 +69,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
             if (resultSet.next()) {
                 // Load existing data into text fields
-                jTextField1.setText(String.valueOf(resultSet.getDouble("basic_salary")));
-                jTextField2.setText(String.valueOf(resultSet.getDouble("grading_incentive")));
-                jTextField3.setText(String.valueOf(resultSet.getDouble("attendance_incentive")));
-                jTextField4.setText(String.valueOf(resultSet.getDouble("production_incentive")));
+                basicSalaryField.setText(String.valueOf(resultSet.getDouble("basic_salary")));
 
                 String peoplesBank = resultSet.getString("peoples_bank_account_no");
                 String hnbBank = resultSet.getString("hnb_bank_account_no");
@@ -103,13 +100,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jTextField2 = new javax.swing.JTextField();
-        jTextField3 = new javax.swing.JTextField();
-        jTextField4 = new javax.swing.JTextField();
+        basicSalaryField = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
         jLabel6 = new javax.swing.JLabel();
         peoples_bank_account_no = new javax.swing.JTextField();
@@ -124,22 +115,7 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
         jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel2.setText("Basic Salary");
 
-        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        jLabel3.setText("Grading Lncentive");
-
-        jLabel4.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        jLabel4.setText("Attendance Incentive");
-
-        jLabel5.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        jLabel5.setText("Production Incentive");
-
-        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        jTextField2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        jTextField3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        jTextField4.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        basicSalaryField.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton1.setText("Save");
@@ -165,28 +141,27 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                 .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jButton1))
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel4)
-                            .addComponent(jLabel5)
+                                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(jLabel6)
                             .addComponent(jLabel7))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField1)
-                            .addComponent(jTextField2)
-                            .addComponent(jTextField3)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE)
-                            .addComponent(peoples_bank_account_no)
-                            .addComponent(hnb_bank_account_no))))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(peoples_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(basicSalaryField, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(hnb_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(20, 20, 20))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(244, 244, 244)
+                .addComponent(jButton1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -198,28 +173,16 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 .addGap(47, 47, 47)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(basicSalaryField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6)
                     .addComponent(peoples_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel7)
                     .addComponent(hnb_bank_account_no, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -233,24 +196,25 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
     private void saveSalaryDetails() {
         try {
-            // Validate input - salary fields required, bank accounts optional
-            if (jTextField1.getText().trim().isEmpty()
-                    || jTextField2.getText().trim().isEmpty()
-                    || jTextField3.getText().trim().isEmpty()
-                    || jTextField4.getText().trim().isEmpty()) {
-
+            // Validate input - only required fields
+            if (basicSalaryField.getText().trim().isEmpty()) {
                 javax.swing.JOptionPane.showMessageDialog(this,
-                        "Please fill all salary fields!",
+                        "Please fill the basic salary field!",
                         "Validation Error",
                         javax.swing.JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             // Parse salary values
-            double basicSalary = Double.parseDouble(jTextField1.getText().trim());
-            double gradingIncentive = Double.parseDouble(jTextField2.getText().trim());
-            double attendanceIncentive = Double.parseDouble(jTextField3.getText().trim());
-            double productionIncentive = Double.parseDouble(jTextField4.getText().trim());
+            double basicSalary = Double.parseDouble(basicSalaryField.getText().trim());
+
+            // Set default values for attendance and production incentives
+            double attendanceIncentive = 0.0;
+            double productionIncentive = 0.0;
+
+            // BRA values - automatic values (1000 for BRA1, 2500 for BRA2)
+            double bra1 = 1000.0;
+            double bra2 = 2500.0;
 
             // Get bank account numbers (can be empty)
             String peoplesBank = peoples_bank_account_no.getText().trim();
@@ -264,10 +228,6 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
                 hnbBank = null;
             }
 
-            // BRA values - automatic values
-            double bra1 = 1000.0;
-            double bra2 = 2500.0;
-
             Connection connection = DatabaseConnection.getConnection();
 
             // Check if record already exists for this employee
@@ -277,48 +237,41 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
             PreparedStatement statement;
 
             if (recordExists) {
-                // Update existing record with bank accounts and BRA values
-                query = "UPDATE salary SET basic_salary = ?, grading_incentive = ?, "
-                        + "attendance_incentive = ?, production_incentive = ?, "
+                // Update existing record with auto BRA values
+                query = "UPDATE salary SET basic_salary = ?, bra1 = ?, bra2 = ?, "
                         + "peoples_bank_account_no = ?, hnb_bank_account_no = ?, "
-                        + "bra_1 = ?, bra_2 = ?, "
                         + "last_modified = CURRENT_TIMESTAMP "
                         + "WHERE employee_id = ?";
 
                 statement = connection.prepareStatement(query);
                 statement.setDouble(1, basicSalary);
-                statement.setDouble(2, gradingIncentive);
-                statement.setDouble(3, attendanceIncentive);
-                statement.setDouble(4, productionIncentive);
-                statement.setString(5, peoplesBank);
-                statement.setString(6, hnbBank);
-                statement.setDouble(7, bra1);
-                statement.setDouble(8, bra2);
-                statement.setInt(9, employeeId);
+                statement.setDouble(2, bra1);  // Auto BRA1 value
+                statement.setDouble(3, bra2);  // Auto BRA2 value
+                statement.setString(4, peoplesBank);
+                statement.setString(5, hnbBank);
+                statement.setInt(6, employeeId);
             } else {
-                // Insert new record with bank accounts and BRA values
-                query = "INSERT INTO salary (employee_id, basic_salary, grading_incentive, "
-                        + "attendance_incentive, production_incentive, peoples_bank_account_no, "
-                        + "hnb_bank_account_no, bra_1, bra_2, last_modified) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                // Insert new record with auto BRA values
+                query = "INSERT INTO salary (employee_id, basic_salary, bra1, bra2, "
+                        + "peoples_bank_account_no, hnb_bank_account_no, last_modified) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
                 statement = connection.prepareStatement(query);
                 statement.setInt(1, employeeId);
                 statement.setDouble(2, basicSalary);
-                statement.setDouble(3, gradingIncentive);
-                statement.setDouble(4, attendanceIncentive);
-                statement.setDouble(5, productionIncentive);
-                statement.setString(6, peoplesBank);
-                statement.setString(7, hnbBank);
-                statement.setDouble(8, bra1);
-                statement.setDouble(9, bra2);
+                statement.setDouble(3, bra1);  // Auto BRA1 value
+                statement.setDouble(4, bra2);  // Auto BRA2 value
+                statement.setString(5, peoplesBank);
+                statement.setString(6, hnbBank);
             }
 
             int rowsAffected = statement.executeUpdate();
 
             if (rowsAffected > 0) {
                 javax.swing.JOptionPane.showMessageDialog(this,
-                        "Salary details saved successfully for " + employeeName + "!",
+                        "Salary details saved successfully for " + employeeName + "!\n"
+                        + "BRA 1: " + bra1 + "\n"
+                        + "BRA 2: " + bra2,
                         "Success",
                         javax.swing.JOptionPane.INFORMATION_MESSAGE);
                 this.dispose();
@@ -409,20 +362,14 @@ public class AddNewUserDFrame extends javax.swing.JDialog {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField basicSalaryField;
     private javax.swing.JTextField hnb_bank_account_no;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
-    private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField peoples_bank_account_no;
     // End of variables declaration//GEN-END:variables
 }

@@ -23,7 +23,7 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
     private String selectedEpfNo;
     private String selectedEmployeeName;
 
-    public SalaryDetailsPanel() {
+    public SalaryDetailsPanel() throws Exception {
         initComponents();
         loadSalaryData();
         setupTableDoubleClick();
@@ -55,22 +55,34 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
         jTextField1.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                performSearch();
+                try {
+                    performSearch();
+                } catch (Exception ex) {
+                    Logger.getLogger(SalaryDetailsPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                performSearch();
+                try {
+                    performSearch();
+                } catch (Exception ex) {
+                    Logger.getLogger(SalaryDetailsPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                performSearch();
+                try {
+                    performSearch();
+                } catch (Exception ex) {
+                    Logger.getLogger(SalaryDetailsPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
     }
 
-    private void performSearch() {
+    private void performSearch() throws Exception {
         String searchText = jTextField1.getText().trim().toLowerCase();
 
         if (searchText.isEmpty()) {
@@ -81,10 +93,9 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            // Advanced search query - including BRA columns
+            // Fixed query - removed attendance_incentive and production_incentive
             String query = "SELECT e.epf_no, e.fname, sec.section_name, d.title, e.nic, "
-                    + "sal.basic_salary, sal.grading_incentive, sal.attendance_incentive, "
-                    + "sal.production_incentive, sal.bra_1, sal.bra_2, "
+                    + "sal.basic_salary, sal.bra1, sal.bra2, "
                     + "sal.peoples_bank_account_no, sal.hnb_bank_account_no "
                     + "FROM employee e "
                     + "LEFT JOIN section sec ON e.section_id = sec.id "
@@ -102,13 +113,11 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
 
             PreparedStatement statement = connection.prepareStatement(query);
             String searchPattern = "%" + searchText + "%";
-
             for (int i = 1; i <= 5; i++) {
                 statement.setString(i, searchPattern);
             }
 
             ResultSet resultSet = statement.executeQuery();
-
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
             model.setRowCount(0);
 
@@ -124,27 +133,12 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     basicSalary = null;
                 }
 
-                Double gradingIncentive = resultSet.getDouble("grading_incentive");
-                if (resultSet.wasNull()) {
-                    gradingIncentive = null;
-                }
-
-                Double attendanceIncentive = resultSet.getDouble("attendance_incentive");
-                if (resultSet.wasNull()) {
-                    attendanceIncentive = null;
-                }
-
-                Double productionIncentive = resultSet.getDouble("production_incentive");
-                if (resultSet.wasNull()) {
-                    productionIncentive = null;
-                }
-
-                Double bra1 = resultSet.getDouble("bra_1");
+                Double bra1 = resultSet.getDouble("bra1");
                 if (resultSet.wasNull()) {
                     bra1 = null;
                 }
 
-                Double bra2 = resultSet.getDouble("bra_2");
+                Double bra2 = resultSet.getDouble("bra2");
                 if (resultSet.wasNull()) {
                     bra2 = null;
                 }
@@ -159,9 +153,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     designation,
                     nic,
                     basicSalary,
-                    gradingIncentive,
-                    attendanceIncentive,
-                    productionIncentive,
                     bra1,
                     bra2,
                     peoplesBank,
@@ -179,12 +170,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     "Error searching salary data: " + e.getMessage(),
                     "Database Error",
                     javax.swing.JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Error searching salary data: " + e.getMessage(),
-                    "Database Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -197,14 +182,13 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
         loadSalaryData();
     }
 
-    public void loadSalaryData() {
+    public void loadSalaryData() throws Exception {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
-            // Load only employees who HAVE salary details - including BRA columns
+            // Fixed query - removed attendance_incentive and production_incentive
             String query = "SELECT e.epf_no, e.fname, sec.section_name, d.title, e.nic, "
-                    + "sal.basic_salary, sal.grading_incentive, sal.attendance_incentive, "
-                    + "sal.production_incentive, sal.bra_1, sal.bra_2, "
+                    + "sal.basic_salary, sal.bra1, sal.bra2, "
                     + "sal.peoples_bank_account_no, sal.hnb_bank_account_no "
                     + "FROM employee e "
                     + "LEFT JOIN section sec ON e.section_id = sec.id "
@@ -232,37 +216,19 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     basicSalary = null;
                 }
 
-                Double gradingIncentive = resultSet.getDouble("grading_incentive");
-                if (resultSet.wasNull()) {
-                    gradingIncentive = null;
-                }
-
-                Double attendanceIncentive = resultSet.getDouble("attendance_incentive");
-                if (resultSet.wasNull()) {
-                    attendanceIncentive = null;
-                }
-
-                Double productionIncentive = resultSet.getDouble("production_incentive");
-                if (resultSet.wasNull()) {
-                    productionIncentive = null;
-                }
-
-                // Get BRA values
-                Double bra1 = resultSet.getDouble("bra_1");
+                Double bra1 = resultSet.getDouble("bra1");
                 if (resultSet.wasNull()) {
                     bra1 = null;
                 }
 
-                Double bra2 = resultSet.getDouble("bra_2");
+                Double bra2 = resultSet.getDouble("bra2");
                 if (resultSet.wasNull()) {
                     bra2 = null;
                 }
 
-                // Get bank account numbers
                 String peoplesBank = resultSet.getString("peoples_bank_account_no");
                 String hnbBank = resultSet.getString("hnb_bank_account_no");
 
-                // Add row to table with all columns including BRA
                 model.addRow(new Object[]{
                     epfNo,
                     name,
@@ -270,9 +236,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     designation,
                     nic,
                     basicSalary,
-                    gradingIncentive,
-                    attendanceIncentive,
-                    productionIncentive,
                     bra1,
                     bra2,
                     peoplesBank,
@@ -285,12 +248,6 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
             connection.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Error loading salary data: " + e.getMessage(),
-                    "Database Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
             e.printStackTrace();
             javax.swing.JOptionPane.showMessageDialog(this,
                     "Error loading salary data: " + e.getMessage(),
@@ -325,17 +282,17 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "Attendance Incentive", "Production Incentive", "BRA 1", "BRA 2", "Peoples Bank Account No", "Hnb Bank Account No"
+                "EPF No", "Name", "Section", "Designation", "NIC", "Basic Salary", "BRA 1", "BRA 2", "Peoples Bank Account No", "Hnb Bank Account No"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -431,6 +388,8 @@ public class SalaryDetailsPanel extends javax.swing.JPanel {
                     "Error",
                     javax.swing.JOptionPane.ERROR_MESSAGE);
         }
+
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
