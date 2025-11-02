@@ -257,8 +257,17 @@ public class OverTimePanel extends javax.swing.JPanel {
         }
     }
 
+    private boolean isCalculating = false; // ✅ Flag එකක් add කරන්න
+
     private void calculateTotals(int row) {
+        // ✅ දැනටමත් calculate කරනවා නම් return කරන්න
+        if (isCalculating) {
+            return;
+        }
+
         try {
+            isCalculating = true; // ✅ Calculation start කරනවා කියලා mark කරන්න
+
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
             double normal = getDoubleValue(model.getValueAt(row, 5));
             double extra = getDoubleValue(model.getValueAt(row, 6));
@@ -272,8 +281,11 @@ public class OverTimePanel extends javax.swing.JPanel {
 
             model.setValueAt(totalHours, row, 8);
             model.setValueAt(totalAmount, row, 12);
+
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            isCalculating = false; // ✅ Calculation අවසානයි කියලා mark කරන්න
         }
     }
 

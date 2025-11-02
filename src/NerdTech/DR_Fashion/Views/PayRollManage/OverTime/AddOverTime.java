@@ -238,7 +238,7 @@ public class AddOverTime extends javax.swing.JDialog {
                 return;
             }
 
-            // ✅ First, find attendence_id for this employee
+            // ✅ Find attendence_id
             int attendenceId = -1;
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(
                     "SELECT id FROM attendence WHERE employee_id = (SELECT id FROM employee WHERE epf_no = ?) ORDER BY id DESC LIMIT 1")) {
@@ -258,12 +258,17 @@ public class AddOverTime extends javax.swing.JDialog {
                 return;
             }
 
-            // ✅ Try update existing overtime
+            // ✅ Calculate totals
+            double totalHours = normal + extra + trible;
+            double totalAmount = normalAmount + extraAmount + tribleAmount;
+
+            // ✅ Update existing overtime - CORRECT COLUMN NAMES
             Connection conn = DatabaseConnection.getConnection();
             String sql = """
             UPDATE overtime 
-            SET normal_hours=?, extra_hours=?, trible_hours=?, 
-                normal_amount=?, extra_amount=?, trible_amount=? 
+            SET normal=?, extra=?, trible=?, 
+                normal_amount=?, extra_amount=?, trible_amount=?,
+                total=?, total_amount=?
             WHERE attendence_id=?
         """;
             PreparedStatement pst = conn.prepareStatement(sql);
@@ -273,7 +278,9 @@ public class AddOverTime extends javax.swing.JDialog {
             pst.setDouble(4, normalAmount);
             pst.setDouble(5, extraAmount);
             pst.setDouble(6, tribleAmount);
-            pst.setInt(7, attendenceId);
+            pst.setDouble(7, totalHours);
+            pst.setDouble(8, totalAmount);
+            pst.setInt(9, attendenceId);
 
             int rows = pst.executeUpdate();
             pst.close();
@@ -283,11 +290,13 @@ public class AddOverTime extends javax.swing.JDialog {
                 System.out.println("✅ Overtime record updated successfully for attendance_id: " + attendenceId);
             } else {
                 System.out.println("⚠ No existing record found — inserting new overtime entry...");
+
+                // ✅ Insert new record - CORRECT COLUMN NAMES
                 conn = DatabaseConnection.getConnection();
                 sql = """
-                INSERT INTO overtime (attendence_id, normal_hours, extra_hours, trible_hours, 
-                                      normal_amount, extra_amount, trible_amount)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO overtime (attendence_id, normal, extra, trible, 
+                                      normal_amount, extra_amount, trible_amount, total, total_amount)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
                 pst = conn.prepareStatement(sql);
                 pst.setInt(1, attendenceId);
@@ -297,9 +306,12 @@ public class AddOverTime extends javax.swing.JDialog {
                 pst.setDouble(5, normalAmount);
                 pst.setDouble(6, extraAmount);
                 pst.setDouble(7, tribleAmount);
+                pst.setDouble(8, totalHours);
+                pst.setDouble(9, totalAmount);
                 pst.executeUpdate();
                 pst.close();
                 conn.close();
+                System.out.println("✅ New overtime record inserted successfully!");
             }
 
             // ✅ Refresh parent table if available

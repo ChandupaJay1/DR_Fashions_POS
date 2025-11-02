@@ -91,81 +91,81 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
         try {
             // Modified query to avoid duplicates - use DISTINCT and proper joins
             String query = """
-            SELECT DISTINCT
-                e.epf_no AS 'EPF No',
-                e.name_with_initial AS 'Name',
-                s.section_name AS 'Section',
-                d.title AS 'Designation',
-                e.nic AS 'NIC',
-                COALESCE(sal.basic_salary, '0') AS 'Basic Salary',
-                
-                -- Incentive Columns (get latest incentive)
-                COALESCE((SELECT attendance_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Attendance Incentive',
-                COALESCE((SELECT grading_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Grading Incentive',
-                COALESCE((SELECT production1_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive I',
-                COALESCE((SELECT production2_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive II',
-                COALESCE((SELECT total_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Incentive',
-                
-                -- Day & Amount Columns (get latest day)
-                COALESCE((SELECT working_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day',
-                COALESCE((SELECT sunday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday',
-                COALESCE((SELECT poya_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day',
-                COALESCE((SELECT holiday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday',
-                COALESCE((SELECT total_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
-                COALESCE((SELECT working_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day Amount',
-                COALESCE((SELECT sunday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday Amount',
-                COALESCE((SELECT poya_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day Amount',
-                COALESCE((SELECT holiday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday Amount',
-                COALESCE((SELECT total_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day Amount',
-                
-                -- Overtime Columns (get latest overtime)
-                COALESCE((SELECT normal FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal',
-                COALESCE((SELECT extra FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra',
-                COALESCE((SELECT trible FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible',
-                COALESCE((SELECT total FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
-                COALESCE((SELECT normal_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal Amount',
-                COALESCE((SELECT extra_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra Amount',
-                COALESCE((SELECT trible_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible Amount',
-                COALESCE((SELECT total_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
-                
-                -- Leave & No Pay Columns (get latest leave)
-                COALESCE((SELECT leave_count FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Count',
-                COALESCE((SELECT `leave` FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave',
-                COALESCE((SELECT leave_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Amount',
-                COALESCE((SELECT day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day',
-                COALESCE((SELECT hour FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour',
-                COALESCE((SELECT total FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
-                COALESCE((SELECT day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day Amount',
-                COALESCE((SELECT hour_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour Amount',
-                COALESCE((SELECT total_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
-                COALESCE((SELECT short_working_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days',
-                COALESCE((SELECT short_working_day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days Amount',
-                COALESCE((SELECT vacation_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Vacation Day',
-                COALESCE((SELECT total_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
-                COALESCE((SELECT arreas FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Arreas',
-                COALESCE((SELECT advance FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Advance',
-                
-                -- EPF/ETF Columns from epf table
-                COALESCE(epf.total_efp, '0') AS 'Total For EPF',
-                COALESCE(epf.epf_12, '0') AS 'EPF 12%',
-                COALESCE(epf.epf_3, '0') AS 'ETF 3%',
-                COALESCE(epf.epf_8, '0') AS 'EPF 8%',
-                COALESCE(epf.`total_epf/etf`, '0') AS 'Total EPF/ETF',
-                
-                -- Salary Columns from epf table
-                COALESCE(epf.gross_salary, '0') AS 'Gross Salary',
-                COALESCE(epf.net_salary, '0') AS 'Net Salary'
-                
-            FROM employee e
-            LEFT JOIN section s ON e.section_id = s.id
-            LEFT JOIN designation d ON e.designation_id = d.id
-            LEFT JOIN salary sal ON e.id = sal.employee_id
-            LEFT JOIN attendence a ON e.id = a.employee_id 
-                AND a.attendance_date = (SELECT MAX(attendance_date) FROM attendence WHERE employee_id = e.id)
-            LEFT JOIN epf ON e.id = epf.id
-            WHERE e.status = 'active'
-            ORDER BY e.epf_no
-            """;
+        SELECT DISTINCT
+            e.epf_no AS 'EPF No',
+            e.name_with_initial AS 'Name',
+            s.section_name AS 'Section',
+            d.title AS 'Designation',
+            e.nic AS 'NIC',
+            COALESCE(sal.basic_salary, '0') AS 'Basic Salary',
+            
+            -- Incentive Columns (get latest incentive)
+            COALESCE((SELECT attendance_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Attendance Incentive',
+            COALESCE((SELECT grading_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Grading Incentive',
+            COALESCE((SELECT production1_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive I',
+            COALESCE((SELECT production2_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Production Incentive II',
+            COALESCE((SELECT total_incentive FROM incentive WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Incentive',
+            
+            -- Day & Amount Columns (get latest day)
+            COALESCE((SELECT working_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day',
+            COALESCE((SELECT sunday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday',
+            COALESCE((SELECT poya_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day',
+            COALESCE((SELECT holiday FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday',
+            COALESCE((SELECT total_day FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
+            COALESCE((SELECT working_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Working Day Amount',
+            COALESCE((SELECT sunday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Sunday Amount',
+            COALESCE((SELECT poya_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Poya Day Amount',
+            COALESCE((SELECT holiday_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Holiday Amount',
+            COALESCE((SELECT total_day_amount FROM day WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day Amount',
+            
+            -- Overtime Columns (get latest overtime)
+            COALESCE((SELECT normal FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal',
+            COALESCE((SELECT extra FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra',
+            COALESCE((SELECT trible FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible',
+            COALESCE((SELECT total FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
+            COALESCE((SELECT normal_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Normal Amount',
+            COALESCE((SELECT extra_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Extra Amount',
+            COALESCE((SELECT trible_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Trible Amount',
+            COALESCE((SELECT total_amount FROM overtime WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
+            
+            -- Leave & No Pay Columns (get latest leave)
+            COALESCE((SELECT leave_count FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Count',
+            COALESCE((SELECT `leave` FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave',
+            COALESCE((SELECT leave_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Leave Amount',
+            COALESCE((SELECT day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day',
+            COALESCE((SELECT hour FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour',
+            COALESCE((SELECT total FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total',
+            COALESCE((SELECT day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Day Amount',
+            COALESCE((SELECT hour_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Hour Amount',
+            COALESCE((SELECT total_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Amount',
+            COALESCE((SELECT short_working_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days',
+            COALESCE((SELECT short_working_day_amount FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Short Working Days Amount',
+            COALESCE((SELECT vacation_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Vacation Day',
+            COALESCE((SELECT total_day FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Total Day',
+            COALESCE((SELECT arreas FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Arreas',
+            COALESCE((SELECT advance FROM `leave` WHERE attendence_id = a.id ORDER BY id DESC LIMIT 1), '0') AS 'Advance',
+            
+            -- EPF/ETF Columns from epf table
+            COALESCE(epf.total_efp, '0') AS 'Total For EPF',
+            COALESCE(epf.epf_12, '0') AS 'EPF 12%',
+            COALESCE(epf.epf_3, '0') AS 'ETF 3%',
+            COALESCE(epf.epf_8, '0') AS 'EPF 8%',
+            COALESCE(epf.`total_epf/etf`, '0') AS 'Total EPF/ETF',
+            
+            -- Salary Columns from epf table
+            COALESCE(epf.gross_salary, '0') AS 'Gross Salary',
+            COALESCE(epf.net_salary, '0') AS 'Net Salary'
+            
+        FROM employee e
+        LEFT JOIN section s ON e.section_id = s.id
+        LEFT JOIN designation d ON e.designation_id = d.id
+        LEFT JOIN salary sal ON e.id = sal.employee_id
+        LEFT JOIN attendence a ON e.id = a.employee_id 
+            AND a.attendance_date = (SELECT MAX(attendance_date) FROM attendence WHERE employee_id = e.id)
+        LEFT JOIN epf ON e.id = epf.id
+        WHERE e.status = 'active'
+        ORDER BY e.epf_no
+        """;
 
             System.out.println("Executing query..."); // Debug message
 
@@ -194,18 +194,20 @@ public class PayRollManagementPanel extends javax.swing.JPanel {
             rs.close();
             stmt.close();
 
-            System.out.println("Loaded " + rowCount + " rows"); // Debug message
+            System.out.println("✅ Loaded " + rowCount + " payroll records successfully"); // Debug message
 
-            if (rowCount > 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Payroll data loaded successfully! " + rowCount + " records found.",
-                        "Success", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "No payroll data found for active employees.",
-                        "Info", JOptionPane.INFORMATION_MESSAGE);
-            }
-
+            // ❌ Success dialog එක comment කරන්න
+            /*
+        if (rowCount > 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Payroll data loaded successfully! " + rowCount + " records found.",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "No payroll data found for active employees.",
+                    "Info", JOptionPane.INFORMATION_MESSAGE);
+        }
+             */
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this,

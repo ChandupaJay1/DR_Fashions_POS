@@ -10,10 +10,10 @@ import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
+import NerdTech.DR_Fashion.Views.BillBuyer.Bill.BillBuyerRegistrationPanel;
 import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
 import NerdTech.DR_Fashion.Views.PayRollManage.PayRollManagementPanel;
-import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
@@ -25,6 +25,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import NerdTech.DR_Fashion.Views.DashboardP.EmployeeSectionStatsPanel;
+import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
 import NerdTech.DR_Fashion.Views.Stock.StockPanel;
 import java.sql.SQLException;
 
@@ -94,7 +95,7 @@ public class Dashboard extends javax.swing.JFrame {
         loadPanelWithLoading(panelName, loader);
     }
 
-    private void loadPanelWithLoading(String panelName, PanelLoader loader) {
+    public void loadPanelWithLoading(String panelName, PanelLoader loader) {
         currentPanelName = panelName;
 
         // Show loading immediately
@@ -176,6 +177,7 @@ public class Dashboard extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
         jButton10 = new javax.swing.JButton();
+        jButton8 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         LoaderPanel = new javax.swing.JPanel();
@@ -270,7 +272,7 @@ public class Dashboard extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jPanel3.setLayout(new java.awt.GridLayout(7, 1, 5, 10));
+        jPanel3.setLayout(new java.awt.GridLayout(8, 1, 5, 10));
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton2.setText("Dashboard");
@@ -309,13 +311,22 @@ public class Dashboard extends javax.swing.JFrame {
         jPanel3.add(jButton7);
 
         jButton10.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
-        jButton10.setText("Shipments");
+        jButton10.setText("Bill");
         jButton10.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton10ActionPerformed(evt);
             }
         });
         jPanel3.add(jButton10);
+
+        jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
+        jButton8.setText("Shipment");
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton8ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton8);
 
         jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
         jButton3.setText("Stock");
@@ -391,21 +402,25 @@ public class Dashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        currentPanelName = "Registration";
         loadPanelWithLoading("Registration", () -> new EmployeeRegistration());
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        currentPanelName = "Attendance";
         loadPanelWithLoading("Attendance", () -> new AttendencePanel());
     }//GEN-LAST:event_jButton1ActionPerformed
 
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        currentPanelName = "Backup";
         loadPanelWithLoading("Backup", () -> new BackupPanel());
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        currentPanelName = "Dashboard";
         loadPanelWithLoading("Dashboard", () -> new DashboardPanel());
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -424,10 +439,9 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        currentPanelName = "PayRollManagement";
         loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
     }//GEN-LAST:event_jButton7ActionPerformed
-
-   
 
     private void refreshCurrentPanel() {
         switch (currentPanelName) {
@@ -445,11 +459,18 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
             case "Stock" ->
                 loadPanelWithLoading("Stock", () -> new StockPanel());
-            case "Registration Buyer" ->
-                loadPanelWithLoading("Registration Buyer", () -> new RegistrationBuyerPanel(this));
-            default ->
-                showErrorPanel("Cannot refresh this panel.");
+            case "Shipment" ->
+                loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+            case "Bill Registration" ->
+                loadPanelWithLoading("Bill Registration", () -> new BillBuyerRegistrationPanel(this));
+            case "Bill Management" ->
+                loadPanelWithLoading("Bill Management", () -> new NerdTech.DR_Fashion.Views.Bill.BillPanel());
+            default -> {
+                System.out.println("Unknown panel for refresh: " + currentPanelName);
+                showErrorPanel("Cannot refresh this panel: " + currentPanelName);
+            }
         }
+
     }
 
 
@@ -458,7 +479,8 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-        loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+        currentPanelName = "Bill Registration";
+        loadPanelWithLoading("Bill Registration", () -> new BillBuyerRegistrationPanel(this));
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButtonSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSyncActionPerformed
@@ -586,8 +608,14 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonSyncActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        currentPanelName = "Stock";
         loadPanelWithLoading("Stock", () -> new StockPanel());
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        currentPanelName = "Shipment";
+        loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+    }//GEN-LAST:event_jButton8ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -620,6 +648,7 @@ public class Dashboard extends javax.swing.JFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JButton jButton7;
+    private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JButton jButtonSync;
     private javax.swing.JLabel jLabel1;
