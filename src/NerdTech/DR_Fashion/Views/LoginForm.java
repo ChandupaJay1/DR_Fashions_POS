@@ -5,22 +5,37 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.DatabaseConnection.FullDatabaseSync;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Image;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.border.Border;
 
 public class LoginForm extends javax.swing.JFrame {
+
+    private static final String VERSION = "v1.0";
+    private JLabel versionLabel;
+    private JLabel capsLockWarning;
+    private JLabel copyrightLabel;
 
     public LoginForm() {
         initComponents();
         init();
+        enhanceUI();
     }
 
     class User {
@@ -45,6 +60,203 @@ public class LoginForm extends javax.swing.JFrame {
         } else {
             System.err.println("Image not found: /NerdTech/DR_Fashion/img/logo.png");
         }
+    }
+
+    // නව enhanceUI() method - මේක ඔයාගේ පරණ එක replace කරන්න
+    private void enhanceUI() {
+        // Version label - jPanel1 එකේ top right corner එකට
+        versionLabel = new JLabel(VERSION);
+        versionLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
+        versionLabel.setForeground(new Color(150, 150, 150));
+
+        // Copyright label - bottom center එකට (main content pane එකේ)
+        copyrightLabel = new JLabel("© 2025 NerdTech™ Software Development. All Rights Reserved");
+        copyrightLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 10));
+        copyrightLabel.setForeground(new Color(120, 120, 120));
+        copyrightLabel.setHorizontalAlignment(JLabel.CENTER);
+
+        // Caps Lock warning label - jPanel2 එකේ password field එකට උඩින්
+        capsLockWarning = new JLabel("");
+        capsLockWarning.setFont(new Font("JetBrains Mono", Font.PLAIN, 11));
+        capsLockWarning.setForeground(new Color(255, 153, 0));
+        capsLockWarning.setHorizontalAlignment(JLabel.CENTER);
+
+        // Window listener to position labels after window is fully created
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                positionCustomLabels();
+            }
+        });
+
+        // Component listener for resize events
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                positionCustomLabels();
+            }
+        });
+
+        // Enhanced button styling
+        SignInBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        SignInBtn.setFocusPainted(false);
+        SignInBtn.setBorderPainted(false);
+
+        // Button hover effect
+        SignInBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                SignInBtn.setBackground(new Color(42, 58, 233));
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                SignInBtn.setBackground(new Color(52, 68, 243));
+            }
+        });
+
+        // Enhanced text field borders
+        Border defaultBorder = BorderFactory.createLineBorder(new Color(200, 200, 200), 1);
+        Border focusBorder = BorderFactory.createLineBorder(new Color(52, 68, 243), 2);
+
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+                defaultBorder,
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+                defaultBorder,
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        // Focus listeners for animated borders
+        usernameField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                usernameField.setBorder(BorderFactory.createCompoundBorder(
+                        focusBorder, BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                ));
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                usernameField.setBorder(BorderFactory.createCompoundBorder(
+                        defaultBorder, BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                ));
+            }
+        });
+
+        passwordField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                passwordField.setBorder(BorderFactory.createCompoundBorder(
+                        focusBorder, BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                ));
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                passwordField.setBorder(BorderFactory.createCompoundBorder(
+                        defaultBorder, BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                ));
+            }
+        });
+
+        // Caps Lock detection
+        passwordField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                try {
+                    boolean capsLockOn = java.awt.Toolkit.getDefaultToolkit()
+                            .getLockingKeyState(java.awt.event.KeyEvent.VK_CAPS_LOCK);
+                    if (capsLockOn) {
+                        capsLockWarning.setText("⚠ Caps Lock is ON");
+                    } else {
+                        capsLockWarning.setText("");
+                    }
+                } catch (UnsupportedOperationException ex) {
+                    // Caps lock detection not supported on this system
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                keyPressed(e);  // Check on release too
+            }
+        });
+
+        // Enter key support
+        usernameField.addActionListener(evt -> passwordField.requestFocus());
+        passwordField.addActionListener(evt -> SignInBtnActionPerformed(null));
+    }
+
+    private void positionCustomLabels() {
+        if (!isVisible()) {
+            return;
+        }
+
+        // Remove labels if already added
+        if (versionLabel != null && versionLabel.getParent() != null) {
+            versionLabel.getParent().remove(versionLabel);
+        }
+        if (copyrightLabel != null && copyrightLabel.getParent() != null) {
+            copyrightLabel.getParent().remove(copyrightLabel);
+        }
+        if (capsLockWarning != null && capsLockWarning.getParent() != null) {
+            capsLockWarning.getParent().remove(capsLockWarning);
+        }
+
+        // Use LayeredPane for absolute positioning over GroupLayout
+        javax.swing.JLayeredPane layeredPane = getLayeredPane();
+
+        // Create labels if they don't exist
+        if (versionLabel == null) {
+            versionLabel = new JLabel(VERSION);
+            versionLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
+            versionLabel.setForeground(new Color(150, 150, 150));
+        }
+
+        if (copyrightLabel == null) {
+            copyrightLabel = new JLabel("© 2025 NerdTech™ Software Development. All Rights Reserved");
+            copyrightLabel.setFont(new Font("JetBrains Mono", Font.PLAIN, 10));
+            copyrightLabel.setForeground(new Color(120, 120, 120));
+            copyrightLabel.setHorizontalAlignment(JLabel.CENTER);
+        }
+
+        if (capsLockWarning == null) {
+            capsLockWarning = new JLabel("");
+            capsLockWarning.setFont(new Font("JetBrains Mono", Font.PLAIN, 11));
+            capsLockWarning.setForeground(new Color(255, 153, 0));
+            capsLockWarning.setHorizontalAlignment(JLabel.CENTER);
+        }
+
+        // Position version at top-right corner
+        if (versionLabel != null) {
+            int versionX = getWidth() - 80; // Right side with some margin
+            int versionY = 539; // Top margin
+            versionLabel.setBounds(versionX, versionY, 100, 30);
+            layeredPane.add(versionLabel, javax.swing.JLayeredPane.PALETTE_LAYER);
+        }
+
+        // Position copyright at bottom center
+        if (copyrightLabel != null) {
+            int copyrightY = getHeight() - 26;
+            copyrightLabel.setBounds(0, copyrightY, getWidth(), 20);
+            layeredPane.add(copyrightLabel, javax.swing.JLayeredPane.PALETTE_LAYER);
+        }
+
+        // Position caps lock warning below password field
+        if (capsLockWarning != null && passwordField != null) {
+            java.awt.Point pwdLoc = javax.swing.SwingUtilities.convertPoint(
+                    passwordField.getParent(), passwordField.getX(), passwordField.getY(), layeredPane);
+            int warningX = pwdLoc.x;
+            int warningY = pwdLoc.y + passwordField.getHeight() + 5;
+            capsLockWarning.setBounds(warningX, warningY, passwordField.getWidth(), 20);
+            layeredPane.add(capsLockWarning, javax.swing.JLayeredPane.PALETTE_LAYER);
+        }
+
+        layeredPane.revalidate();
+        layeredPane.repaint();
     }
 
     @SuppressWarnings("unchecked")
@@ -216,18 +428,29 @@ public class LoginForm extends javax.swing.JFrame {
         String password = new String(passwordField.getPassword()).trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Username and Password are required.");
+            JOptionPane.showMessageDialog(this, "Username and Password are required.",
+                    "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        // Show loading state
+        SignInBtn.setEnabled(false);
+        SignInBtn.setText("Signing In...");
 
         User user = authenticateUser(username, password);
 
         if (user != null) {
-            JOptionPane.showMessageDialog(this, "Login successful as " + user.fullName + " (" + user.role + ")");
+            JOptionPane.showMessageDialog(this, "Login successful as " + user.fullName + " (" + user.role + ")",
+                    "Welcome", JOptionPane.INFORMATION_MESSAGE);
             this.dispose();
             new Dashboard(user.fullName, user.role).setVisible(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Invalid username or password.");
+            JOptionPane.showMessageDialog(this, "Invalid username or password.",
+                    "Login Failed", JOptionPane.ERROR_MESSAGE);
+            SignInBtn.setEnabled(true);
+            SignInBtn.setText("Sign In");
+            passwordField.setText("");
+            passwordField.requestFocus();
         }
     }//GEN-LAST:event_SignInBtnActionPerformed
 
@@ -241,18 +464,14 @@ public class LoginForm extends javax.swing.JFrame {
             e.printStackTrace();
         }
 
-        // Show splash screen
         SplashScreen splash = new SplashScreen();
         splash.showSplash();
 
-        // Run database connection + bidirectional sync in background
         new Thread(() -> {
             try {
-                // Step 1: Initialize
                 splash.setStatus("🔌 Initializing...");
                 Thread.sleep(300);
 
-                // Step 2: Test LOCAL database connection first
                 splash.setStatus("🔗 Connecting to local database...");
                 Connection localConn = DatabaseConnection.getConnection();
 
@@ -263,7 +482,6 @@ public class LoginForm extends javax.swing.JFrame {
                 splash.setStatus("✅ Local database connected!");
                 Thread.sleep(500);
 
-                // Step 3: Try to connect to ONLINE database
                 splash.setStatus("🌐 Checking online connection...");
                 Connection onlineConn = null;
                 boolean onlineAvailable = false;
@@ -284,12 +502,10 @@ public class LoginForm extends javax.swing.JFrame {
                     Thread.sleep(1000);
                 }
 
-                // Step 4: Perform sync if online is available
                 if (onlineAvailable) {
                     splash.setStatus("🔄 Syncing databases...");
                     splash.setSyncStatus("Starting bidirectional sync...");
 
-                    // Set callback using the correct interface
                     FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
                         @Override
                         public void onStatusChange(String status) {
@@ -300,7 +516,6 @@ public class LoginForm extends javax.swing.JFrame {
                     });
 
                     try {
-                        // Perform full bidirectional sync
                         boolean syncSuccess = FullDatabaseSync.performFullSync();
 
                         if (syncSuccess) {
@@ -323,7 +538,6 @@ public class LoginForm extends javax.swing.JFrame {
 
                 localConn.close();
 
-                // Step 5: Launch login form
                 splash.setStatus("🚀 Starting application...");
                 Thread.sleep(300);
 
