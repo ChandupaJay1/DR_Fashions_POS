@@ -93,11 +93,11 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
             ps.setString(1, name);
             ps.setString(2, email);
             ps.setString(3, mobileNo);
-            ps.setString(4, lanNo);
-            ps.setString(5, coordinator);
-            ps.setString(6, address);
-            ps.setString(7, companyName);
-            ps.setString(8, brandName);
+            ps.setString(4, lanNo.isEmpty() ? "" : lanNo);
+            ps.setString(5, coordinator.isEmpty() ? "" : coordinator);
+            ps.setString(6, address.isEmpty() ? "" : address);
+            ps.setString(7, companyName.isEmpty() ? "" : companyName);
+            ps.setString(8, brandName.isEmpty() ? "" : brandName);
             ps.setString(9, brNo.isEmpty() ? "0" : brNo);
             ps.setString(10, brName.isEmpty() ? "" : brName);
             ps.setString(11, paymentMethod.isEmpty() ? "" : paymentMethod);
@@ -259,6 +259,11 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton2.setText("Cancel");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -392,18 +397,14 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        dispose();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-     * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -420,12 +421,9 @@ public class AddBuyerDFrame extends javax.swing.JDialog {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(AddBuyerDFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                // Test the dialog standalone (without RegistrationBuyerPanel)
                 AddBuyerDFrame dialog = new AddBuyerDFrame(new javax.swing.JFrame(), true, null);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override

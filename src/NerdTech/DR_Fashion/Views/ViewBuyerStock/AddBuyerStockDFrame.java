@@ -249,7 +249,6 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // Get buyer name from jTextField1 (not jComboBox1)
         String buyerName = jTextField1.getText().trim();
         String colour = jTextField2.getText().trim();
         String stockQtyStr = jTextField3.getText().trim();
@@ -286,12 +285,11 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
             int totalIssued = totalIssuedStr.isEmpty() ? 0 : Integer.parseInt(totalIssuedStr);
             int availableQty = availableQtyStr.isEmpty() ? 0 : Integer.parseInt(availableQtyStr);
 
-            // Remove Rs. prefix if exists before parsing
             unitPriceStr = unitPriceStr.replace("Rs.", "").replace(",", "").trim();
             double unitPrice = Double.parseDouble(unitPriceStr);
 
             try (Connection conn = DatabaseConnection.getConnection()) {
-                // Find buyer ID from registration_buyer table
+                // Find buyer ID
                 PreparedStatement pstBuyer = conn.prepareStatement("SELECT id FROM registration_buyer WHERE name = ?");
                 pstBuyer.setString(1, buyerName);
                 ResultSet rsBuyer = pstBuyer.executeQuery();
@@ -305,29 +303,31 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
                     return;
                 }
 
-                // ✅ UPDATED: Insert into bstock table with status = 'active'
-                String sql = "INSERT INTO bstock (registration_buyer_id, colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price, status, last_modified) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+                // ✅ FIXED: Added buyer_name column
+                String sql = "INSERT INTO bstock (registration_buyer_id, buyer_name, colour, stock_qty, material, "
+                        + "received_date, issued_date, total_issued, available_qty, unit_price, status) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')";
 
                 PreparedStatement pst = conn.prepareStatement(sql);
                 pst.setInt(1, buyerId);
-                pst.setString(2, colour);
-                pst.setInt(3, stockQty);
-                pst.setString(4, material);
-                pst.setDate(5, receivedDate);
+                pst.setString(2, buyerName); // 🔥 NEW
+                pst.setString(3, colour);
+                pst.setInt(4, stockQty);
+                pst.setString(5, material);
+                pst.setDate(6, receivedDate);
                 if (issuedDate != null) {
-                    pst.setDate(6, issuedDate);
+                    pst.setDate(7, issuedDate);
                 } else {
-                    pst.setNull(6, java.sql.Types.DATE);
+                    pst.setNull(7, java.sql.Types.DATE);
                 }
-                pst.setInt(7, totalIssued);
-                pst.setInt(8, availableQty);
-                pst.setDouble(9, unitPrice);
+                pst.setInt(8, totalIssued);
+                pst.setInt(9, availableQty);
+                pst.setDouble(10, unitPrice);
 
                 int rows = pst.executeUpdate();
 
                 if (rows > 0) {
-                    JOptionPane.showMessageDialog(this, "Buyer stock added successfully!",
+                    JOptionPane.showMessageDialog(this, "✅ Buyer stock added successfully!",
                             "Success", JOptionPane.INFORMATION_MESSAGE);
                     if (parentPanel != null) {
                         parentPanel.refreshTable();
@@ -336,13 +336,13 @@ public class AddBuyerStockDFrame extends javax.swing.JDialog {
                 }
 
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error adding buyer stock: " + e.getMessage(),
+                JOptionPane.showMessageDialog(this, "❌ Error: " + e.getMessage(),
                         "Database Error", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Please enter valid numbers for quantity and price fields.",
+            JOptionPane.showMessageDialog(this, "Please enter valid numbers.",
                     "Validation Error", JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
