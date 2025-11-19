@@ -45,19 +45,6 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         showLoading("Connecting to Database");
         loadContentInBackground();
 
-        setupTableModel();
-
-        jScrollPane1 = new javax.swing.JScrollPane();
-        model = new javax.swing.JTable();
-
-// Scroll policies සැකසීම
-        jScrollPane1.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-
-        model.setFont(new java.awt.Font("Calibri", 0, 12)); // NOI18N
-// ... අනෙකුත් code එක
-        jScrollPane1.setViewportView(model);
-
     }
 
     private void setupTableModel() {
@@ -73,16 +60,54 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     "Capacity", "Section", "Joined Date"
                 }
         ) {
-            boolean[] canEdit = new boolean[28];
-
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return false;
             }
         });
 
-        // Auto resize mode සැකසීම
+        // ✅ AUTO_RESIZE_OFF කරන්න
         model.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
+
+        // ✅ Column widths auto-adjust කරන්න
+        autoAdjustColumnWidths();
+    }
+
+    private void autoAdjustColumnWidths() {
+        javax.swing.table.TableColumnModel columnModel = model.getColumnModel();
+
+        for (int column = 0; column < model.getColumnCount(); column++) {
+            javax.swing.table.TableColumn tableColumn = columnModel.getColumn(column);
+
+            // Header width එක හොයන්න
+            javax.swing.table.TableCellRenderer headerRenderer = model.getTableHeader().getDefaultRenderer();
+            Object headerValue = tableColumn.getHeaderValue();
+            java.awt.Component headerComp = headerRenderer.getTableCellRendererComponent(
+                    model, headerValue, false, false, 0, column);
+            int headerWidth = headerComp.getPreferredSize().width;
+
+            // Data cells වල maximum width එක හොයන්න
+            int maxWidth = headerWidth;
+            for (int row = 0; row < model.getRowCount(); row++) {
+                javax.swing.table.TableCellRenderer cellRenderer = model.getCellRenderer(row, column);
+                java.awt.Component cellComp = model.prepareRenderer(cellRenderer, row, column);
+                int cellWidth = cellComp.getPreferredSize().width;
+                maxWidth = Math.max(maxWidth, cellWidth);
+            }
+
+            // Padding එකක් දාන්න (margin)
+            maxWidth += 20;
+
+            // Minimum width එකක් set කරන්න (columns අපහසුතාවයට යන එක නවත්වන්න)
+            maxWidth = Math.max(maxWidth, 80);
+
+            // Maximum width limit එකක් දාන්න (columns ගොඩක් පළල් වෙන එක නවත්වන්න)
+            maxWidth = Math.min(maxWidth, 400);
+
+            tableColumn.setPreferredWidth(maxWidth);
+            tableColumn.setMinWidth(50);
+            tableColumn.setResizable(true);
+        }
     }
 
     private void showLoading(String message) {
@@ -91,53 +116,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
         add(loadingPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
-
-        setupTableModel();
-
-        if (model.getColumnModel().getColumnCount() > 0) {
-            // Column widths වඩාත් සුදුසු ලෙස සැකසීම
-            int[] columnWidths = {
-                80, // EPF No
-                150, // Name with Initial  
-                120, // First Name
-                60, // Initials
-                120, // Surname
-                80, // Gender
-                100, // DOB
-                150, // NIC
-                120, // Mobile
-                120, // Father
-                120, // Mother
-                100, // Religion
-                120, // Recruited Date
-                100, // As Today
-                120, // Confirmation Date
-                120, // Service End Date
-                140, // Days to Service End
-                100, // Electroate
-                200, // Permanent Address
-                200, // Current Address
-                120, // Nominee
-                120, // Married Status
-                100, // District
-                80, // Race
-                150, // Designation
-                120, // Capacity
-                100, // Section
-                120 // Joined Date
-            };
-
-            for (int i = 0; i < model.getColumnModel().getColumnCount(); i++) {
-                model.getColumnModel().getColumn(i).setResizable(true);
-                if (i < columnWidths.length) {
-                    model.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
-                    model.getColumnModel().getColumn(i).setMinWidth(50); // අවම width
-                }
-            }
-
-            // Auto resize off කිරීම
-            model.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
-        }
+        // ✅ මෙතන setupTableModel() හා අනෙකුත් lines delete කරන්න
     }
 
     private void loadContentInBackground() {
@@ -178,6 +157,10 @@ public class EmployeeRegistration extends javax.swing.JPanel {
     private void showActualContent() {
         removeAll();
         initComponents();
+
+        // ✅ මෙතන table setup කරන්න
+        setupTableModel();
+
         loadEmployees();
         setupSearchFilter();
         isInitialized = true;
@@ -314,8 +297,8 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     rs.getString("mother"),
                     rs.getString("religion"),
                     rs.getString("recruited_date"),
-                    rs.getString("as_today"), // ✅ As Today
-                    rs.getString("confirmation_date"), // ✅ Confirmation Date
+                    rs.getString("as_today"),
+                    rs.getString("confirmation_date"),
                     rs.getString("service_end_date"),
                     rs.getString("date_to_service_end"),
                     rs.getString("electroate"),
@@ -331,6 +314,9 @@ public class EmployeeRegistration extends javax.swing.JPanel {
                     rs.getString("joined_date")
                 });
             }
+
+            // ✅ Data load වෙලා ඉවර වෙද්දී columns auto-adjust කරන්න
+            autoAdjustColumnWidths();
 
             if (tableModel.getRowCount() == 0) {
                 JOptionPane.showMessageDialog(this,
@@ -388,7 +374,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -401,7 +387,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(1).setResizable(false);
             model.getColumnModel().getColumn(1).setPreferredWidth(100);
             model.getColumnModel().getColumn(2).setResizable(false);
-            model.getColumnModel().getColumn(2).setPreferredWidth(150);
+            model.getColumnModel().getColumn(2).setPreferredWidth(400);
             model.getColumnModel().getColumn(3).setResizable(false);
             model.getColumnModel().getColumn(3).setPreferredWidth(100);
             model.getColumnModel().getColumn(4).setResizable(false);
@@ -419,12 +405,17 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(10).setResizable(false);
             model.getColumnModel().getColumn(10).setPreferredWidth(200);
             model.getColumnModel().getColumn(11).setResizable(false);
+            model.getColumnModel().getColumn(12).setResizable(false);
+            model.getColumnModel().getColumn(13).setResizable(false);
+            model.getColumnModel().getColumn(14).setResizable(false);
+            model.getColumnModel().getColumn(15).setResizable(false);
             model.getColumnModel().getColumn(15).setPreferredWidth(150);
+            model.getColumnModel().getColumn(16).setResizable(false);
             model.getColumnModel().getColumn(16).setPreferredWidth(150);
             model.getColumnModel().getColumn(17).setResizable(false);
-            model.getColumnModel().getColumn(17).setPreferredWidth(200);
+            model.getColumnModel().getColumn(17).setPreferredWidth(400);
             model.getColumnModel().getColumn(18).setResizable(false);
-            model.getColumnModel().getColumn(18).setPreferredWidth(200);
+            model.getColumnModel().getColumn(18).setPreferredWidth(400);
             model.getColumnModel().getColumn(19).setResizable(false);
             model.getColumnModel().getColumn(20).setResizable(false);
             model.getColumnModel().getColumn(20).setPreferredWidth(100);
@@ -438,7 +429,7 @@ public class EmployeeRegistration extends javax.swing.JPanel {
             model.getColumnModel().getColumn(24).setPreferredWidth(100);
             model.getColumnModel().getColumn(25).setResizable(false);
             model.getColumnModel().getColumn(26).setResizable(false);
-            model.getColumnModel().getColumn(26).setPreferredWidth(100);
+            model.getColumnModel().getColumn(26).setPreferredWidth(200);
             model.getColumnModel().getColumn(27).setResizable(false);
         }
 
