@@ -142,43 +142,8 @@
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Calibri" size="12" style="0"/>
             </Property>
-            <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="34" rowCount="0">
-                <Column editable="false" title="epf_no" type="java.lang.Object"/>
-                <Column editable="false" title="Name with Initial" type="java.lang.Object"/>
-                <Column editable="false" title="Fname" type="java.lang.Object"/>
-                <Column editable="false" title="Initials" type="java.lang.Object"/>
-                <Column editable="false" title="Surname" type="java.lang.Object"/>
-                <Column editable="false" title="DOB" type="java.lang.Object"/>
-                <Column editable="false" title="NIC" type="java.lang.Object"/>
-                <Column editable="false" title="Gender" type="java.lang.Object"/>
-                <Column editable="false" title="mobile" type="java.lang.Object"/>
-                <Column editable="false" title="Father" type="java.lang.Object"/>
-                <Column editable="false" title="Mother" type="java.lang.Object"/>
-                <Column editable="false" title="Religion" type="java.lang.Object"/>
-                <Column editable="false" title="Recruited Date" type="java.lang.Object"/>
-                <Column editable="false" title="As Today" type="java.lang.Object"/>
-                <Column editable="false" title="Confirmation Date" type="java.lang.Object"/>
-                <Column editable="false" title="Service End Date" type="java.lang.Object"/>
-                <Column editable="false" title="Date To Service_end" type="java.lang.Object"/>
-                <Column editable="false" title="Permanate Address" type="java.lang.Object"/>
-                <Column editable="false" title="Current Address" type="java.lang.Object"/>
-                <Column editable="false" title="elctroate" type="java.lang.Object"/>
-                <Column editable="false" title="Nominee" type="java.lang.Object"/>
-                <Column editable="false" title="Married Status" type="java.lang.Object"/>
-                <Column editable="false" title="District" type="java.lang.Object"/>
-                <Column editable="false" title="Race" type="java.lang.Object"/>
-                <Column editable="false" title="Designation" type="java.lang.Object"/>
-                <Column editable="false" title="Capacity" type="java.lang.Object"/>
-                <Column editable="false" title="Section" type="java.lang.Object"/>
-                <Column editable="false" title="Joined Date" type="java.lang.Object"/>
-                <Column editable="false" title="Employee" type="java.lang.Object"/>
-                <Column editable="false" title="Resign Type" type="java.lang.Object"/>
-                <Column editable="false" title="Resign Date" type="java.lang.Object"/>
-                <Column editable="false" title="Reason" type="java.lang.Object"/>
-                <Column editable="false" title="Service Duration" type="java.lang.Object"/>
-                <Column editable="false" title="Status" type="java.lang.Object"/>
-              </Table>
+            <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+              <Connection code="new javax.swing.table.DefaultTableModel(&#xd;&#xa;    new Object [][] {},&#xd;&#xa;    new String [] {&#xd;&#xa;        &quot;ID&quot;, &quot;EPF No&quot;, &quot;Employee Name&quot;, &quot;Designation&quot;, &#xd;&#xa;        &quot;Resign Type&quot;, &quot;Resign Date&quot;, &quot;Reason&quot;, &#xd;&#xa;        &quot;Service Duration&quot;, &quot;Status&quot;&#xd;&#xa;    }&#xd;&#xa;) {&#xd;&#xa;    Class[] types = new Class [] {&#xd;&#xa;        java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class, &#xd;&#xa;        java.lang.String.class, java.lang.String.class, java.lang.Object.class, &#xd;&#xa;        java.lang.String.class, java.lang.String.class, java.lang.String.class&#xd;&#xa;    };&#xd;&#xa;    boolean[] canEdit = new boolean [] {&#xd;&#xa;        false, false, false, false, false, false, false, false, false&#xd;&#xa;    };&#xd;&#xa;&#xd;&#xa;    public Class getColumnClass(int columnIndex) {&#xd;&#xa;        return types [columnIndex];&#xd;&#xa;    }&#xd;&#xa;&#xd;&#xa;    public boolean isCellEditable(int rowIndex, int columnIndex) {&#xd;&#xa;        return canEdit [columnIndex];&#xd;&#xa;    }&#xd;&#xa;}" type="code"/>
             </Property>
             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
               <TableColumnModel selectionModel="0">

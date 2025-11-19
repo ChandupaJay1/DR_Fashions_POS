@@ -1,13 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
- */
 package NerdTech.DR_Fashion.Views.Registration;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.Connection;
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  *
@@ -15,180 +15,241 @@ import java.sql.Connection;
  */
 public class ActivateEmployeePanel extends javax.swing.JDialog {
 
-    private EmployeeRegistration employeeRegistrationPanel;
+    private DefaultTableModel tableModel;
+    private EmployeeRegistration parentPanel;
 
-    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal, EmployeeRegistration employeeRegistrationPanel) {
+    // Updated constructor with correct parameters
+    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal, EmployeeRegistration parentPanel) {
         super(parent, modal);
-        this.employeeRegistrationPanel = employeeRegistrationPanel;
+        this.parentPanel = parentPanel;
         initComponents();
-        loadInactiveEmployees();
-        setupSearchFilter();
+        initializeTable();
+        loadResignationData();
+        setupSearchFunctionality();
     }
 
-    private void setupSearchFilter() {
-        javax.swing.table.DefaultTableModel tableModel = (javax.swing.table.DefaultTableModel) model.getModel();
-        javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter
-                = new javax.swing.table.TableRowSorter<>(tableModel);
-        model.setRowSorter(rowSorter);
+    // Original constructor for backward compatibility
+    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal) {
+        super(parent, modal);
+        initComponents();
+        initializeTable();
+        loadResignationData();
+        setupSearchFunctionality();
+    }
 
-        searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            private void filterTable() {
-                String searchText = searchTextField.getText().trim();
+    private void initializeTable() {
+        tableModel = (DefaultTableModel) model.getModel();
+        // Clear existing columns and add only the ones we need
+        tableModel.setColumnCount(0);
 
-                if (searchText.isEmpty()) {
-                    rowSorter.setRowFilter(null);
-                    return;
-                }
+        // Add columns for resignation data
+        String[] columns = {
+            "ID", "EPF No", "Employee Name", "Designation",
+            "Resign Type", "Resign Date", "Reason",
+            "Service Duration", "Status"
+        };
 
-                javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object> rowFilter
-                        = new javax.swing.RowFilter<javax.swing.table.DefaultTableModel, Object>() {
-                    @Override
-                    public boolean include(Entry<? extends javax.swing.table.DefaultTableModel, ? extends Object> entry) {
-                        for (int i = 0; i < entry.getValueCount(); i++) {
-                            Object value = entry.getValue(i);
-                            if (value != null && value.toString().toLowerCase().contains(searchText.toLowerCase())) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
+        for (String column : columns) {
+            tableModel.addColumn(column);
+        }
+
+        // Set the correct table model
+        model.setModel(tableModel);
+    }
+
+    private void loadResignationData() {
+        try {
+            tableModel.setRowCount(0); // Clear existing data
+
+            ResultSet rs = DatabaseConnection.getResignationData();
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getInt("epf_no"),
+                    rs.getString("name_with_initial"),
+                    rs.getString("designation_name"),
+                    rs.getString("resign_type"),
+                    rs.getDate("resign_date"),
+                    rs.getString("reason"),
+                    rs.getString("service_duration"),
+                    rs.getString("status")
                 };
-
-                rowSorter.setRowFilter(rowFilter);
+                tableModel.addRow(row);
             }
 
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
-            }
+            // Adjust column widths
+            model.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
+            model.getColumnModel().getColumn(1).setPreferredWidth(80);  // EPF No
+            model.getColumnModel().getColumn(2).setPreferredWidth(150); // Employee Name
+            model.getColumnModel().getColumn(3).setPreferredWidth(120); // Designation
+            model.getColumnModel().getColumn(4).setPreferredWidth(100); // Resign Type
+            model.getColumnModel().getColumn(5).setPreferredWidth(100); // Resign Date
+            model.getColumnModel().getColumn(6).setPreferredWidth(200); // Reason
+            model.getColumnModel().getColumn(7).setPreferredWidth(100); // Service Duration
+            model.getColumnModel().getColumn(8).setPreferredWidth(80);  // Status
 
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
-            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading resignation data: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
 
+    private void setupSearchFunctionality() {
+        searchTextField.addKeyListener(new KeyAdapter() {
             @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
+            public void keyReleased(KeyEvent e) {
+                searchEmployees();
             }
         });
     }
 
-    private void loadInactiveEmployees() {
-        javax.swing.table.DefaultTableModel tableModel
-                = (javax.swing.table.DefaultTableModel) model.getModel();
-        tableModel.setRowCount(0);
+    private void searchEmployees() {
+        String searchText = searchTextField.getText().trim();
 
-        // ✅ Query loads BOTH 'inactive' AND 'pending' status employees
-        String query = "SELECT "
-                + "e.epf_no, " // 0
-                + "e.name_with_initial, " // 1
-                + "e.fname, " // 2
-                + "e.initials, " // 3
-                + "e.surname, " // 4
-                + "e.dob, " // 5
-                + "e.nic, " // 6
-                + "e.gender, " // 7
-                + "e.mobile, " // 8
-                + "e.father, " // 9
-                + "e.mother, " // 10
-                + "e.religion, " // 11
-                + "e.recruited_date, " // 12
-                + "e.as_today, " // 13
-                + "e.confirmation_date, " // 14
-                + "e.service_end_date, " // 15
-                + "e.date_to_service_end, " // 16
-                + "e.permanate_address, " // 17
-                + "e.current_address, " // 18
-                + "e.electroate, " // 19
-                + "e.nominee, " // 20
-                + "e.married_status, " // 21
-                + "e.district, " // 22
-                + "e.race, " // 23
-                + "d.title AS designation, " // 24
-                + "c.name AS capacity, " // 25
-                + "s.section_name, " // 26
-                + "e.joined_date, " // 27
-                + "CONCAT(e.fname, ' ', e.surname) AS employee, " // 28
-                + "r.resign_type, " // 29
-                + "r.resign_date, " // 30
-                + "r.reason, " // 31
-                + "r.service_duration, " // 32
-                + "COALESCE(r.status, 'No Resignation') AS resignation_status, " // 33 - Renamed to avoid confusion
-                + "e.status AS employee_status " // 34 - This is what we need to see!
-                + "FROM employee e "
-                + "LEFT JOIN designation d ON e.designation_id = d.id "
-                + "LEFT JOIN section s ON e.section_id = s.id "
-                + "LEFT JOIN capacity c ON e.capacity_id = c.id "
-                + "LEFT JOIN resignation r ON e.id = r.employee_id "
-                + "WHERE e.status IN ('inactive', 'pending') " // ✅ Both inactive AND pending
-                + "ORDER BY e.epf_no";
+        if (searchText.isEmpty()) {
+            loadResignationData();
+            return;
+        }
 
-        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
+        try {
+            tableModel.setRowCount(0); // Clear existing data
 
-            int rowCount = 0;
+            ResultSet rs = DatabaseConnection.getResignationDataByEmployeeName(searchText);
             while (rs.next()) {
-                // Debug: Print what we're getting from database
-                String epfNo = rs.getString("epf_no");
-                String employeeStatus = rs.getString("employee_status");
-                String name = rs.getString("name_with_initial");
-
-                System.out.println("Loading - EPF: " + epfNo + ", Name: " + name + ", Status: " + employeeStatus);
-
-                tableModel.addRow(new Object[]{
-                    rs.getString("epf_no"), // 0
-                    rs.getString("name_with_initial"), // 1
-                    rs.getString("fname"), // 2
-                    rs.getString("initials"), // 3
-                    rs.getString("surname"), // 4
-                    rs.getDate("dob"), // 5
-                    rs.getString("nic"), // 6
-                    rs.getString("gender"), // 7
-                    rs.getString("mobile"), // 8
-                    rs.getString("father"), // 9
-                    rs.getString("mother"), // 10
-                    rs.getString("religion"), // 11
-                    rs.getDate("recruited_date"), // 12
-                    rs.getString("as_today"), // 13
-                    rs.getDate("confirmation_date"), // 14
-                    rs.getDate("service_end_date"), // 15
-                    rs.getString("date_to_service_end"), // 16
-                    rs.getString("permanate_address"), // 17
-                    rs.getString("current_address"), // 18
-                    rs.getString("electroate"), // 19
-                    rs.getString("nominee"), // 20
-                    rs.getString("married_status"), // 21
-                    rs.getString("district"), // 22
-                    rs.getString("race"), // 23
-                    rs.getString("designation"), // 24
-                    rs.getString("capacity"), // 25
-                    rs.getString("section_name"), // 26
-                    rs.getDate("joined_date"), // 27
-                    rs.getString("employee"), // 28
-                    rs.getString("resign_type"), // 29
-                    rs.getDate("resign_date"), // 30
-                    rs.getString("reason"), // 31
-                    rs.getString("service_duration"), // 32
-                    rs.getString("resignation_status"), // 33 - Resignation status
-                    rs.getString("employee_status") // 34 - Employee status (THIS IS IMPORTANT!)
-                });
-                rowCount++;
-            }
-
-            System.out.println("✅ Total loaded: " + rowCount + " employees");
-            System.out.println("✅ Table model now has: " + tableModel.getRowCount() + " rows");
-
-            if (tableModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "No inactive or pending employees found.",
-                        "Information",
-                        JOptionPane.INFORMATION_MESSAGE);
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getInt("epf_no"),
+                    rs.getString("name_with_initial"),
+                    rs.getString("designation_name"),
+                    rs.getString("resign_type"),
+                    rs.getDate("resign_date"),
+                    rs.getString("reason"),
+                    rs.getString("service_duration"),
+                    rs.getString("status")
+                };
+                tableModel.addRow(row);
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Failed to load employees: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error searching resignation data: " + e.getMessage(),
+                    "Search Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void activateEmployee() {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an employee to activate.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            int resignationId = (int) tableModel.getValueAt(selectedRow, 0);
+            int epfNo = (int) tableModel.getValueAt(selectedRow, 1);
+            String employeeName = (String) tableModel.getValueAt(selectedRow, 2);
+            String currentStatus = (String) tableModel.getValueAt(selectedRow, 8);
+
+            // Check if already activated (since we're only loading pending/inactive, this should not happen)
+            if ("active".equals(currentStatus)) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee " + employeeName + " is already activated!",
+                        "Already Activated",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to activate employee " + employeeName + " (EPF: " + epfNo + ")?\n\n"
+                    + "This will:\n"
+                    + "• Update employee status to 'active'\n"
+                    + "• Update resignation status to 'active'",
+                    "Confirm Activation", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Update both employee and resignation status in a transaction
+                boolean success = DatabaseConnection.activateEmployeeAndResignation(epfNo, resignationId);
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Employee activated successfully!\n"
+                            + "• Employee status updated to 'active'\n"
+                            + "• Resignation status updated to 'active'",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh parent panel if available
+                    if (parentPanel != null) {
+                        parentPanel.refreshTable();
+                    }
+
+                    loadResignationData(); // This will reload and the activated record will disappear
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to activate employee.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error activating employee: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void deactivateEmployee() {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an employee to deactivate.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            int resignationId = (int) tableModel.getValueAt(selectedRow, 0);
+            int epfNo = (int) tableModel.getValueAt(selectedRow, 1);
+            String employeeName = (String) tableModel.getValueAt(selectedRow, 2);
+            String currentStatus = (String) tableModel.getValueAt(selectedRow, 8);
+
+            // Check if already deactivated
+            if ("inactive".equals(currentStatus)) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee " + employeeName + " is already deactivated!",
+                        "Already Deactivated",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to deactivate employee " + employeeName + " (EPF: " + epfNo + ")?\n\n"
+                    + "This will:\n"
+                    + "• Update resignation status to 'inactive'\n"
+                    + "• Set employee status to 'inactive'",
+                    "Confirm Deactivation", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Update both resignation and employee status in a transaction
+                boolean success = DatabaseConnection.deactivateEmployeeAndResignation(resignationId, epfNo);
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Employee deactivated successfully!\n"
+                            + "• Resignation status updated to 'inactive'\n"
+                            + "• Employee status set to 'inactive'",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh parent panel if available
+                    if (parentPanel != null) {
+                        parentPanel.refreshTable();
+                    }
+
+                    loadResignationData(); // This will reload and show the record as inactive
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to deactivate employee.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error deactivating employee: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -233,16 +294,25 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
 
         model.setFont(new java.awt.Font("Calibri", 0, 12)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
+            new Object [][] {},
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Initials", "Surname", "DOB", "NIC", "Gender", "mobile", "Father", "Mother", "Religion", "Recruited Date", "As Today", "Confirmation Date", "Service End Date", "Date To Service_end", "Permanate Address", "Current Address", "elctroate", "Nominee", "Married Status", "District", "Race", "Designation", "Capacity", "Section", "Joined Date", "Employee", "Resign Type", "Resign Date", "Reason", "Service Duration", "Status"
+                "ID", "EPF No", "Employee Name", "Designation", 
+                "Resign Type", "Resign Date", "Reason", 
+                "Service Duration", "Status"
             }
         ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class, 
+                java.lang.String.class, java.lang.String.class, java.lang.Object.class, 
+                java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
@@ -317,55 +387,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        int selectedRow = model.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select an employee to activate.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String nic = model.getValueAt(selectedRow, 6).toString();
-        String fname = model.getValueAt(selectedRow, 2).toString();
-        String surname = model.getValueAt(selectedRow, 4).toString();
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to activate " + fname + " " + surname + "?",
-                "Confirm Activation",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            String sql = "UPDATE employee SET status = 'active' WHERE nic = ? AND status = 'inactive'";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, nic);
-
-            int updated = ps.executeUpdate();
-
-            if (updated > 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Employee activated successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                employeeRegistrationPanel.refreshTable();
-                loadInactiveEmployees();
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Employee not found or already active.",
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Activation failed: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
+        activateEmployee();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -373,136 +395,13 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        int selectedRow = model.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select an employee to mark as inactive.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        String nic = model.getValueAt(selectedRow, 6).toString();
-        String fname = model.getValueAt(selectedRow, 2).toString();
-        String surname = model.getValueAt(selectedRow, 4).toString();
-        String epfNo = model.getValueAt(selectedRow, 0).toString();
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to mark employee as inactive?\n\n"
-                + "Name: " + fname + " " + surname + "\n"
-                + "EPF No: " + epfNo + "\n"
-                + "NIC: " + nic + "\n\n"
-                + "Note: This will update BOTH:\n"
-                + "  • Employee status to 'inactive'\n"
-                + "  • Resignation status to 'inactive' (if resignation exists)",
-                "Confirm Inactivation",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        Connection conn = null;
-        PreparedStatement psEmployee = null;
-        PreparedStatement psResignation = null;
-        PreparedStatement psCheckEmployee = null;
-        ResultSet rsCheck = null;
-
-        try {
-            conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
-
-            // ✅ First, get the employee ID
-            String getEmployeeIdSql = "SELECT id FROM employee WHERE nic = ?";
-            psCheckEmployee = conn.prepareStatement(getEmployeeIdSql);
-            psCheckEmployee.setString(1, nic);
-            rsCheck = psCheckEmployee.executeQuery();
-
-            if (!rsCheck.next()) {
-                JOptionPane.showMessageDialog(this,
-                        "Employee not found.",
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int employeeId = rsCheck.getInt("id");
-
-            // ✅ Update employee table status to 'inactive'
-            String updateEmployeeSql = "UPDATE employee SET status = 'inactive' WHERE nic = ?";
-            psEmployee = conn.prepareStatement(updateEmployeeSql);
-            psEmployee.setString(1, nic);
-            int employeeUpdated = psEmployee.executeUpdate();
-
-            // ✅ Update resignation table status to 'inactive' (if resignation record exists)
-            String updateResignationSql = "UPDATE resignation SET status = 'inactive' WHERE employee_id = ?";
-            psResignation = conn.prepareStatement(updateResignationSql);
-            psResignation.setInt(1, employeeId);
-            int resignationUpdated = psResignation.executeUpdate();
-
-            if (employeeUpdated > 0) {
-                String message = "Employee marked as inactive successfully!\n\n"
-                        + "Name: " + fname + " " + surname + "\n"
-                        + "EPF No: " + epfNo + "\n"
-                        + "Employee Status: Inactive\n";
-
-                if (resignationUpdated > 0) {
-                    message += "Resignation Status: Inactive ✓\n\n"
-                            + "Both employee and resignation records updated.";
-                } else {
-                    message += "Resignation Status: No resignation record found.\n\n"
-                            + "Only employee status was updated.";
-                }
-
-                JOptionPane.showMessageDialog(this,
-                        message,
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                // Refresh tables
-                employeeRegistrationPanel.refreshTable();
-                loadInactiveEmployees();
-
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Employee not found.",
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
-            }
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Update failed: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        } finally {
-            // Close resources
-            try {
-                if (rsCheck != null) {
-                    rsCheck.close();
-                }
-                if (psCheckEmployee != null) {
-                    psCheckEmployee.close();
-                }
-                if (psEmployee != null) {
-                    psEmployee.close();
-                }
-                if (psResignation != null) {
-                    psResignation.close();
-                }
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        deactivateEmployee();
     }//GEN-LAST:event_jButton3ActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                EmployeeRegistration empReg = new EmployeeRegistration();
-                ActivateEmployeePanel dialog = new ActivateEmployeePanel(new javax.swing.JFrame(), true, empReg);
+                ActivateEmployeePanel dialog = new ActivateEmployeePanel(new javax.swing.JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override
                     public void windowClosing(java.awt.event.WindowEvent e) {
