@@ -37,10 +37,8 @@ public class AccesoriesPanel extends javax.swing.JPanel {
     private TableRowSorter<javax.swing.table.DefaultTableModel> sorter;
 
     public AccesoriesPanel() {
-        FlatDarkLaf.setup();
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1237, 686));
-        setBackground(new Color(50, 50, 50));
         showLoading("Connecting to Database");
         loadContentInBackground();
     }
@@ -128,7 +126,6 @@ public class AccesoriesPanel extends javax.swing.JPanel {
     private void showError(String errorMessage) {
         removeAll();
         JPanel errorPanel = new JPanel(new GridBagLayout());
-        errorPanel.setBackground(new Color(245, 247, 250));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -142,13 +139,11 @@ public class AccesoriesPanel extends javax.swing.JPanel {
         gbc.gridy = 1;
         JLabel errorLabel = new JLabel("Connection Failed");
         errorLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 24));
-        errorLabel.setForeground(new Color(239, 68, 68));
         errorPanel.add(errorLabel, gbc);
 
         gbc.gridy = 2;
         JLabel errorMsg = new JLabel(errorMessage);
         errorMsg.setFont(new Font("JetBrains Mono", Font.PLAIN, 14));
-        errorMsg.setForeground(new Color(100, 116, 139));
         errorPanel.add(errorMsg, gbc);
 
         gbc.gridy = 3;
@@ -349,14 +344,16 @@ public class AccesoriesPanel extends javax.swing.JPanel {
                         .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 790, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(217, 217, 217)
+                                .addGap(171, 171, 171)
                                 .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(228, 228, 228)
-                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 196, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(131, 131, 131)))
                         .addComponent(jButton3)))
                 .addContainerGap())
         );
@@ -373,7 +370,7 @@ public class AccesoriesPanel extends javax.swing.JPanel {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 114, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
