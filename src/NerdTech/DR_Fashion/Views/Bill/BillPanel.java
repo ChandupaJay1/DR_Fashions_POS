@@ -6,30 +6,69 @@ import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-/**
- *
- * @author MG_Pathum
- */
 public class BillPanel extends javax.swing.JPanel {
 
+    private Integer filteredInvoiceId = null;
     private Integer filteredBuyerId = null;
     private String filteredBuyerName = null;
+    private String filteredInvoiceNo = null;
 
     // Constructor 1: Show all bills
     public BillPanel() {
+        this.filteredInvoiceId = null;
         this.filteredBuyerId = null;
         this.filteredBuyerName = null;
+        this.filteredInvoiceNo = null;
         initComponents();
+        fixBillTableColumns();  // මේක add කරන්න
         loadBillData();
         setupButtonActions();
         updateTitle();
     }
 
-    // Constructor 2: Show bills for specific buyer
+    // Constructor 2: Show bills for specific buyer (old constructor - keep for compatibility)
     public BillPanel(int buyerId, String buyerName) {
+        this.filteredInvoiceId = null;
         this.filteredBuyerId = buyerId;
         this.filteredBuyerName = buyerName;
+        this.filteredInvoiceNo = null;
         initComponents();
+        fixBillTableColumns();  // මේක add කරන්න
+        loadBillData();
+        setupButtonActions();
+        updateTitle();
+    }
+
+    private void fixBillTableColumns() {
+        // Bill ID column එක සමග table model එක reset කරන්න
+        DefaultTableModel model = new DefaultTableModel(
+                new Object[][]{},
+                new String[]{"Bill ID", "Date", "Description", "Size", "Qty", "Unit",
+                    "Price", "Return Amount", "Total Amount", "Paid Amount",
+                    "Balance", "Remark", "Payment Method"}
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // කිසිම cell එකක් edit කරන්න බෑ
+            }
+        };
+        jTable1.setModel(model);
+
+        // Bill ID column එක hide කරන්න (පළමු column එක)
+        jTable1.getColumnModel().getColumn(0).setMinWidth(0);
+        jTable1.getColumnModel().getColumn(0).setMaxWidth(0);
+        jTable1.getColumnModel().getColumn(0).setPreferredWidth(0);
+    }
+
+    // Constructor 3: Show bills for specific invoice (NEW - මේක තමයි අලුත constructor එක)
+    // Constructor 3: Show bills for specific invoice
+    public BillPanel(int invoiceId, int buyerId, String buyerName, String invoiceNo) {
+        this.filteredInvoiceId = invoiceId;
+        this.filteredBuyerId = buyerId;
+        this.filteredBuyerName = buyerName;
+        this.filteredInvoiceNo = invoiceNo;
+        initComponents();
+        fixBillTableColumns();  // ⬅️ මේ line එක add කරන්න!
         loadBillData();
         setupButtonActions();
         updateTitle();
@@ -37,98 +76,90 @@ public class BillPanel extends javax.swing.JPanel {
 
     // Update title based on filter
     private void updateTitle() {
-        if (filteredBuyerId != null && filteredBuyerName != null) {
+        if (filteredInvoiceId != null && filteredInvoiceNo != null) {
+            // Invoice specific view
+            jLabel1.setText("Bill Details - " + filteredBuyerName + " - Invoice: " + filteredInvoiceNo);
+        } else if (filteredBuyerId != null && filteredBuyerName != null) {
+            // Buyer specific view (all invoices)
             jLabel1.setText("Bill Details - " + filteredBuyerName);
         } else {
+            // All buyers view
             jLabel1.setText("Bill Details - All Buyers");
         }
     }
 
     // Setup Button Actions
     private void setupButtonActions() {
-        // Add Bill Button
-        jButton1.addActionListener(e -> {
-            java.awt.Frame parentFrame = (java.awt.Frame) SwingUtilities.getWindowAncestor(this);
-            AddBill dialog = new AddBill(parentFrame, true, this);
-            dialog.setVisible(true);
-        });
 
-        // Update Bill Button (සීරීස් bill update කරන්න)
-        jButton2.addActionListener(e -> {
-            int selectedRow = jTable1.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Please select a bill to update!",
-                        "No Selection", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            try {
-                String invoiceNo = jTable1.getValueAt(selectedRow, 2).toString();
-                int billId = getBillIdByInvoiceNo(invoiceNo);
-                if (billId > 0) {
-                    java.awt.Frame parentFrame = (java.awt.Frame) SwingUtilities.getWindowAncestor(this);
-                    UpdateBill dialog = new UpdateBill(parentFrame, true, this, billId);
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+
+                if (filteredInvoiceId != null) {
+
+                    java.awt.Frame parentFrame
+                            = (java.awt.Frame) SwingUtilities.getWindowAncestor(BillPanel.this);
+
+                    AddBill dialog = new AddBill(
+                            parentFrame,
+                            true,
+                            BillPanel.this,
+                            filteredInvoiceId,
+                            filteredBuyerId,
+                            filteredBuyerName,
+                            filteredInvoiceNo
+                    );
                     dialog.setVisible(true);
+
+                } else if (filteredBuyerId != null && filteredBuyerName != null) {
+
+                    JOptionPane.showMessageDialog(
+                            BillPanel.this,
+                            "Please select a specific invoice first!",
+                            "No Invoice Selected",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+
                 } else {
-                    JOptionPane.showMessageDialog(this, "Bill not found!",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+
+                    JOptionPane.showMessageDialog(
+                            BillPanel.this,
+                            "Please select a buyer and invoice first!",
+                            "No Selection",
+                            JOptionPane.WARNING_MESSAGE
+                    );
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Delete Bill Button
-        jButton3.addActionListener(e -> {
-            int selectedRow = jTable1.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Please select a bill to delete!",
-                        "No Selection", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            String invoiceNo = jTable1.getValueAt(selectedRow, 2).toString();
-            String buyerName = jTable1.getValueAt(selectedRow, 0).toString();
-
-            int confirm = JOptionPane.showConfirmDialog(
-                    this,
-                    "Are you sure you want to delete this bill?\n\nBuyer: " + buyerName
-                    + "\nInvoice: " + invoiceNo,
-                    "Confirm Delete",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE
-            );
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                deleteBill(invoiceNo);
-            }
-        });
-
-        // Go To Buyer Registration
-        jButton4.addActionListener(e -> goToBuyerRegistration());
     }
 
-    // Load Bill Data (with or without filter)
+    // Load Bill Data (with filter based on invoice or buyer)
     private void loadBillData() {
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String query = "SELECT bb.name AS buyer_name, b.date, b.invoice_no, "
-                    + "b.description, b.size, b.qty, b.unit, b.price, "
-                    + "b.return_amount, b.total_amount, b.paid_amount, b.balance, "
-                    + "b.remark, b.payment_method "
-                    + "FROM bill b "
-                    + "INNER JOIN bill_buyer bb ON b.bill_buyer_id = bb.id ";
 
-            if (filteredBuyerId != null) {
-                query += "WHERE b.bill_buyer_id = ? ";
+            // Query එකට bill ID එක add කරන්න
+            String query = "SELECT b.id, b.date, b.description, b.size, b.qty, b.unit, b.price, "
+                    + "b.return_amount, b.total_amount, b.paid_amount, b.balance, "
+                    + "b.remark, b.payment_method, bb.name AS buyer_name, i.invoice_no "
+                    + "FROM bill b "
+                    + "INNER JOIN invoice_no i ON b.invoice_no_id = i.id "
+                    + "INNER JOIN bill_buyer bb ON i.bill_buyer_id = bb.id ";
+
+            if (filteredInvoiceId != null) {
+                query += "WHERE b.invoice_no_id = ? ";
+            } else if (filteredBuyerId != null) {
+                query += "WHERE i.bill_buyer_id = ? ";
             }
 
             query += "ORDER BY b.date DESC, b.id DESC";
 
             PreparedStatement ps = conn.prepareStatement(query);
 
-            if (filteredBuyerId != null) {
+            if (filteredInvoiceId != null) {
+                ps.setInt(1, filteredInvoiceId);
+            } else if (filteredBuyerId != null) {
                 ps.setInt(1, filteredBuyerId);
             }
 
@@ -140,9 +171,8 @@ public class BillPanel extends javax.swing.JPanel {
             int rowCount = 0;
             while (rs.next()) {
                 Object[] row = {
-                    rs.getString("buyer_name"),
+                    rs.getInt("id"), // Bill ID (hidden column)
                     rs.getString("date"),
-                    rs.getString("invoice_no"),
                     rs.getString("description"),
                     rs.getString("size"),
                     rs.getString("qty"),
@@ -162,9 +192,9 @@ public class BillPanel extends javax.swing.JPanel {
             rs.close();
             ps.close();
 
-            if (filteredBuyerId != null && rowCount == 0) {
+            if (filteredInvoiceId != null && rowCount == 0) {
                 JOptionPane.showMessageDialog(this,
-                        "No bills found for " + filteredBuyerName,
+                        "No bills found for invoice: " + filteredInvoiceNo,
                         "No Data",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -178,36 +208,13 @@ public class BillPanel extends javax.swing.JPanel {
         }
     }
 
-    // Get Bill ID
-    private int getBillIdByInvoiceNo(String invoiceNo) {
-        try {
-            Connection conn = DatabaseConnection.getConnection();
-            String query = "SELECT id FROM bill WHERE invoice_no = ?";
-            PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, invoiceNo);
-            ResultSet rs = ps.executeQuery();
-
-            int id = 0;
-            if (rs.next()) {
-                id = rs.getInt("id");
-            }
-
-            rs.close();
-            ps.close();
-            return id;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
     // Delete Bill
-    private void deleteBill(String invoiceNo) {
+    private void deleteBill(int billId) {
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String query = "DELETE FROM bill WHERE invoice_no = ?";
+            String query = "DELETE FROM bill WHERE id = ?";
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, invoiceNo);
+            ps.setInt(1, billId);
 
             int result = ps.executeUpdate();
             ps.close();
@@ -220,33 +227,20 @@ public class BillPanel extends javax.swing.JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to delete bill!",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1451) {
+                JOptionPane.showMessageDialog(this,
+                        "Cannot delete this bill!\nThere are related records.",
+                        "Delete Error - Foreign Key Constraint",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error deleting bill: " + e.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error deleting bill: " + e.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    // Go to Buyer Registration Panel
-    private void goToBuyerRegistration() {
-        try {
-            javax.swing.JFrame frame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
-
-            if (frame != null && frame instanceof NerdTech.DR_Fashion.Views.Dashboard) {
-                NerdTech.DR_Fashion.Views.Dashboard dashboard
-                        = (NerdTech.DR_Fashion.Views.Dashboard) frame;
-                dashboard.loadPanelWithLoading("Bill Registration",
-                        () -> new NerdTech.DR_Fashion.Views.BillBuyer.Bill.BillBuyerRegistrationPanel(dashboard));
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Cannot navigate to registration panel. Please use the Bill button in the main menu.",
-                        "Navigation Error",
-                        JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Error loading registration panel: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -274,17 +268,17 @@ public class BillPanel extends javax.swing.JPanel {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Buyer Name", "Date", "Invoice No", "Description", "Size", "Qty", "Unit", "Price", "Return Amount", "Total Amount", "Paid Amount", "Balance", "Remark", "Payment Method"
+                "Date", "Description", "Size", "Qty", "Unit", "Price", "Return Amount", "Total Amount", "Paid Amount", "Balance", "Remark", "Payment Method"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -295,11 +289,6 @@ public class BillPanel extends javax.swing.JPanel {
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton1.setText("Add");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton2.setText("Update");
@@ -318,7 +307,7 @@ public class BillPanel extends javax.swing.JPanel {
         });
 
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton4.setText("Go to Registration Buyer");
+        jButton4.setText("Back");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton4ActionPerformed(evt);
@@ -340,11 +329,11 @@ public class BillPanel extends javax.swing.JPanel {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 283, Short.MAX_VALUE)
+                        .addGap(379, 379, 379)
                         .addComponent(jButton2)
-                        .addGap(274, 274, 274)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
                         .addComponent(jButton3)
-                        .addGap(217, 217, 217)
+                        .addGap(292, 292, 292)
                         .addComponent(jButton4)))
                 .addContainerGap())
         );
@@ -368,7 +357,43 @@ public class BillPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        goToBuyerRegistration();
+        try {
+            javax.swing.JFrame frame
+                    = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
+
+            if (frame != null && frame instanceof NerdTech.DR_Fashion.Views.Dashboard) {
+
+                NerdTech.DR_Fashion.Views.Dashboard dashboard
+                        = (NerdTech.DR_Fashion.Views.Dashboard) frame;
+
+                // 🔑 Invoice list panel load කරනවා
+                dashboard.loadPanelWithLoading(
+                        "Invoice No - " + filteredBuyerName,
+                        () -> new NerdTech.DR_Fashion.Views.BillBuyer.Bill.RegisterInvoice.RegisterInvoiceNoPanel(
+                                filteredBuyerId,
+                                filteredBuyerName
+                        )
+                );
+
+            } else {
+                // fallback
+                frame.setContentPane(
+                        new NerdTech.DR_Fashion.Views.BillBuyer.Bill.RegisterInvoice.RegisterInvoiceNoPanel(
+                                filteredBuyerId,
+                                filteredBuyerName
+                        )
+                );
+                frame.revalidate();
+                frame.repaint();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error loading invoice panel: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void openUpdateBillDialog(int billId) {
@@ -384,16 +409,49 @@ public class BillPanel extends javax.swing.JPanel {
 
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        int selectedRow = jTable1.getSelectedRow();
 
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a bill to update!",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Hidden column (0) එකෙන් Bill ID එක ගන්න
+        int billId = (int) jTable1.getValueAt(selectedRow, 0);
+
+        // Update dialog open කරන්න
+        openUpdateBillDialog(billId);
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton3ActionPerformed
+        int selectedRow = jTable1.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a bill to delete!",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
+        // Hidden column එකෙන් Bill ID එක ගන්න
+        int billId = (int) jTable1.getValueAt(selectedRow, 0);
+        String description = (String) jTable1.getValueAt(selectedRow, 2); // Column 2 is description (0 is hidden ID)
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to delete this bill?\nDescription: " + description,
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            deleteBill(billId);
+        }
+    }//GEN-LAST:event_jButton3ActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

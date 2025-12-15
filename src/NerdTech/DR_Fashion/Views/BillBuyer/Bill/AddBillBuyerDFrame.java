@@ -27,6 +27,8 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
         jLabel2 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
+        jTextField2 = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -46,6 +48,11 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
             }
         });
 
+        jTextField2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel3.setText("Invoice No");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -54,14 +61,18 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addGap(204, 204, 204)
-                        .addComponent(jTextField1))
-                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel1)
                             .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 348, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 226, Short.MAX_VALUE)))
+                        .addGap(0, 226, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel3))
+                        .addGap(138, 138, 138)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField2)
+                            .addComponent(jTextField1))))
                 .addContainerGap())
             .addGroup(layout.createSequentialGroup()
                 .addGap(227, 227, 227)
@@ -79,7 +90,11 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 44, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -90,6 +105,7 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // Save button action
         String name = jTextField1.getText().trim();
+        String invoiceNo = jTextField2.getText().trim();
 
         if (name.isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -100,11 +116,21 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
             return;
         }
 
+        if (invoiceNo.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please enter an invoice number!",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE);
+            jTextField2.requestFocus();
+            return;
+        }
+
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String query = "INSERT INTO bill_buyer (name) VALUES (?)";
+            String query = "INSERT INTO bill_buyer (name, invoice_no) VALUES (?, ?)";
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, name);
+            ps.setString(2, invoiceNo);
 
             int result = ps.executeUpdate();
             ps.close();
@@ -122,6 +148,7 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
 
                 // Clear form
                 jTextField1.setText("");
+                jTextField2.setText("");
                 jTextField1.requestFocus();
 
                 // Close dialog
@@ -179,7 +206,9 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 }
