@@ -25,10 +25,8 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        nameField = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
-        jTextField2 = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -38,7 +36,7 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
         jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel2.setText("Name");
 
-        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        nameField.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton1.setText("Save");
@@ -47,11 +45,6 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
                 jButton1ActionPerformed(evt);
             }
         });
-
-        jTextField2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-
-        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
-        jLabel3.setText("Invoice No");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -66,13 +59,9 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
                             .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 348, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 226, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel3))
-                        .addGap(138, 138, 138)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField2)
-                            .addComponent(jTextField1))))
+                        .addComponent(jLabel2)
+                        .addGap(204, 204, 204)
+                        .addComponent(nameField)))
                 .addContainerGap())
             .addGroup(layout.createSequentialGroup()
                 .addGap(227, 227, 227)
@@ -89,12 +78,8 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
+                    .addComponent(nameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 38, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -103,61 +88,81 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // Save button action
-        String name = jTextField1.getText().trim();
-        String invoiceNo = jTextField2.getText().trim();
+        String name = nameField.getText().trim();
 
+        // Validation
         if (name.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Please enter a name!",
+                    "Please enter bill buyer name!",
                     "Validation Error",
                     JOptionPane.WARNING_MESSAGE);
-            jTextField1.requestFocus();
+            nameField.requestFocus();
             return;
         }
 
-        if (invoiceNo.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Please enter an invoice number!",
-                    "Validation Error",
-                    JOptionPane.WARNING_MESSAGE);
-            jTextField2.requestFocus();
-            return;
-        }
-
+        // Check if name already exists
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String query = "INSERT INTO bill_buyer (name, invoice_no) VALUES (?, ?)";
-            PreparedStatement ps = conn.prepareStatement(query);
+            String checkQuery = "SELECT COUNT(*) FROM bill_buyer WHERE name = ?";
+            PreparedStatement checkPs = conn.prepareStatement(checkQuery);
+            checkPs.setString(1, name);
+            ResultSet rs = checkPs.executeQuery();
+
+            if (rs.next() && rs.getInt(1) > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Bill buyer with this name already exists!",
+                        "Duplicate Error",
+                        JOptionPane.WARNING_MESSAGE);
+                rs.close();
+                checkPs.close();
+                nameField.requestFocus();
+                return;
+            }
+            rs.close();
+            checkPs.close();
+
+            // Insert new bill buyer
+            String insertQuery = "INSERT INTO bill_buyer (name) VALUES (?)";
+            PreparedStatement ps = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, name);
-            ps.setString(2, invoiceNo);
 
             int result = ps.executeUpdate();
-            ps.close();
 
             if (result > 0) {
+                // Get the generated ID
+                ResultSet generatedKeys = ps.getGeneratedKeys();
+                int newId = -1;
+                if (generatedKeys.next()) {
+                    newId = generatedKeys.getInt(1);
+                }
+                generatedKeys.close();
+                ps.close();
+
                 JOptionPane.showMessageDialog(this,
-                        "Bill Buyer added successfully!",
+                        "Bill buyer added successfully!\nID: " + newId,
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // Refresh parent table
+                // Refresh parent panel
                 if (parentPanel != null) {
                     parentPanel.refreshTable();
                 }
 
-                // Clear form
-                jTextField1.setText("");
-                jTextField2.setText("");
-                jTextField1.requestFocus();
-
-                // Close dialog
-                this.dispose();
+                // Clear and close
+                nameField.setText("");
+                dispose();
             }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Database Error: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error adding bill buyer: " + e.getMessage(),
-                    "Database Error",
+                    "Error: " + e.getMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
@@ -206,9 +211,7 @@ public class AddBillBuyerDFrame extends javax.swing.JDialog {
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
+    private javax.swing.JTextField nameField;
     // End of variables declaration//GEN-END:variables
 }

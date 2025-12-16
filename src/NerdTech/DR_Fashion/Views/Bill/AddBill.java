@@ -12,11 +12,11 @@ public class AddBill extends javax.swing.JDialog {
     private int selectedBuyerId = -1;
     private Integer selectedInvoiceId = null;
 
-    // Constructor: Pre-selected buyer (හැම වෙලේම buyer එක pre-selected)
     public AddBill(java.awt.Frame parent, boolean modal, BillPanel panel, int buyerId, String buyerName) {
         super(parent, modal);
         this.parentPanel = panel;
         this.selectedBuyerId = buyerId;
+        this.selectedInvoiceId = null; // ⬅️ මේක add කරන්න
         initComponents();
         loadPaymentMethods();
         setupCalculations();
@@ -26,15 +26,29 @@ public class AddBill extends javax.swing.JDialog {
 
         setLocationRelativeTo(parent);
     }
-// 🔹 NEW 7-param constructor (for BillPanel open)
 
+// Constructor 2: NEW 7-param constructor (BillPanel එකෙන් call කරද්දී)
     public AddBill(java.awt.Frame parent, boolean modal, BillPanel panel,
             int invoiceId, int buyerId, String buyerName, String invoiceNo) {
-        this(parent, modal, panel, buyerId, buyerName); // call existing constructor
+        super(parent, modal);
+        this.parentPanel = panel;
+        this.selectedBuyerId = buyerId;
+        this.selectedInvoiceId = invoiceId;  // ✅ මුලින්ම set කරන්න!
 
-        // ⬅️ මේ lines add කරන්න
-        this.selectedInvoiceId = invoiceId;
-        System.out.println("Invoice ID set to: " + invoiceId); // Debug කරන්න
+        initComponents();
+        loadPaymentMethods();
+        setupCalculations();
+
+        // ✅ Previous balance load කරන්න (දැන් selectedInvoiceId set වෙලා ඇති!)
+        double prevBalance = getPreviousBalance(buyerId);
+        jTextField2.setText(String.format("%.2f", prevBalance));
+
+        setLocationRelativeTo(parent);
+
+        System.out.println("✅ AddBill opened:");
+        System.out.println("   Invoice ID: " + invoiceId);
+        System.out.println("   Invoice No: " + invoiceNo);
+        System.out.println("   Previous Balance: " + prevBalance);
     }
 
     // Load Payment Methods
@@ -51,27 +65,41 @@ public class AddBill extends javax.swing.JDialog {
         try {
             Connection conn = DatabaseConnection.getConnection();
 
-            // ⬅️ Query එක වෙනස් කරන්න - JOIN එකක් use කරන්න
-            String query = "SELECT b.balance "
-                    + "FROM bill b "
-                    + "INNER JOIN invoice_no i ON b.invoice_no_id = i.id "
-                    + "WHERE i.bill_buyer_id = ? "
-                    + "ORDER BY b.date DESC, b.id DESC "
+            // ✅ එකම INVOICE එකේ විතරක් previous balance එක check කරන්න
+            String query = "SELECT balance "
+                    + "FROM bill "
+                    + "WHERE invoice_no_id = ? " // ⬅️ මේ invoice එකේ විතරක්
+                    + "ORDER BY date DESC, id DESC "
                     + "LIMIT 1";
 
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setInt(1, buyerId);
-            ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) {
-                String balanceStr = rs.getString("balance");
+            // ✅ දැන් add කරන invoice එකේම previous bills විතරක් check කරන්න
+            if (selectedInvoiceId != null) {
+                ps.setInt(1, selectedInvoiceId);
+
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    String balanceStr = rs.getString("balance");
+                    rs.close();
+                    ps.close();
+
+                    double previousBalance = balanceStr != null ? Double.parseDouble(balanceStr) : 0.0;
+
+                    System.out.println("✅ Previous Balance for Invoice " + selectedInvoiceId + ": " + previousBalance);
+
+                    return previousBalance;
+                }
+
                 rs.close();
                 ps.close();
-                return balanceStr != null ? Double.parseDouble(balanceStr) : 0.0;
             }
 
-            rs.close();
-            ps.close();
+            // ✅ Invoice එකේ කිසිම previous bill එකක් නැත්නම් 0.00
+            System.out.println("✅ No previous bills in Invoice " + selectedInvoiceId + " - Starting fresh with 0.00");
+            return 0.0;
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,

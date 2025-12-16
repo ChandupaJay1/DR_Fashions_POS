@@ -1,11 +1,10 @@
 package NerdTech.DR_Fashion.Views.Shipment;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.Views.Shipment.Cutting.CuttingPanel;
+import NerdTech.DR_Fashion.Views.Shipment.Cutting.OrderNoPanel;
 import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.CardLayout;
 
 /**
  *
@@ -339,34 +338,31 @@ public class ShipmentPanel extends javax.swing.JPanel {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // Cutting button - Switch to CuttingPanel within the same panel
-        switchToCuttingPanel();
+        switchToOrderNoPanel();
     }//GEN-LAST:event_jButton4ActionPerformed
 
-    private void switchToCuttingPanel() {
+    private void switchToOrderNoPanel() {
         try {
-            // Remove current components
+            // Remove all current components
             this.removeAll();
 
-            // Create CuttingPanel instance
-            CuttingPanel cuttingPanel = new CuttingPanel();
+            // Create OrderNoPanel instance
+            OrderNoPanel orderNoPanel = new OrderNoPanel();
 
-            // Make sure layout is properly refreshed
+            // Set layout and add the new panel
             this.setLayout(new java.awt.BorderLayout());
-            this.add(cuttingPanel, java.awt.BorderLayout.CENTER);
+            this.add(orderNoPanel, java.awt.BorderLayout.CENTER);
 
             // Refresh panel visually
             this.revalidate();
             this.repaint();
 
-            // Explicitly reload data (ensure visible table refresh)
-            SwingUtilities.invokeLater(() -> cuttingPanel.loadCuttingData());
-
-            System.out.println("Switched to CuttingPanel successfully!");
+            System.out.println("Switched to OrderNoPanel successfully!");
 
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                    "Error switching to Cutting Panel: " + e.getMessage(),
+                    "Error switching to Order No Panel: " + e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }

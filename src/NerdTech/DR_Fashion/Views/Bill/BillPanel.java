@@ -3,6 +3,8 @@ package NerdTech.DR_Fashion.Views.Bill;
 import NerdTech.DR_Fashion.Views.Bill.AddBill;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -90,56 +92,203 @@ public class BillPanel extends javax.swing.JPanel {
 
     // Setup Button Actions
     private void setupButtonActions() {
+        // මේක empty තියෙනවා නම් remove කරන්න
+        // Add button action listener දැනටමත් initComponents() එකේ තියෙනවා
 
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        // Pay Button Action
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
             @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-
-                if (filteredInvoiceId != null) {
-
-                    java.awt.Frame parentFrame
-                            = (java.awt.Frame) SwingUtilities.getWindowAncestor(BillPanel.this);
-
-                    AddBill dialog = new AddBill(
-                            parentFrame,
-                            true,
-                            BillPanel.this,
-                            filteredInvoiceId,
-                            filteredBuyerId,
-                            filteredBuyerName,
-                            filteredInvoiceNo
-                    );
-                    dialog.setVisible(true);
-
-                } else if (filteredBuyerId != null && filteredBuyerName != null) {
-
-                    JOptionPane.showMessageDialog(
-                            BillPanel.this,
-                            "Please select a specific invoice first!",
-                            "No Invoice Selected",
-                            JOptionPane.WARNING_MESSAGE
-                    );
-
-                } else {
-
-                    JOptionPane.showMessageDialog(
-                            BillPanel.this,
-                            "Please select a buyer and invoice first!",
-                            "No Selection",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                try {
+                    handlePayment();
+                } catch (Exception ex) {
+                    Logger.getLogger(BillPanel.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-
     }
 
-    // Load Bill Data (with filter based on invoice or buyer)
-    private void loadBillData() {
+    private void handlePayment() throws Exception {
+        // ✅ Invoice ID check කරන්න
+        if (filteredInvoiceId == null) {
+            JOptionPane.showMessageDialog(this,
+                    "No invoice selected! Please select an invoice first.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String totalText = jTextField1.getText().trim();
+        String balanceText = jTextField2.getText().trim();
+        String paymentText = jTextField3.getText().trim();
+
+        if (balanceText.isEmpty() || balanceText.equals("0.00")) {
+            JOptionPane.showMessageDialog(this,
+                    "No balance to pay!",
+                    "Payment",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if (paymentText.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please enter payment amount!",
+                    "Payment Required",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            double total = Double.parseDouble(totalText);
+            double balance = Double.parseDouble(balanceText);
+            double payment = Double.parseDouble(paymentText);
+
+            if (payment <= 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Payment amount must be greater than 0!",
+                        "Invalid Amount",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (payment > balance) {
+                int confirm = JOptionPane.showConfirmDialog(this,
+                        "Payment amount (" + payment + ") is greater than balance (" + balance + ").\nDo you want to continue?",
+                        "Confirm Overpayment",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+
+                if (confirm != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            }
+
+            // Payment database එකට update කරන්න
+            makePaymentToDatabase(payment);
+
+            // Table refresh කරනවා
+            refreshTable();
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Please enter valid numbers!",
+                    "Invalid Input",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void makePaymentToDatabase(double paymentAmount) throws Exception {
         try {
             Connection conn = DatabaseConnection.getConnection();
 
-            // Query එකට bill ID එක add කරන්න
+            System.out.println("🔍 DEBUG - Payment Details:");
+            System.out.println("   Invoice ID: " + filteredInvoiceId);
+            System.out.println("   Payment Amount: " + paymentAmount);
+
+            // Check if bills exist
+            String checkQuery = "SELECT COUNT(*) as count FROM bill WHERE invoice_no_id = ?";
+            PreparedStatement checkPs = conn.prepareStatement(checkQuery);
+            checkPs.setInt(1, filteredInvoiceId);
+            ResultSet checkRs = checkPs.executeQuery();
+
+            if (checkRs.next() && checkRs.getInt("count") == 0) {
+                checkRs.close();
+                checkPs.close();
+                JOptionPane.showMessageDialog(this,
+                        "No bills found for this invoice!",
+                        "Payment Failed",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            checkRs.close();
+            checkPs.close();
+
+            // ✅ අන්තිම bill එක හොයා ගන්න
+            String getLastBillQuery = "SELECT id, total_amount, paid_amount, balance FROM bill "
+                    + "WHERE invoice_no_id = ? "
+                    + "ORDER BY date DESC, id DESC "
+                    + "LIMIT 1";
+
+            PreparedStatement lastBillPs = conn.prepareStatement(getLastBillQuery);
+            lastBillPs.setInt(1, filteredInvoiceId);
+            ResultSet lastBillRs = lastBillPs.executeQuery();
+
+            int lastBillId = -1;
+            double currentTotal = 0.0;
+            double currentPaid = 0.0;
+            double currentBalance = 0.0;
+
+            if (lastBillRs.next()) {
+                lastBillId = lastBillRs.getInt("id");
+                currentTotal = lastBillRs.getDouble("total_amount");
+                currentPaid = lastBillRs.getDouble("paid_amount");
+                currentBalance = lastBillRs.getDouble("balance");
+
+                System.out.println("   Last Bill ID: " + lastBillId);
+                System.out.println("   Current Total: " + currentTotal);
+                System.out.println("   Current Paid: " + currentPaid);
+                System.out.println("   Current Balance: " + currentBalance);
+            }
+            lastBillRs.close();
+            lastBillPs.close();
+
+            if (lastBillId == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "Could not find the last bill!",
+                        "Payment Failed",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // ✅ Paid amount සහ balance විතරක් update කරන්න (Total එක වෙනස් නොකරන්න)
+            double newPaid = currentPaid + paymentAmount;
+            double newBalance = currentBalance - paymentAmount;
+
+            String updateQuery = "UPDATE bill SET "
+                    + "paid_amount = ?, "
+                    + "balance = ? "
+                    + "WHERE id = ?";
+
+            PreparedStatement ps = conn.prepareStatement(updateQuery);
+            ps.setDouble(1, newPaid);
+            ps.setDouble(2, newBalance);
+            ps.setInt(3, lastBillId);
+
+            int updatedRows = ps.executeUpdate();
+            ps.close();
+
+            System.out.println("   New Paid: " + newPaid);
+            System.out.println("   New Balance: " + newBalance);
+            System.out.println("   Updated Rows: " + updatedRows);
+
+            if (updatedRows > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Payment of " + paymentAmount + " applied successfully!",
+                        "Payment Successful",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Failed to update bill!",
+                        "Payment Failed",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error applying payment: " + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadBillData() {
+        double lastBillTotalAmount = 0.0;
+        double totalPaidAmount = 0.0;  // ⬅️ Database එකේ සියලුම paid amounts
+
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+
             String query = "SELECT b.id, b.date, b.description, b.size, b.qty, b.unit, b.price, "
                     + "b.return_amount, b.total_amount, b.paid_amount, b.balance, "
                     + "b.remark, b.payment_method, bb.name AS buyer_name, i.invoice_no "
@@ -164,14 +313,24 @@ public class BillPanel extends javax.swing.JPanel {
             }
 
             ResultSet rs = ps.executeQuery();
-
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
             model.setRowCount(0);
 
             int rowCount = 0;
+            boolean isFirstRow = true;
+
             while (rs.next()) {
+                // ✅ පළමු row එකේ total_amount
+                if (isFirstRow) {
+                    lastBillTotalAmount = rs.getDouble("total_amount");
+                    isFirstRow = false;
+                }
+
+                // ✅ සියලුම bills වල paid_amount එකතු කරන්න
+                totalPaidAmount += rs.getDouble("paid_amount");
+
                 Object[] row = {
-                    rs.getInt("id"), // Bill ID (hidden column)
+                    rs.getInt("id"),
                     rs.getString("date"),
                     rs.getString("description"),
                     rs.getString("size"),
@@ -192,11 +351,21 @@ public class BillPanel extends javax.swing.JPanel {
             rs.close();
             ps.close();
 
+            // ✅ Balance = Total - සියලුම Paid Amounts
+            double calculatedBalance = lastBillTotalAmount - totalPaidAmount;
+
+            // ✅ Display values
+            jTextField1.setText(String.format("%.2f", lastBillTotalAmount));   // Total
+            jTextField2.setText(String.format("%.2f", calculatedBalance));     // Balance (Total - Paid)
+            jTextField3.setText("");  // Clear Paid Amount field
+
             if (filteredInvoiceId != null && rowCount == 0) {
                 JOptionPane.showMessageDialog(this,
                         "No bills found for invoice: " + filteredInvoiceNo,
                         "No Data",
                         JOptionPane.INFORMATION_MESSAGE);
+                jTextField1.setText("0.00");
+                jTextField2.setText("0.00");
             }
 
         } catch (Exception e) {
@@ -205,6 +374,8 @@ public class BillPanel extends javax.swing.JPanel {
                     "Error loading bill data: " + e.getMessage(),
                     "Database Error",
                     JOptionPane.ERROR_MESSAGE);
+            jTextField1.setText("0.00");
+            jTextField2.setText("0.00");
         }
     }
 
@@ -262,6 +433,13 @@ public class BillPanel extends javax.swing.JPanel {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jTextField1 = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        jTextField3 = new javax.swing.JTextField();
+        jButton5 = new javax.swing.JButton();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Bill Details");
@@ -289,6 +467,11 @@ public class BillPanel extends javax.swing.JPanel {
 
         jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton1.setText("Add");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
         jButton2.setText("Update");
@@ -314,6 +497,29 @@ public class BillPanel extends javax.swing.JPanel {
             }
         });
 
+        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+
+        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jLabel2.setText("Total");
+
+        jLabel3.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jLabel3.setText("Balance");
+
+        jTextField2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+
+        jLabel4.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jLabel4.setText("Paid Amount");
+
+        jTextField3.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+
+        jButton5.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton5.setText("Pay");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -328,13 +534,32 @@ public class BillPanel extends javax.swing.JPanel {
                             .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 311, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jButton1)
-                        .addGap(379, 379, 379)
-                        .addComponent(jButton2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
-                        .addComponent(jButton3)
-                        .addGap(292, 292, 292)
-                        .addComponent(jButton4)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel4)
+                                .addGap(53, 53, 53)
+                                .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 276, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(83, 83, 83)
+                                .addComponent(jLabel2))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jButton1)
+                                .addGap(229, 229, 229)
+                                .addComponent(jButton2)))
+                        .addGap(44, 44, 44)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton3))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 74, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton5)
+                                .addGap(222, 222, 222)
+                                .addComponent(jButton4))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel3)
+                                .addGap(53, 53, 53)
+                                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -346,12 +571,23 @@ public class BillPanel extends javax.swing.JPanel {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
+                .addGap(36, 36, 36)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel4)
+                        .addComponent(jLabel2)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel3)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 79, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jButton2)
                     .addComponent(jButton3)
-                    .addComponent(jButton4))
+                    .addComponent(jButton4)
+                    .addComponent(jButton5))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -453,15 +689,73 @@ public class BillPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        try {
+            handlePayment();
+        } catch (Exception ex) {
+            Logger.getLogger(BillPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        openAddBillDialog();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void openAddBillDialog() {
+        try {
+            if (filteredInvoiceId == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select an invoice first!",
+                        "No Invoice Selected",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (filteredBuyerId == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Buyer information is missing!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            java.awt.Frame parentFrame = (java.awt.Frame) SwingUtilities.getWindowAncestor(this);
+
+            AddBill addDialog = new AddBill(
+                    parentFrame,
+                    true,
+                    this,
+                    filteredInvoiceId,
+                    filteredBuyerId,
+                    filteredBuyerName,
+                    filteredInvoiceNo
+            );
+            addDialog.setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error opening add bill dialog: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTable jTable1;
+    private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
+    private javax.swing.JTextField jTextField3;
     // End of variables declaration//GEN-END:variables
 }

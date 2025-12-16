@@ -22,10 +22,26 @@ import javax.swing.table.DefaultTableModel;
  */
 public class CuttingPanel extends javax.swing.JPanel {
 
+    private String filterOrderNo = null; // Store filter order number
+
+    // Default constructor - load all data
     public CuttingPanel() {
         initComponents();
         loadCuttingData();
-        addDoubleClickListener(); // Add this line
+        addDoubleClickListener();
+    }
+
+    // Constructor with order number filter
+    public CuttingPanel(String orderNo) {
+        this.filterOrderNo = orderNo;
+        initComponents();
+        loadCuttingData();
+        addDoubleClickListener();
+
+        // Update title to show filtered order
+        if (filterOrderNo != null && !filterOrderNo.isEmpty()) {
+            jLabel1.setText("Cutting Details - Order: " + filterOrderNo);
+        }
     }
 
     // Add this method to handle double clicks
@@ -66,33 +82,66 @@ public class CuttingPanel extends javax.swing.JPanel {
             Connection conn = DatabaseConnection.getConnection();
             System.out.println("Database connection established: " + (conn != null));
 
-            // ✅ නිවැරදි JOIN query - shipment details සමග cutting details එකට ගන්න
-            String query = "SELECT "
-                    + "s.order_no as order_number, "
-                    + "s.fabric_inhouse_date, "
-                    + "s.buyer_name, "
-                    + "s.yardage_fabric as yardage, "
-                    + "c.id as cutting_id, "
-                    + "c.shipment_id, "
-                    + "c.style, "
-                    + "c.roll, "
-                    + "c.cut_no, "
-                    + "c.fabric_issued, "
-                    + "c.damage_return, "
-                    + "c.roll_sort, "
-                    + "c.end_fabric, "
-                    + "c.balance, "
-                    + "c.total_used, "
-                    + "c.cut_pcs, "
-                    + "c.consumption, "
-                    + "c.width, "
-                    + "c.remark "
-                    + "FROM cutting c "
-                    + "INNER JOIN shipment s ON c.shipment_id = s.id"; // ✅ INNER JOIN use කරන්න
+            // Build query based on whether we have a filter
+            String query;
+            if (filterOrderNo != null && !filterOrderNo.isEmpty()) {
+                query = "SELECT "
+                        + "s.order_no as order_number, "
+                        + "s.fabric_inhouse_date, "
+                        + "s.buyer_name, "
+                        + "s.yardage_fabric as yardage, "
+                        + "c.id as cutting_id, "
+                        + "c.shipment_id, "
+                        + "c.style, "
+                        + "c.roll, "
+                        + "c.cut_no, "
+                        + "c.fabric_issued, "
+                        + "c.damage_return, "
+                        + "c.roll_sort, "
+                        + "c.end_fabric, "
+                        + "c.balance, "
+                        + "c.total_used, "
+                        + "c.cut_pcs, "
+                        + "c.consumption, "
+                        + "c.width, "
+                        + "c.remark "
+                        + "FROM cutting c "
+                        + "INNER JOIN shipment s ON c.shipment_id = s.id "
+                        + "WHERE s.order_no = ?";
+            } else {
+                query = "SELECT "
+                        + "s.order_no as order_number, "
+                        + "s.fabric_inhouse_date, "
+                        + "s.buyer_name, "
+                        + "s.yardage_fabric as yardage, "
+                        + "c.id as cutting_id, "
+                        + "c.shipment_id, "
+                        + "c.style, "
+                        + "c.roll, "
+                        + "c.cut_no, "
+                        + "c.fabric_issued, "
+                        + "c.damage_return, "
+                        + "c.roll_sort, "
+                        + "c.end_fabric, "
+                        + "c.balance, "
+                        + "c.total_used, "
+                        + "c.cut_pcs, "
+                        + "c.consumption, "
+                        + "c.width, "
+                        + "c.remark "
+                        + "FROM cutting c "
+                        + "INNER JOIN shipment s ON c.shipment_id = s.id";
+            }
 
-            System.out.println("Executing main query: " + query);
+            System.out.println("Executing query: " + query);
 
             PreparedStatement pst = conn.prepareStatement(query);
+
+            // Set parameter if filtering
+            if (filterOrderNo != null && !filterOrderNo.isEmpty()) {
+                pst.setString(1, filterOrderNo);
+            }
+
             ResultSet rs = pst.executeQuery();
 
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
@@ -133,8 +182,11 @@ public class CuttingPanel extends javax.swing.JPanel {
             System.out.println("Loaded " + rowCount + " cutting records successfully");
 
             if (rowCount == 0) {
+                String message = filterOrderNo != null
+                        ? "No cutting records found for Order No: " + filterOrderNo
+                        : "No cutting records found in the database. Please add some cutting records first.";
                 javax.swing.JOptionPane.showMessageDialog(this,
-                        "No cutting records found in the database. Please add some cutting records first.",
+                        message,
                         "No Data",
                         javax.swing.JOptionPane.INFORMATION_MESSAGE);
             }
@@ -150,8 +202,31 @@ public class CuttingPanel extends javax.swing.JPanel {
 
     // Add button functionality
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add new cutting record
-        showAddEditDialog(null);
+        // Check if we're in filtered mode
+        if (filterOrderNo != null && !filterOrderNo.isEmpty()) {
+            // Add new record for this specific order
+            showAddDialog(filterOrderNo);
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Please select an order first from Order No & Fabric Inhouse Date",
+                    "No Order Selected",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void showAddDialog(String orderNo) {
+        try {
+            java.awt.Frame parentFrame = (java.awt.Frame) SwingUtilities.getWindowAncestor(this);
+            AddCuttingDFrame dialog = new AddCuttingDFrame(parentFrame, true, orderNo, this);
+            dialog.setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error opening add dialog: " + e.getMessage(),
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {
@@ -210,6 +285,13 @@ public class CuttingPanel extends javax.swing.JPanel {
     private void backButtonActionPerformed(java.awt.event.ActionEvent evt) {
         // Back to ShipmentPanel
         switchToShipmentPanel();
+    }
+
+    private void clearFilterButtonActionPerformed(java.awt.event.ActionEvent evt) {
+        // Clear filter and reload all data
+        filterOrderNo = null;
+        jLabel1.setText("Cutting Details");
+        loadCuttingData();
     }
 
     private void switchToShipmentPanel() {
