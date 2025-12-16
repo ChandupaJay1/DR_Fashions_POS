@@ -465,17 +465,56 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("Bill Registration", () -> new BillBuyerRegistrationPanel(this));
             case "Bill Management" ->
                 loadPanelWithLoading("Bill Management", () -> new NerdTech.DR_Fashion.Views.Bill.BillPanel());
+            case "Buyer Registration" ->
+                loadPanelWithLoading("Buyer Registration", () -> new RegistrationBuyerPanel(this));
             default -> {
-                System.out.println("Unknown panel for refresh: " + currentPanelName);
-                showErrorPanel("Cannot refresh this panel: " + currentPanelName);
+                System.out.println("Unknown panel: " + currentPanelName);
+                showErrorPanel("Cannot refresh: " + currentPanelName);
             }
         }
-
     }
 
 
+
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
-        refreshCurrentPanel();
+        // Disable button temporarily
+        jButton9.setEnabled(false);
+        jButton9.setText("Refreshing...");
+
+        // Show loading
+        LoaderPanel.removeAll();
+        LoadingPanel refreshLoadingPanel = new LoadingPanel("Refreshing " + currentPanelName);
+        LoaderPanel.setLayout(new BorderLayout());
+        LoaderPanel.add(refreshLoadingPanel, BorderLayout.CENTER);
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
+
+        // Refresh in background
+        SwingWorker<Void, Void> refreshWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                Thread.sleep(200); // Smooth UX
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    refreshCurrentPanel();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "Failed to refresh: " + ex.getMessage(),
+                            "Refresh Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    jButton9.setEnabled(true);
+                    jButton9.setText("Refresh");
+                }
+            }
+        };
+
+        refreshWorker.execute();
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
@@ -484,13 +523,16 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButtonSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSyncActionPerformed
-        // Disable button to prevent multiple clicks
+        // Disable button
         jButtonSync.setEnabled(false);
         jButtonSync.setText("Syncing...");
 
-        // Show temporary loading panel
+        // Show loading panel
         JPanel syncLoadingPanel = new JPanel(new BorderLayout());
-        syncLoadingPanel.add(new LoadingPanel("Syncing database..."), BorderLayout.CENTER);
+        JLabel loadingLabel = new JLabel("🔄 Syncing database...", SwingConstants.CENTER);
+        loadingLabel.setFont(new java.awt.Font("JetBrains Mono", 1, 24));
+        syncLoadingPanel.add(loadingLabel, BorderLayout.CENTER);
+
         LoaderPanel.removeAll();
         LoaderPanel.setLayout(new BorderLayout());
         LoaderPanel.add(syncLoadingPanel, BorderLayout.CENTER);
@@ -499,17 +541,19 @@ public class Dashboard extends javax.swing.JFrame {
 
         // Background sync
         SwingWorker<Boolean, String> syncWorker = new SwingWorker<Boolean, String>() {
+            private StringBuilder syncLog = new StringBuilder();
+
             @Override
             protected Boolean doInBackground() throws Exception {
-                // Small delay for UX
-                Thread.sleep(500);
+                Thread.sleep(300); // Smooth UX
 
                 try {
-                    // Set callback for sync status updates
+                    // Set callback for sync status
                     FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
                         @Override
                         public void onStatusChange(String status) {
-                            publish(status);  // Send to process() method
+                            syncLog.append(status).append("\n");
+                            publish(status);
                         }
                     });
 
@@ -520,38 +564,40 @@ public class Dashboard extends javax.swing.JFrame {
                 } catch (Exception e) {
                     e.printStackTrace();
                     publish("❌ Sync Error: " + e.getMessage());
-                    return false;
+                    throw e;
                 }
             }
 
             @Override
             protected void process(java.util.List<String> chunks) {
-                // Update UI with sync status (optional - show in loading panel)
+                // Log sync updates
                 if (!chunks.isEmpty()) {
                     String latestStatus = chunks.get(chunks.size() - 1);
-                    System.out.println("[SYNC STATUS] " + latestStatus);
-
-                    // You can update the loading panel with status if needed
-                    // loadingPanel.setStatus(latestStatus);
+                    System.out.println("[SYNC] " + latestStatus);
                 }
             }
 
             @Override
             protected void done() {
                 try {
-                    Boolean success = get(); // Get result and check for exceptions
+                    Boolean success = get();
 
                     if (success) {
                         JOptionPane.showMessageDialog(Dashboard.this,
-                                "✅ Sync completed successfully!\n\n"
-                                + "All data has been synchronized between local and online databases.",
+                                "✅ Sync Completed Successfully!\n\n"
+                                + "All database tables have been synchronized.\n"
+                                + "Local and Online databases are now in sync.",
                                 "Sync Success",
                                 JOptionPane.INFORMATION_MESSAGE);
+
+                        // Auto refresh current panel after successful sync
+                        refreshCurrentPanel();
+
                     } else {
                         JOptionPane.showMessageDialog(Dashboard.this,
-                                "⚠️ Sync completed with warnings!\n\n"
-                                + "Some data may not have been synchronized properly.\n"
-                                + "Please check your internet connection and try again.",
+                                "⚠️ Sync Completed with Warnings!\n\n"
+                                + "Some tables may not have synced properly.\n"
+                                + "Please check logs and try again if needed.",
                                 "Sync Warning",
                                 JOptionPane.WARNING_MESSAGE);
                     }
@@ -562,21 +608,21 @@ public class Dashboard extends javax.swing.JFrame {
 
                     String errorMsg;
                     if (cause instanceof SQLException) {
-                        errorMsg = "Database connection error: " + cause.getMessage();
+                        errorMsg = "Database error: " + cause.getMessage();
                     } else if (cause instanceof java.net.ConnectException) {
-                        errorMsg = "Cannot connect to online database.\nPlease check your internet connection.";
+                        errorMsg = "Cannot connect to online database.\nCheck your internet connection.";
                     } else if (cause instanceof ClassNotFoundException) {
-                        errorMsg = "Database driver not found. Please check your classpath.";
+                        errorMsg = "Database driver not found.";
                     } else {
                         errorMsg = cause != null ? cause.getMessage() : ex.getMessage();
                     }
 
                     JOptionPane.showMessageDialog(Dashboard.this,
-                            "❌ Sync failed!\n\n" + errorMsg + "\n\n"
-                            + "Possible solutions:\n"
-                            + "• Check your internet connection\n"
-                            + "• Verify online database credentials\n"
-                            + "• Ensure online MySQL server is running\n"
+                            "❌ Sync Failed!\n\n" + errorMsg + "\n\n"
+                            + "Solutions:\n"
+                            + "• Check internet connection\n"
+                            + "• Verify database credentials\n"
+                            + "• Ensure online server is running\n"
                             + "• Check firewall settings",
                             "Sync Error",
                             JOptionPane.ERROR_MESSAGE);
@@ -584,20 +630,24 @@ public class Dashboard extends javax.swing.JFrame {
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(Dashboard.this,
-                            "⚠️ Sync was interrupted!",
+                            "⚠️ Sync Interrupted!",
                             "Sync Interrupted",
                             JOptionPane.WARNING_MESSAGE);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(Dashboard.this,
-                            "❌ Unexpected error during sync!\n\n" + ex.getMessage(),
-                            "Sync Error",
+                            "❌ Unexpected Error!\n\n" + ex.getMessage(),
+                            "Error",
                             JOptionPane.ERROR_MESSAGE);
 
                 } finally {
-                    // Restore Dashboard panel after sync
-                    loadDashboardPanelByDefault();
+                    // Restore dashboard
+                    if (currentPanelName.equals("Dashboard")) {
+                        loadDashboardPanelByDefault();
+                    } else {
+                        refreshCurrentPanel();
+                    }
                     jButtonSync.setEnabled(true);
                     jButtonSync.setText("Sync");
                 }
