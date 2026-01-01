@@ -1,5 +1,6 @@
 package NerdTech.DR_Fashion.Views.BillBuyer.Bill;
 
+import NerdTech.DR_Fashion.Views.BillBuyer.Bill.RegisterInvoice.RegisterInvoiceNoPanel;
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.BillBuyer.Bill.AddBillBuyerDFrame;
 import NerdTech.DR_Fashion.Views.BillBuyer.Bill.UpdateBillBuyer;
@@ -37,32 +38,31 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
                     if (selectedRow != -1) {
                         int buyerId = (int) jTable1.getValueAt(selectedRow, 0);
                         String buyerName = (String) jTable1.getValueAt(selectedRow, 1);
-                        navigateToBillPanelWithFilter(buyerId, buyerName);
+                        navigateToInvoicePanel(buyerId, buyerName); // මෙතන method එක වෙනස්
                     }
                 }
             }
         });
     }
 
-    // නව method - Buyer details සහිතව BillPanel එකට යන්න
-    private void navigateToBillPanelWithFilter(int buyerId, String buyerName) {
+    private void navigateToInvoicePanel(int buyerId, String buyerName) {
         if (dashboard != null) {
-            dashboard.loadPanelWithLoading("Bill Management - " + buyerName,
-                    () -> new BillPanel(buyerId, buyerName));
+            dashboard.loadPanelWithLoading("Invoice Management - " + buyerName,
+                    () -> new RegisterInvoiceNoPanel(buyerId, buyerName));
         } else {
             // Fallback method
             try {
                 javax.swing.JFrame frame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
                 if (frame != null) {
-                    BillPanel billPanel = new BillPanel(buyerId, buyerName);
-                    frame.setContentPane(billPanel);
+                    RegisterInvoiceNoPanel invoicePanel = new RegisterInvoiceNoPanel(buyerId, buyerName);
+                    frame.setContentPane(invoicePanel);
                     frame.revalidate();
                     frame.repaint();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this,
-                        "Error loading bill panel: " + e.getMessage(),
+                        "Error loading invoice panel: " + e.getMessage(),
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -73,7 +73,7 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
     private void loadBillBuyerData() {
         try {
             Connection conn = DatabaseConnection.getConnection();
-            String query = "SELECT id, name FROM bill_buyer ORDER BY id";
+            String query = "SELECT id, name, invoice_no FROM bill_buyer ORDER BY id";
             PreparedStatement ps = conn.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
 
@@ -83,7 +83,8 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
             while (rs.next()) {
                 model.addRow(new Object[]{
                     rs.getInt("id"),
-                    rs.getString("name")
+                    rs.getString("name"),
+                    rs.getString("invoice_no") // මේකයි අලුතින් add වෙන column එක
                 });
             }
 
@@ -186,9 +187,9 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
                         .addGap(0, 684, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(333, 333, 333)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(349, 349, 349)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
@@ -200,7 +201,7 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 460, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 386, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
@@ -222,7 +223,7 @@ public class BillBuyerRegistrationPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-         int selectedRow = jTable1.getSelectedRow();
+        int selectedRow = jTable1.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this,
                     "Please select a row to update!",

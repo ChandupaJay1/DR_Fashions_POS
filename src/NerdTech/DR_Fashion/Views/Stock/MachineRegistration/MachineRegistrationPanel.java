@@ -2,6 +2,7 @@ package NerdTech.DR_Fashion.Views.Stock.MachineRegistration;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
 import NerdTech.DR_Fashion.Views.Dashboard;
+import NerdTech.DR_Fashion.Views.Stock.StockPanel;
 import javax.swing.table.DefaultTableModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -67,6 +68,7 @@ public class MachineRegistrationPanel extends javax.swing.JPanel {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Machine Registration");
@@ -124,6 +126,14 @@ public class MachineRegistrationPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton5.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton5.setText("Back");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -139,12 +149,14 @@ public class MachineRegistrationPanel extends javax.swing.JPanel {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton1)
-                        .addGap(290, 290, 290)
+                        .addGap(237, 237, 237)
                         .addComponent(jButton2)
-                        .addGap(371, 371, 371)
+                        .addGap(307, 307, 307)
                         .addComponent(jButton3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 371, Short.MAX_VALUE)
-                        .addComponent(jButton4)))
+                        .addGap(195, 195, 195)
+                        .addComponent(jButton4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 207, Short.MAX_VALUE)
+                        .addComponent(jButton5)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -161,7 +173,8 @@ public class MachineRegistrationPanel extends javax.swing.JPanel {
                     .addComponent(jButton1)
                     .addComponent(jButton2)
                     .addComponent(jButton3)
-                    .addComponent(jButton4))
+                    .addComponent(jButton4)
+                    .addComponent(jButton5))
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -269,12 +282,30 @@ public class MachineRegistrationPanel extends javax.swing.JPanel {
     }
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        final Dashboard dashboard = (Dashboard) javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (dashboard != null) {
+            dashboard.loadPanel("Stock", new Dashboard.PanelLoader() {
+                public javax.swing.JPanel loadPanel() throws Exception {
+                    return new StockPanel();
+                }
+            });
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error: Cannot access Dashboard!",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButton5ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
