@@ -18,44 +18,35 @@ public class ViewBuyerStock extends javax.swing.JPanel {
     private DefaultTableModel tableModel;
     private String selectedBuyerName;
 
-    /**
-     * Default constructor (for backward compatibility)
-     */
     public ViewBuyerStock() {
         initComponents();
         initializeTable();
         loadBuyerStockData();
     }
 
-    /**
-     * New constructor with buyer name
-     */
     public ViewBuyerStock(String buyerName) {
         initComponents();
         this.selectedBuyerName = buyerName;
         initializeTable();
         loadBuyerStockDataByBuyer();
-
-        // Update title to show which buyer's stock is being viewed
         jLabel1.setText("View Buyer Stock - " + buyerName);
     }
 
-    /**
-     * Initialize table model with columns Note: We add "ID" as hidden first
-     * column for database operations
-     */
     private void initializeTable() {
         String[] columnNames = {
-            "ID", // Hidden column for database ID
-            "Buyer Name",
-            "Colour",
-            "Stock Qty",
-            "Material",
-            "Received Date",
-            "Issued Date",
-            "Total Issued",
-            "Available Qty",
-            "Unit Price"
+            "ID", // Column 0: Hidden
+            "Buyer Name", // Column 1
+            "Colour", // Column 2
+            "Stock Qty", // Column 3
+            "Brand Name", // Column 4
+            "Size", // Column 5
+            "Material", // Column 6
+            "Received Date", // Column 7
+            "Issued Date", // Column 8
+            "Total Issued", // Column 9
+            "Available Qty", // Column 10
+            "Unit Price", // Column 11
+            "Work Order No" // Column 12 ⭐ NEW
         };
 
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -67,15 +58,12 @@ public class ViewBuyerStock extends javax.swing.JPanel {
 
         jTable1.setModel(tableModel);
 
-        // Hide the ID column (but keep the data)
+        // Hide ID column
         jTable1.getColumnModel().getColumn(0).setMinWidth(0);
         jTable1.getColumnModel().getColumn(0).setMaxWidth(0);
         jTable1.getColumnModel().getColumn(0).setWidth(0);
     }
 
-    /**
-     * Load ALL buyer stock data (no filter)
-     */
     private void loadBuyerStockData() {
         try {
             tableModel.setRowCount(0);
@@ -83,16 +71,19 @@ public class ViewBuyerStock extends javax.swing.JPanel {
 
             while (rs.next()) {
                 Object[] row = new Object[]{
-                    rs.getInt("id"), // ✅ Store database ID
-                    rs.getString("buyer_name"),
-                    rs.getString("colour"),
-                    rs.getInt("stock_qty"),
-                    rs.getString("material"),
-                    rs.getDate("received_date"),
-                    rs.getDate("issued_date"),
-                    rs.getInt("total_issued"),
-                    rs.getInt("available_qty"),
-                    String.format("Rs. %.2f", rs.getDouble("unit_price"))
+                    rs.getInt("id"), // Column 0
+                    rs.getString("buyer_name"), // Column 1
+                    rs.getString("colour"), // Column 2
+                    rs.getInt("stock_qty"), // Column 3
+                    rs.getString("brand_name"), // Column 4
+                    rs.getDouble("size"), // Column 5
+                    rs.getString("material"), // Column 6
+                    rs.getDate("received_date"), // Column 7
+                    rs.getDate("issued_date"), // Column 8
+                    rs.getInt("total_issued"), // Column 9
+                    rs.getInt("available_qty"), // Column 10
+                    String.format("Rs. %.2f", rs.getDouble("unit_price")), // Column 11
+                    rs.getString("work_order_no") // Column 12 ⭐ NEW
                 };
                 tableModel.addRow(row);
             }
@@ -108,9 +99,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
     }
 
-    /**
-     * Load buyer stock data FILTERED by buyer name
-     */
     private void loadBuyerStockDataByBuyer() {
         try {
             tableModel.setRowCount(0);
@@ -120,16 +108,19 @@ public class ViewBuyerStock extends javax.swing.JPanel {
 
                 while (rs.next()) {
                     Object[] row = new Object[]{
-                        rs.getInt("id"), // ✅ Store database ID
-                        rs.getString("buyer_name"),
-                        rs.getString("colour"),
-                        rs.getInt("stock_qty"),
-                        rs.getString("material"),
-                        rs.getDate("received_date"),
-                        rs.getDate("issued_date"),
-                        rs.getInt("total_issued"),
-                        rs.getInt("available_qty"),
-                        String.format("Rs. %.2f", rs.getDouble("unit_price"))
+                        rs.getInt("id"), // Column 0
+                        rs.getString("buyer_name"), // Column 1
+                        rs.getString("colour"), // Column 2
+                        rs.getInt("stock_qty"), // Column 3
+                        rs.getString("brand_name"), // Column 4
+                        rs.getDouble("size"), // Column 5
+                        rs.getString("material"), // Column 6
+                        rs.getDate("received_date"), // Column 7
+                        rs.getDate("issued_date"), // Column 8
+                        rs.getInt("total_issued"), // Column 9
+                        rs.getInt("available_qty"), // Column 10
+                        String.format("Rs. %.2f", rs.getDouble("unit_price")), // Column 11
+                        rs.getString("work_order_no") // Column 12 ⭐ NEW
                     };
                     tableModel.addRow(row);
                 }
@@ -146,9 +137,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
     }
 
-    /**
-     * Helper method to close database resources
-     */
     private void closeResources(ResultSet rs) {
         try {
             if (rs != null) {
@@ -167,9 +155,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
     }
 
-    /**
-     * Refresh table data
-     */
     public void refreshTable() {
         if (selectedBuyerName != null) {
             loadBuyerStockDataByBuyer();
@@ -201,13 +186,13 @@ public class ViewBuyerStock extends javax.swing.JPanel {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Buyer Name", "Colour", "Stock Qty", "Material", "Recieved Date", "Issued Date", "Total Issued", "Available Qty", "Unit Price"
+                "Buyer Name", "Colour", "Brand Name", "Work Order No :", "Size", "Stock Qty", "Material", "Recieved Date", "Issued Date", "Total Issued", "Available Qty", "Unit Price"
             }
         ));
         jScrollPane1.setViewportView(jTable1);
@@ -281,10 +266,8 @@ public class ViewBuyerStock extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // When "Add Buyer Stock" button is clicked, pass the buyer name to the dialog
         AddBuyerStockDFrame addDialog = new AddBuyerStockDFrame(this);
 
-        // If this panel was opened with a specific buyer name, load it
         if (selectedBuyerName != null && !selectedBuyerName.isEmpty()) {
             addDialog.jTextField1.setText(selectedBuyerName);
         }
@@ -293,7 +276,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // Get selected row from table
         int selectedRow = jTable1.getSelectedRow();
 
         if (selectedRow == -1) {
@@ -305,36 +287,41 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
 
         try {
-            // ✅ CORRECTED: Get data from correct column indices
-            int stockId = (int) tableModel.getValueAt(selectedRow, 0);           // Column 0: ID (hidden)
-            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);   // Column 1: Buyer Name
-            String colour = (String) tableModel.getValueAt(selectedRow, 2);      // Column 2: Colour
-            int stockQty = (int) tableModel.getValueAt(selectedRow, 3);          // ✅ Column 3: Stock Qty (මෙතන තමයි වැරදිලා තිබ්බේ!)
-            String material = (String) tableModel.getValueAt(selectedRow, 4);    // Column 4: Material
-            java.sql.Date receivedDate = (java.sql.Date) tableModel.getValueAt(selectedRow, 5);  // Column 5: Received Date
-            java.sql.Date issuedDate = (java.sql.Date) tableModel.getValueAt(selectedRow, 6);    // Column 6: Issued Date
-            int totalIssued = (int) tableModel.getValueAt(selectedRow, 7);       // Column 7: Total Issued
-            int availableQty = (int) tableModel.getValueAt(selectedRow, 8);      // Column 8: Available Qty
+            // ✅ Updated column indices with work_order_no
+            int stockId = (int) tableModel.getValueAt(selectedRow, 0);           // Column 0
+            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);   // Column 1
+            String colour = (String) tableModel.getValueAt(selectedRow, 2);      // Column 2
+            int stockQty = (int) tableModel.getValueAt(selectedRow, 3);          // Column 3
+            String brandName = (String) tableModel.getValueAt(selectedRow, 4);   // Column 4
+            double size = (double) tableModel.getValueAt(selectedRow, 5);        // Column 5
+            String material = (String) tableModel.getValueAt(selectedRow, 6);    // Column 6
+            java.sql.Date receivedDate = (java.sql.Date) tableModel.getValueAt(selectedRow, 7);  // Column 7
+            java.sql.Date issuedDate = (java.sql.Date) tableModel.getValueAt(selectedRow, 8);    // Column 8
+            int totalIssued = (int) tableModel.getValueAt(selectedRow, 9);       // Column 9
+            int availableQty = (int) tableModel.getValueAt(selectedRow, 10);     // Column 10
 
-            // Parse unit price (remove "Rs." and parse)
-            String unitPriceStr = (String) tableModel.getValueAt(selectedRow, 9); // Column 9: Unit Price
+            String unitPriceStr = (String) tableModel.getValueAt(selectedRow, 11); // Column 11
             unitPriceStr = unitPriceStr.replace("Rs.", "").replace(",", "").trim();
             double unitPrice = Double.parseDouble(unitPriceStr);
 
-            // ✅ Open update dialog with CORRECT values
-            // Constructor: (parent, stockId, buyerName, colour, stockQty, material, receivedDate, issuedDate, totalIssued, availableQty, unitPrice)
+            String workOrderNo = (String) tableModel.getValueAt(selectedRow, 12); // Column 12 ⭐ NEW
+
+            // ✅ Open update dialog with work_order_no
             UpdateBuyerStockDFrame updateDialog = new UpdateBuyerStockDFrame(
                     this,
                     stockId,
                     buyerName,
                     colour,
-                    stockQty, // ✅ Correct Stock Qty from column 3
+                    stockQty,
+                    brandName,
+                    size,
                     material,
                     receivedDate,
                     issuedDate,
                     totalIssued,
-                    availableQty, // ✅ Correct Available Qty from column 8
-                    unitPrice
+                    availableQty,
+                    unitPrice,
+                    workOrderNo // ⭐ NEW
             );
 
             updateDialog.setVisible(true);
@@ -349,7 +336,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // Get selected row from table
         int selectedRow = jTable1.getSelectedRow();
 
         if (selectedRow == -1) {
@@ -361,13 +347,11 @@ public class ViewBuyerStock extends javax.swing.JPanel {
         }
 
         try {
-            // Get stock details for confirmation
-            int stockId = (int) tableModel.getValueAt(selectedRow, 0);           // Column 0: ID (hidden)
-            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);   // Column 1: Buyer Name
-            String colour = (String) tableModel.getValueAt(selectedRow, 2);      // Column 2: Colour
-            String material = (String) tableModel.getValueAt(selectedRow, 4);    // Column 4: Material
+            int stockId = (int) tableModel.getValueAt(selectedRow, 0);
+            String buyerName = (String) tableModel.getValueAt(selectedRow, 1);
+            String colour = (String) tableModel.getValueAt(selectedRow, 2);
+            String material = (String) tableModel.getValueAt(selectedRow, 6);
 
-            // Confirm deletion with user
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Are you sure you want to DEACTIVATE this stock record?\n\n"
                     + "Buyer: " + buyerName + "\n"
@@ -379,7 +363,6 @@ public class ViewBuyerStock extends javax.swing.JPanel {
                     JOptionPane.WARNING_MESSAGE);
 
             if (confirm == JOptionPane.YES_OPTION) {
-                // Deactivate in database (soft delete)
                 deactivateStock(stockId, buyerName, colour, material);
             }
 
@@ -404,7 +387,7 @@ public class ViewBuyerStock extends javax.swing.JPanel {
                         + "Material: " + material,
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE);
-                refreshTable(); // Refresh the table after deactivation
+                refreshTable();
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Failed to deactivate stock record!",
@@ -422,32 +405,25 @@ public class ViewBuyerStock extends javax.swing.JPanel {
     }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // Navigate to Buyer Accessories Panel
         try {
-            // Get the parent window (could be JFrame or JDialog)
             java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
 
             if (parentWindow != null) {
-                // Create ViewBuyerAccesoriesPanel instance
                 NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel accessoriesPanel;
 
-                // If this panel has a selected buyer, pass it to accessories panel
                 if (selectedBuyerName != null && !selectedBuyerName.isEmpty()) {
                     accessoriesPanel = new NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel(selectedBuyerName);
                 } else {
                     accessoriesPanel = new NerdTech.DR_Fashion.Views.ViewBuyerAccesories.ViewBuyerAccesoriesPanel();
                 }
 
-                // Get LoadingPanel from parent window
                 javax.swing.JPanel loadingPanel = null;
 
-                // Try to get LoadingPanel field from the parent window
                 try {
                     java.lang.reflect.Field field = parentWindow.getClass().getDeclaredField("LoadingPanel");
                     field.setAccessible(true);
                     loadingPanel = (javax.swing.JPanel) field.get(parentWindow);
                 } catch (NoSuchFieldException e) {
-                    // If LoadingPanel field not found, try to find it in the content pane
                     if (parentWindow instanceof javax.swing.JFrame) {
                         javax.swing.JFrame frame = (javax.swing.JFrame) parentWindow;
                         java.awt.Container contentPane = frame.getContentPane();
@@ -464,12 +440,9 @@ public class ViewBuyerStock extends javax.swing.JPanel {
                 }
 
                 if (loadingPanel != null) {
-                    // Clear LoadingPanel and add new panel
                     loadingPanel.removeAll();
                     loadingPanel.setLayout(new java.awt.BorderLayout());
                     loadingPanel.add(accessoriesPanel, java.awt.BorderLayout.CENTER);
-
-                    // Refresh the panel
                     loadingPanel.revalidate();
                     loadingPanel.repaint();
                 } else {

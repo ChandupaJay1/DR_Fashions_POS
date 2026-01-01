@@ -12,6 +12,8 @@ import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.Dashboard;
 import NerdTech.DR_Fashion.Views.Stock.MachineRegistration.MachineRegistrationPanel;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,9 +28,30 @@ public class StockPanel extends javax.swing.JPanel {
         initComponents();
         loadStockData();
         setupSearchListener();
+        setupTableDoubleClickListener();
     }
 
-    // ✅ Advanced Search - Search across multiple columns
+    private void setupTableDoubleClickListener() {
+        model.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) { // Double click
+                    int selectedRow = model.getSelectedRow();
+                    if (selectedRow != -1) {
+                        String colour = model.getValueAt(selectedRow, 0).toString();
+                        // Open ColourWiseDFrame with the selected colour
+                        ColourWiseDFrame dialog = new ColourWiseDFrame(
+                                (java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(StockPanel.this),
+                                true,
+                                colour
+                        );
+                        dialog.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
+
     private void setupSearchListener() {
         jTextField1.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -48,33 +71,32 @@ public class StockPanel extends javax.swing.JPanel {
         });
     }
 
-    // ✅ Advanced Search Method - searches across colour, material, and dates
     private void performAdvancedSearch() {
         String searchText = jTextField1.getText().trim().toLowerCase();
 
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-        tableModel.setRowCount(0); // Clear table
+        tableModel.setRowCount(0);
 
         if (searchText.isEmpty()) {
-            loadStockData(); // Show all data if search is empty
+            loadStockData();
             return;
         }
 
-        // ✅ Search in multiple columns using LIKE with OR conditions
-        String query = "SELECT colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price "
+        // ✅ Search including work_order_no
+        String query = "SELECT colour, stock_qty, previous_stock_qty, material, received_date, "
+                + "recieved_qty, available_qty, unit_price, work_order_no "
                 + "FROM stock WHERE status = 'active' AND ("
                 + "LOWER(colour) LIKE ? OR "
                 + "LOWER(material) LIKE ? OR "
+                + "LOWER(work_order_no) LIKE ? OR "
                 + "CAST(stock_qty AS CHAR) LIKE ? OR "
                 + "CAST(available_qty AS CHAR) LIKE ? OR "
-                + "CAST(received_date AS CHAR) LIKE ? OR "
-                + "CAST(issued_date AS CHAR) LIKE ?)";
+                + "CAST(received_date AS CHAR) LIKE ?)";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
 
             String searchPattern = "%" + searchText + "%";
 
-            // Set all parameters with the same search pattern
             for (int i = 1; i <= 6; i++) {
                 ps.setString(i, searchPattern);
             }
@@ -84,18 +106,18 @@ public class StockPanel extends javax.swing.JPanel {
             while (rs.next()) {
                 Object[] row = new Object[]{
                     rs.getString("colour"),
-                    rs.getInt("stock_qty"),
+                    rs.getString("stock_qty"),
+                    rs.getString("previous_stock_qty"),
                     rs.getString("material"),
-                    rs.getDate("received_date"),
-                    rs.getDate("issued_date"),
-                    rs.getInt("total_issued"),
-                    rs.getInt("available_qty"),
-                    "Rs. " + String.format("%.2f", rs.getDouble("unit_price"))
+                    rs.getString("received_date"),
+                    rs.getString("recieved_qty"),
+                    rs.getString("available_qty"),
+                    "Rs. " + String.format("%.2f", Double.parseDouble(rs.getString("unit_price"))),
+                    rs.getString("work_order_no") // ⭐ Work Order No
                 };
                 tableModel.addRow(row);
             }
 
-            // Show message if no results found
             if (tableModel.getRowCount() == 0) {
                 javax.swing.JOptionPane.showMessageDialog(this,
                         "No results found for: " + searchText,
@@ -114,30 +136,35 @@ public class StockPanel extends javax.swing.JPanel {
 
     public void loadStockData() {
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-        tableModel.setRowCount(0); // clear existing rows
+        tableModel.setRowCount(0);
 
-        // ✅ Only load active records
-        String query = "SELECT colour, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price FROM stock WHERE status = 'active'";
+        // ✅ Include work_order_no in query
+        String query = "SELECT colour, stock_qty, previous_stock_qty, material, "
+                + "received_date, recieved_qty, available_qty, unit_price, work_order_no "
+                + "FROM stock WHERE status = 'active'";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Object[] row = new Object[]{
-                    rs.getString("colour"),
-                    rs.getInt("stock_qty"),
-                    rs.getString("material"),
-                    rs.getDate("received_date"),
-                    rs.getDate("issued_date"),
-                    rs.getInt("total_issued"),
-                    rs.getInt("available_qty"),
-                    "Rs. " + String.format("%.2f", rs.getDouble("unit_price"))
+                    rs.getString("colour"), // Column 0
+                    rs.getString("stock_qty"), // Column 1  
+                    rs.getString("previous_stock_qty"), // Column 2
+                    rs.getString("material"), // Column 3
+                    rs.getString("received_date"), // Column 4
+                    rs.getString("recieved_qty"), // Column 5
+                    rs.getString("available_qty"), // Column 6
+                    "Rs. " + String.format("%.2f", // Column 7
+                    Double.parseDouble(rs.getString("unit_price"))),
+                    rs.getString("work_order_no") // Column 8 ⭐ Work Order No
                 };
                 tableModel.addRow(row);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Error loading stock data: " + e.getMessage());
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error loading stock data: " + e.getMessage());
         }
     }
 
@@ -166,17 +193,17 @@ public class StockPanel extends javax.swing.JPanel {
         model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Colour", "Stock Qty", "Materials", "Recieved Date", "Issued Date", "Total Issued", "Available Qty", "Unit Price"
+                "Colour", "Stock Qty", "Previous Stock Qty", "Materials", "Recieved Date", "Recieved Qty", "Available Qty", "Unit Price", "work_order_no"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, true
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -188,8 +215,8 @@ public class StockPanel extends javax.swing.JPanel {
             model.getColumnModel().getColumn(0).setResizable(false);
             model.getColumnModel().getColumn(1).setResizable(false);
             model.getColumnModel().getColumn(2).setResizable(false);
+            model.getColumnModel().getColumn(2).setPreferredWidth(100);
             model.getColumnModel().getColumn(3).setResizable(false);
-            model.getColumnModel().getColumn(3).setPreferredWidth(100);
             model.getColumnModel().getColumn(4).setResizable(false);
             model.getColumnModel().getColumn(4).setPreferredWidth(100);
             model.getColumnModel().getColumn(5).setResizable(false);
@@ -270,7 +297,7 @@ public class StockPanel extends javax.swing.JPanel {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 110, Short.MAX_VALUE)
                         .addComponent(jButton1)
                         .addGap(45, 45, 45)
                         .addComponent(jButton4)
@@ -295,7 +322,7 @@ public class StockPanel extends javax.swing.JPanel {
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 52, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jButton2)
@@ -323,21 +350,24 @@ public class StockPanel extends javax.swing.JPanel {
             return;
         }
 
-        // ✅ Get row data with correct column indices
+        // ✅ Include work_order_no (Column 8)
         String colour = model.getValueAt(selectedRow, 0).toString();
         String stockQty = model.getValueAt(selectedRow, 1).toString();
-        String material = model.getValueAt(selectedRow, 2).toString();
-        String receivedDate = model.getValueAt(selectedRow, 3).toString();
-        String issuedDate = model.getValueAt(selectedRow, 4).toString();
-        String totalIssued = model.getValueAt(selectedRow, 5).toString();
+        String previousStockQty = model.getValueAt(selectedRow, 2).toString();
+        String material = model.getValueAt(selectedRow, 3).toString();
+        String receivedDate = model.getValueAt(selectedRow, 4).toString();
+        String receivedQty = model.getValueAt(selectedRow, 5).toString();
         String availableQty = model.getValueAt(selectedRow, 6).toString();
         String unitPrice = model.getValueAt(selectedRow, 7).toString().replace("Rs. ", "");
+        String workOrderNo = model.getValueAt(selectedRow, 8) != null
+                ? model.getValueAt(selectedRow, 8).toString() : "";  // ⭐ Work Order No
 
         UpdateDFrame dialog = new UpdateDFrame(
                 (java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(StockPanel.this),
                 true,
                 StockPanel.this,
-                colour, stockQty, material, receivedDate, issuedDate, totalIssued, availableQty, unitPrice
+                colour, stockQty, previousStockQty, material, receivedDate,
+                receivedQty, availableQty, unitPrice, workOrderNo // ⭐ Pass Work Order No
         );
         dialog.setVisible(true);
 
@@ -368,7 +398,6 @@ public class StockPanel extends javax.swing.JPanel {
             return;
         }
 
-        // Confirm delete
         int confirm = javax.swing.JOptionPane.showConfirmDialog(
                 this,
                 "Are you sure you want to delete this stock item?",
@@ -380,18 +409,15 @@ public class StockPanel extends javax.swing.JPanel {
             return;
         }
 
-        // ✅ FIX: Get colour from column 0 (first column) and use it in WHERE clause
         String stockColour = model.getValueAt(selectedRow, 0).toString();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // ✅ FIX: Use 'colour' column instead of 'name'
             String sql = "UPDATE stock SET status = 'deactivated' WHERE colour = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, stockColour);
             int rowsAffected = ps.executeUpdate();
 
             if (rowsAffected > 0) {
-                // Remove from UI table
                 DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
                 tableModel.removeRow(selectedRow);
 
