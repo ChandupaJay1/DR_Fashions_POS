@@ -7,12 +7,19 @@ package NerdTech.DR_Fashion.Views.Stock;
 import NerdTech.DR_Fashion.Views.Dashboard;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.Dashboard;
+import NerdTech.DR_Fashion.Views.Stock.MachineRegistration.MachineRegistrationPanel;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 
 public class StockPanel extends javax.swing.JPanel {
@@ -20,35 +27,144 @@ public class StockPanel extends javax.swing.JPanel {
     public StockPanel() {
         initComponents();
         loadStockData();
+        setupSearchListener();
+        setupTableDoubleClickListener();
+    }
+
+    private void setupTableDoubleClickListener() {
+        model.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) { // Double click
+                    int selectedRow = model.getSelectedRow();
+                    if (selectedRow != -1) {
+                        String colour = model.getValueAt(selectedRow, 0).toString();
+                        // Open ColourWiseDFrame with the selected colour
+                        ColourWiseDFrame dialog = new ColourWiseDFrame(
+                                (java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(StockPanel.this),
+                                true,
+                                colour
+                        );
+                        dialog.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
+
+    private void setupSearchListener() {
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                performAdvancedSearch();
+            }
+        });
+    }
+
+    private void performAdvancedSearch() {
+        String searchText = jTextField1.getText().trim().toLowerCase();
+
+        DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
+        tableModel.setRowCount(0);
+
+        if (searchText.isEmpty()) {
+            loadStockData();
+            return;
+        }
+
+        // ✅ Search including work_order_no
+        String query = "SELECT colour, stock_qty, previous_stock_qty, material, received_date, "
+                + "recieved_qty, available_qty, unit_price, work_order_no "
+                + "FROM stock WHERE status = 'active' AND ("
+                + "LOWER(colour) LIKE ? OR "
+                + "LOWER(material) LIKE ? OR "
+                + "LOWER(work_order_no) LIKE ? OR "
+                + "CAST(stock_qty AS CHAR) LIKE ? OR "
+                + "CAST(available_qty AS CHAR) LIKE ? OR "
+                + "CAST(received_date AS CHAR) LIKE ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+
+            String searchPattern = "%" + searchText + "%";
+
+            for (int i = 1; i <= 6; i++) {
+                ps.setString(i, searchPattern);
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Object[] row = new Object[]{
+                    rs.getString("colour"),
+                    rs.getString("stock_qty"),
+                    rs.getString("previous_stock_qty"),
+                    rs.getString("material"),
+                    rs.getString("received_date"),
+                    rs.getString("recieved_qty"),
+                    rs.getString("available_qty"),
+                    "Rs. " + String.format("%.2f", Double.parseDouble(rs.getString("unit_price"))),
+                    rs.getString("work_order_no") // ⭐ Work Order No
+                };
+                tableModel.addRow(row);
+            }
+
+            if (tableModel.getRowCount() == 0) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "No results found for: " + searchText,
+                        "Search Results",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error searching stock: " + e.getMessage(),
+                    "Search Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void loadStockData() {
         DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
-        tableModel.setRowCount(0); // table eka clear karanawa
+        tableModel.setRowCount(0);
 
-        String query = "SELECT name, stock_qty, material, received_date, issued_date, total_issued, available_qty, unit_price FROM stock";
+        // ✅ Include work_order_no in query
+        String query = "SELECT colour, stock_qty, previous_stock_qty, material, "
+                + "received_date, recieved_qty, available_qty, unit_price, work_order_no "
+                + "FROM stock WHERE status = 'active'";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Object[] row = new Object[]{
-                    rs.getString("name"),
-                    rs.getInt("stock_qty"),
-                    rs.getString("material"),
-                    rs.getDate("received_date"),
-                    rs.getDate("issued_date"),
-                    rs.getInt("total_issued"),
-                    rs.getInt("available_qty"),
-                    "Rs. " + String.format("%.2f", rs.getDouble("unit_price"))
-
+                    rs.getString("colour"), // Column 0
+                    rs.getString("stock_qty"), // Column 1  
+                    rs.getString("previous_stock_qty"), // Column 2
+                    rs.getString("material"), // Column 3
+                    rs.getString("received_date"), // Column 4
+                    rs.getString("recieved_qty"), // Column 5
+                    rs.getString("available_qty"), // Column 6
+                    "Rs. " + String.format("%.2f", // Column 7
+                    Double.parseDouble(rs.getString("unit_price"))),
+                    rs.getString("work_order_no") // Column 8 ⭐ Work Order No
                 };
                 tableModel.addRow(row);
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace(); // You can use logging or show dialog instead
         } catch (Exception e) {
             e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error loading stock data: " + e.getMessage());
         }
     }
 
@@ -63,7 +179,11 @@ public class StockPanel extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jButton6 = new javax.swing.JButton();
 
         setPreferredSize(new java.awt.Dimension(0, 763));
 
@@ -73,17 +193,17 @@ public class StockPanel extends javax.swing.JPanel {
         model.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Name", "Stock Qty", "Materials", "Recieved Date", "Issued Date", "Total Issued", "Available Qty", "Unit Price"
+                "Colour", "Stock Qty", "Previous Stock Qty", "Materials", "Recieved Date", "Recieved Qty", "Available Qty", "Unit Price", "work_order_no"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, true
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -93,11 +213,10 @@ public class StockPanel extends javax.swing.JPanel {
         jScrollPane1.setViewportView(model);
         if (model.getColumnModel().getColumnCount() > 0) {
             model.getColumnModel().getColumn(0).setResizable(false);
-            model.getColumnModel().getColumn(0).setPreferredWidth(150);
             model.getColumnModel().getColumn(1).setResizable(false);
             model.getColumnModel().getColumn(2).setResizable(false);
+            model.getColumnModel().getColumn(2).setPreferredWidth(100);
             model.getColumnModel().getColumn(3).setResizable(false);
-            model.getColumnModel().getColumn(3).setPreferredWidth(100);
             model.getColumnModel().getColumn(4).setResizable(false);
             model.getColumnModel().getColumn(4).setPreferredWidth(100);
             model.getColumnModel().getColumn(5).setResizable(false);
@@ -130,11 +249,32 @@ public class StockPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton5.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton5.setText("Go to Accesories");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
         jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton4.setText("Issued Stock");
+        jButton4.setText("Delete Stock");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton4ActionPerformed(evt);
+            }
+        });
+
+        jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel2.setText("Search");
+
+        jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 14)); // NOI18N
+
+        jButton6.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton6.setText("Machiene Part");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
             }
         });
 
@@ -147,35 +287,49 @@ public class StockPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton2)
-                                .addGap(102, 102, 102)
-                                .addComponent(jButton1)
-                                .addGap(108, 108, 108)
-                                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 217, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(109, 109, 109)
-                                .addComponent(jButton3)))
-                        .addGap(0, 336, Short.MAX_VALUE)))
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addGap(21, 21, 21)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jButton2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 110, Short.MAX_VALUE)
+                        .addComponent(jButton1)
+                        .addGap(45, 45, 45)
+                        .addComponent(jButton4)
+                        .addGap(45, 45, 45)
+                        .addComponent(jButton3)
+                        .addGap(39, 39, 39)
+                        .addComponent(jButton5)
+                        .addGap(37, 37, 37)
+                        .addComponent(jButton6)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel2)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jButton2)
                     .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton5)
+                    .addComponent(jButton4)
+                    .addComponent(jButton6))
                 .addGap(30, 30, 30))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -196,21 +350,24 @@ public class StockPanel extends javax.swing.JPanel {
             return;
         }
 
-        // Get row data
-        String name = model.getValueAt(selectedRow, 0).toString();
+        // ✅ Include work_order_no (Column 8)
+        String colour = model.getValueAt(selectedRow, 0).toString();
         String stockQty = model.getValueAt(selectedRow, 1).toString();
-        String material = model.getValueAt(selectedRow, 2).toString();
-        String receivedDate = model.getValueAt(selectedRow, 3).toString();
-        String issuedDate = model.getValueAt(selectedRow, 4).toString();
-        String totalIssued = model.getValueAt(selectedRow, 5).toString();
+        String previousStockQty = model.getValueAt(selectedRow, 2).toString();
+        String material = model.getValueAt(selectedRow, 3).toString();
+        String receivedDate = model.getValueAt(selectedRow, 4).toString();
+        String receivedQty = model.getValueAt(selectedRow, 5).toString();
         String availableQty = model.getValueAt(selectedRow, 6).toString();
         String unitPrice = model.getValueAt(selectedRow, 7).toString().replace("Rs. ", "");
+        String workOrderNo = model.getValueAt(selectedRow, 8) != null
+                ? model.getValueAt(selectedRow, 8).toString() : "";  // ⭐ Work Order No
 
         UpdateDFrame dialog = new UpdateDFrame(
                 (java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(StockPanel.this),
                 true,
-                StockPanel.this, // pass panel
-                name, stockQty, material, receivedDate, issuedDate, totalIssued, availableQty, unitPrice
+                StockPanel.this,
+                colour, stockQty, previousStockQty, material, receivedDate,
+                receivedQty, availableQty, unitPrice, workOrderNo // ⭐ Pass Work Order No
         );
         dialog.setVisible(true);
 
@@ -234,18 +391,101 @@ public class StockPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
+        int selectedRow = model.getSelectedRow();
+
+        if (selectedRow == -1) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Please select a row to delete!");
+            return;
+        }
+
+        int confirm = javax.swing.JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to delete this stock item?",
+                "Confirm Delete",
+                javax.swing.JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != javax.swing.JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String stockColour = model.getValueAt(selectedRow, 0).toString();
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String sql = "UPDATE stock SET status = 'deactivated' WHERE colour = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, stockColour);
+            int rowsAffected = ps.executeUpdate();
+
+            if (rowsAffected > 0) {
+                DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
+                tableModel.removeRow(selectedRow);
+
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "✅ Stock item successfully deactivated and removed from view!");
+            } else {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "⚠️ No stock item found with the selected colour!");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "❌ Error deactivating stock: " + e.getMessage());
+        }
+
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        final Dashboard dashboard = (Dashboard) javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (dashboard != null) {
+            dashboard.loadPanel("Accessories", new Dashboard.PanelLoader() {
+                public javax.swing.JPanel loadPanel() throws Exception {
+                    return new AccesoriesPanel();
+                }
+            });
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error: Cannot access Dashboard!",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        final Dashboard dashboard = (Dashboard) javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (dashboard != null) {
+            dashboard.loadPanel("Machine Registration", new Dashboard.PanelLoader() {
+                public javax.swing.JPanel loadPanel() throws Exception {
+                    return new MachineRegistrationPanel();
+                }
+            });
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error: Cannot access Dashboard!",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    public static void main(String[] args) {
+        FlatMacDarkLaf.setup();
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JTable model;
     // End of variables declaration//GEN-END:variables
 }

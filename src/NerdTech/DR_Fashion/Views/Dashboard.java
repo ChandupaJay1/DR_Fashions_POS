@@ -5,15 +5,15 @@
 package NerdTech.DR_Fashion.Views;
 
 import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
-import NerdTech.DR_Fashion.DatabaseConnection.BidirectionalDatabaseSync;
+import NerdTech.DR_Fashion.DatabaseConnection.FullDatabaseSync;
 import NerdTech.DR_Fashion.Views.Registration.EmployeeRegistration;
 import NerdTech.DR_Fashion.Views.Accesories.AccesoriesPanel;
 import NerdTech.DR_Fashion.Views.Attendence.AttendencePanel;
 import NerdTech.DR_Fashion.Views.Backup.BackupPanel;
+import NerdTech.DR_Fashion.Views.BillBuyer.Bill.BillBuyerRegistrationPanel;
 import NerdTech.DR_Fashion.Views.BuyerRegistrationPanel.RegistrationBuyerPanel;
 import NerdTech.DR_Fashion.Views.DashboardP.DashboardPanel;
 import NerdTech.DR_Fashion.Views.PayRollManage.PayRollManagementPanel;
-import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
@@ -25,6 +25,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import NerdTech.DR_Fashion.Views.DashboardP.EmployeeSectionStatsPanel;
+import NerdTech.DR_Fashion.Views.Shipment.ShipmentPanel;
 import NerdTech.DR_Fashion.Views.Stock.StockPanel;
 import java.sql.SQLException;
 
@@ -35,8 +36,8 @@ import java.sql.SQLException;
 public class Dashboard extends javax.swing.JFrame {
 
     private LoadingPanel loadingPanel;
-
     private String role;
+    private String currentPanelName = "Dashboard";
 
     public Dashboard(String full_name, String role) {
         initComponents();
@@ -45,7 +46,6 @@ public class Dashboard extends javax.swing.JFrame {
         DisplayLabel.setText("Hi, " + full_name);
         setAccessByRole();
         loadDashboardPanelByDefault();
-
     }
 
     private void setAccessByRole() {
@@ -55,31 +55,31 @@ public class Dashboard extends javax.swing.JFrame {
                 jButton2.setEnabled(true); // Dashboard
                 jButton6.setEnabled(true); // Registration
                 jButton1.setEnabled(true); // Attendance
-                jButton8.setEnabled(true); // Accessories
                 jButton3.setEnabled(true); // Stock
                 jButton4.setEnabled(true); // Backup
+                jButtonSync.setEnabled(true); // Sync
             }
-            case "hr" -> {  // Changed from "HR_Manager" to "hr_manager"
-                // Manager limited access
+            case "hr" -> {
+                // HR limited access
                 jButton2.setEnabled(true);
                 jButton6.setEnabled(true);
-                jButton1.setEnabled(false);
-                jButton8.setEnabled(false);
+                jButton1.setEnabled(true);
                 jButton3.setEnabled(false);
-                jButton4.setEnabled(false); // Cannot backup
+                jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
                 jButton10.setEnabled(false);
+                jButtonSync.setEnabled(true); // HR can also sync
             }
-            case "stores" -> {  // Changed from "Stores" to "stores"
-                // Employee minimal access
+            case "stores" -> {
+                // Stores minimal access
                 jButton2.setEnabled(true);
                 jButton1.setEnabled(false);
                 jButton6.setEnabled(false);
-                jButton8.setEnabled(true);
                 jButton3.setEnabled(true);
                 jButton4.setEnabled(false);
                 jButton7.setEnabled(false);
                 jButton10.setEnabled(true);
+                jButtonSync.setEnabled(false); // Stores cannot sync
             }
             default -> {
                 // If unknown role
@@ -95,8 +95,7 @@ public class Dashboard extends javax.swing.JFrame {
         loadPanelWithLoading(panelName, loader);
     }
 
-    private void loadPanelWithLoading(String panelName, PanelLoader loader) {
-
+    public void loadPanelWithLoading(String panelName, PanelLoader loader) {
         currentPanelName = panelName;
 
         // Show loading immediately
@@ -312,7 +311,7 @@ public class Dashboard extends javax.swing.JFrame {
         jPanel3.add(jButton7);
 
         jButton10.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
-        jButton10.setText("Shipments");
+        jButton10.setText("Bill");
         jButton10.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton10ActionPerformed(evt);
@@ -321,7 +320,7 @@ public class Dashboard extends javax.swing.JFrame {
         jPanel3.add(jButton10);
 
         jButton8.setFont(new java.awt.Font("JetBrains Mono", 1, 15)); // NOI18N
-        jButton8.setText("Accesories");
+        jButton8.setText("Shipment");
         jButton8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton8ActionPerformed(evt);
@@ -403,25 +402,25 @@ public class Dashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        currentPanelName = "Registration";
         loadPanelWithLoading("Registration", () -> new EmployeeRegistration());
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        currentPanelName = "Attendance";
         loadPanelWithLoading("Attendance", () -> new AttendencePanel());
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
-        loadPanelWithLoading("Accessories", () -> new AccesoriesPanel());
-    }//GEN-LAST:event_jButton8ActionPerformed
-
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        currentPanelName = "Backup";
         loadPanelWithLoading("Backup", () -> new BackupPanel());
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        currentPanelName = "Dashboard";
         loadPanelWithLoading("Dashboard", () -> new DashboardPanel());
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -440,10 +439,9 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        currentPanelName = "PayRollManagement";
         loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
     }//GEN-LAST:event_jButton7ActionPerformed
-
-    private String currentPanelName = "Dashboard";
 
     private void refreshCurrentPanel() {
         switch (currentPanelName) {
@@ -461,30 +459,80 @@ public class Dashboard extends javax.swing.JFrame {
                 loadPanelWithLoading("PayRollManagement", () -> new PayRollManagementPanel());
             case "Stock" ->
                 loadPanelWithLoading("Stock", () -> new StockPanel());
-            case "Registration Buyer" ->
-                loadPanelWithLoading("Registration Buyer", () -> new RegistrationBuyerPanel(this));
-            default ->
-                showErrorPanel("Cannot refresh this panel.");
+            case "Shipment" ->
+                loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+            case "Bill Registration" ->
+                loadPanelWithLoading("Bill Registration", () -> new BillBuyerRegistrationPanel(this));
+            case "Bill Management" ->
+                loadPanelWithLoading("Bill Management", () -> new NerdTech.DR_Fashion.Views.Bill.BillPanel());
+            case "Buyer Registration" ->
+                loadPanelWithLoading("Buyer Registration", () -> new RegistrationBuyerPanel(this));
+            default -> {
+                System.out.println("Unknown panel: " + currentPanelName);
+                showErrorPanel("Cannot refresh: " + currentPanelName);
+            }
         }
     }
 
 
+
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
-        refreshCurrentPanel();
+        // Disable button temporarily
+        jButton9.setEnabled(false);
+        jButton9.setText("Refreshing...");
+
+        // Show loading
+        LoaderPanel.removeAll();
+        LoadingPanel refreshLoadingPanel = new LoadingPanel("Refreshing " + currentPanelName);
+        LoaderPanel.setLayout(new BorderLayout());
+        LoaderPanel.add(refreshLoadingPanel, BorderLayout.CENTER);
+        LoaderPanel.revalidate();
+        LoaderPanel.repaint();
+
+        // Refresh in background
+        SwingWorker<Void, Void> refreshWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                Thread.sleep(200); // Smooth UX
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    refreshCurrentPanel();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "Failed to refresh: " + ex.getMessage(),
+                            "Refresh Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    jButton9.setEnabled(true);
+                    jButton9.setText("Refresh");
+                }
+            }
+        };
+
+        refreshWorker.execute();
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-        loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+        currentPanelName = "Bill Registration";
+        loadPanelWithLoading("Bill Registration", () -> new BillBuyerRegistrationPanel(this));
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButtonSyncActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSyncActionPerformed
-        // Disable button to prevent multiple clicks
+        // Disable button
         jButtonSync.setEnabled(false);
         jButtonSync.setText("Syncing...");
 
-        // Show temporary loading panel
+        // Show loading panel
         JPanel syncLoadingPanel = new JPanel(new BorderLayout());
-        syncLoadingPanel.add(new LoadingPanel("Syncing database..."), BorderLayout.CENTER);
+        JLabel loadingLabel = new JLabel("🔄 Syncing database...", SwingConstants.CENTER);
+        loadingLabel.setFont(new java.awt.Font("JetBrains Mono", 1, 24));
+        syncLoadingPanel.add(loadingLabel, BorderLayout.CENTER);
+
         LoaderPanel.removeAll();
         LoaderPanel.setLayout(new BorderLayout());
         LoaderPanel.add(syncLoadingPanel, BorderLayout.CENTER);
@@ -493,51 +541,63 @@ public class Dashboard extends javax.swing.JFrame {
 
         // Background sync
         SwingWorker<Boolean, String> syncWorker = new SwingWorker<Boolean, String>() {
+            private StringBuilder syncLog = new StringBuilder();
+
             @Override
             protected Boolean doInBackground() throws Exception {
-                // Small delay for UX
-                Thread.sleep(300);
+                Thread.sleep(300); // Smooth UX
 
-                // Set callback for sync status updates
-                BidirectionalDatabaseSync.setStatusCallback(
-                        new BidirectionalDatabaseSync.SyncStatusCallback() {
-                    @Override
-                    public void onStatusChange(String status) {
-                        publish(status);  // Send to process() method
-                    }
+                try {
+                    // Set callback for sync status
+                    FullDatabaseSync.setStatusCallback(new FullDatabaseSync.SyncStatusCallback() {
+                        @Override
+                        public void onStatusChange(String status) {
+                            syncLog.append(status).append("\n");
+                            publish(status);
+                        }
+                    });
+
+                    // Perform bidirectional sync
+                    boolean success = FullDatabaseSync.performFullSync();
+                    return success;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    publish("❌ Sync Error: " + e.getMessage());
+                    throw e;
                 }
-                );
-
-                // Perform bidirectional sync
-                boolean success = BidirectionalDatabaseSync.performFullSync();
-                return success;
             }
 
             @Override
             protected void process(java.util.List<String> chunks) {
-                // Update UI with sync status (optional - show in loading panel)
+                // Log sync updates
                 if (!chunks.isEmpty()) {
                     String latestStatus = chunks.get(chunks.size() - 1);
-                    System.out.println("[SYNC STATUS] " + latestStatus);
+                    System.out.println("[SYNC] " + latestStatus);
                 }
             }
 
             @Override
             protected void done() {
                 try {
-                    Boolean success = get(); // Get result and check for exceptions
+                    Boolean success = get();
 
                     if (success) {
                         JOptionPane.showMessageDialog(Dashboard.this,
-                                "✅ Sync completed successfully!\n\n"
-                                + "All data has been synchronized between local and online databases.",
+                                "✅ Sync Completed Successfully!\n\n"
+                                + "All database tables have been synchronized.\n"
+                                + "Local and Online databases are now in sync.",
                                 "Sync Success",
                                 JOptionPane.INFORMATION_MESSAGE);
+
+                        // Auto refresh current panel after successful sync
+                        refreshCurrentPanel();
+
                     } else {
                         JOptionPane.showMessageDialog(Dashboard.this,
-                                "⚠️ Sync completed with warnings!\n\n"
-                                + "Some data may not have been synchronized properly.\n"
-                                + "Please check your internet connection and try again.",
+                                "⚠️ Sync Completed with Warnings!\n\n"
+                                + "Some tables may not have synced properly.\n"
+                                + "Please check logs and try again if needed.",
                                 "Sync Warning",
                                 JOptionPane.WARNING_MESSAGE);
                     }
@@ -548,19 +608,21 @@ public class Dashboard extends javax.swing.JFrame {
 
                     String errorMsg;
                     if (cause instanceof SQLException) {
-                        errorMsg = "Database connection error: " + cause.getMessage();
+                        errorMsg = "Database error: " + cause.getMessage();
                     } else if (cause instanceof java.net.ConnectException) {
-                        errorMsg = "Cannot connect to online database.\nPlease check your internet connection.";
+                        errorMsg = "Cannot connect to online database.\nCheck your internet connection.";
+                    } else if (cause instanceof ClassNotFoundException) {
+                        errorMsg = "Database driver not found.";
                     } else {
                         errorMsg = cause != null ? cause.getMessage() : ex.getMessage();
                     }
 
                     JOptionPane.showMessageDialog(Dashboard.this,
-                            "❌ Sync failed!\n\n" + errorMsg + "\n\n"
-                            + "Possible solutions:\n"
-                            + "• Check your internet connection\n"
-                            + "• Verify online database credentials\n"
-                            + "• Ensure online MySQL server is running\n"
+                            "❌ Sync Failed!\n\n" + errorMsg + "\n\n"
+                            + "Solutions:\n"
+                            + "• Check internet connection\n"
+                            + "• Verify database credentials\n"
+                            + "• Ensure online server is running\n"
                             + "• Check firewall settings",
                             "Sync Error",
                             JOptionPane.ERROR_MESSAGE);
@@ -568,13 +630,24 @@ public class Dashboard extends javax.swing.JFrame {
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(Dashboard.this,
-                            "⚠️ Sync was interrupted!",
+                            "⚠️ Sync Interrupted!",
                             "Sync Interrupted",
                             JOptionPane.WARNING_MESSAGE);
 
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(Dashboard.this,
+                            "❌ Unexpected Error!\n\n" + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+
                 } finally {
-                    // Restore Dashboard panel after sync
-                    loadDashboardPanelByDefault();
+                    // Restore dashboard
+                    if (currentPanelName.equals("Dashboard")) {
+                        loadDashboardPanelByDefault();
+                    } else {
+                        refreshCurrentPanel();
+                    }
                     jButtonSync.setEnabled(true);
                     jButtonSync.setText("Sync");
                 }
@@ -585,8 +658,14 @@ public class Dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonSyncActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        currentPanelName = "Stock";
         loadPanelWithLoading("Stock", () -> new StockPanel());
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        currentPanelName = "Shipment";
+        loadPanelWithLoading("Shipment", () -> new ShipmentPanel());
+    }//GEN-LAST:event_jButton8ActionPerformed
 
     /**
      * @param args the command line arguments

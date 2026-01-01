@@ -1,10 +1,12 @@
 package NerdTech.DR_Fashion.Views.BuyerRegistrationPanel;
 
 import NerdTech.DR_Fashion.Views.Dashboard;
+import NerdTech.DR_Fashion.Views.Stock.StockPanel;
 import NerdTech.DR_Fashion.Views.ViewBuyerStock.ViewBuyerStock;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
@@ -62,13 +64,14 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         try {
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, brand_name, br_no, br_name, payment_method, due_payment FROM registration_buyer");
+            // Only load active buyers
+            ResultSet rs = stmt.executeQuery("SELECT name, email, mobile_no, lan_no, coodinator, address, company_name, brand_name, br_no, br_name, payment_method, due_payment FROM registration_buyer WHERE status = 'active' OR status IS NULL");
 
             DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
             tableModel.setRowCount(0);
 
             while (rs.next()) {
-                Object[] rowData = new Object[13];
+                Object[] rowData = new Object[12];
                 rowData[0] = rs.getString("name");
                 rowData[1] = rs.getString("email");
                 rowData[2] = rs.getString("mobile_no");
@@ -106,6 +109,7 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Registration Buyer");
@@ -176,6 +180,14 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
             }
         });
 
+        jButton4.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton4.setText("Back");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -185,20 +197,19 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(92, 92, 92)
+                        .addGap(245, 245, 245)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(81, 81, 81)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 266, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 727, Short.MAX_VALUE))
+                        .addGap(169, 169, 169)
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane1)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel1)
-                                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 426, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addContainerGap())))
+                            .addComponent(jLabel1)
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 426, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -213,13 +224,14 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(44, 44, 44))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // Delete Buyer
+        // Delete Buyer (Deactivate)
         int selectedRow = model.getSelectedRow();
         if (selectedRow == -1) {
             javax.swing.JOptionPane.showMessageDialog(this,
@@ -235,14 +247,46 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         // Confirmation dialog
         int confirm = javax.swing.JOptionPane.showConfirmDialog(
                 this,
-                "Are you sure you want to delete buyer:\n" + buyerName + "?",
-                "Confirm Delete",
+                "Are you sure you want to deactivate buyer:\n" + buyerName + "?",
+                "Confirm Deactivate",
                 javax.swing.JOptionPane.YES_NO_OPTION,
                 javax.swing.JOptionPane.WARNING_MESSAGE
         );
 
         if (confirm == javax.swing.JOptionPane.YES_OPTION) {
-            deleteBuyer(selectedRow);
+            deactivateBuyer(buyerName, selectedRow);
+        }
+    }
+
+    private void deactivateBuyer(String buyerName, int selectedRow) {
+        try {
+            Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
+            String query = "UPDATE registration_buyer SET status = 'deactivated' WHERE name = ?";
+
+            try (PreparedStatement ps = con.prepareStatement(query)) {
+                ps.setString(1, buyerName);
+                int result = ps.executeUpdate();
+
+                if (result > 0) {
+                    // Remove from table UI
+                    DefaultTableModel tableModel = (DefaultTableModel) model.getModel();
+                    tableModel.removeRow(selectedRow);
+
+                    javax.swing.JOptionPane.showMessageDialog(this,
+                            "✅ Buyer deactivated successfully!",
+                            "Deactivated",
+                            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+
+            con.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "❌ Error deactivating buyer:\n" + e.getMessage(),
+                    "Database Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
@@ -321,11 +365,29 @@ public class RegistrationBuyerPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        final Dashboard dashboard = (Dashboard) javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (dashboard != null) {
+            dashboard.loadPanel("Stock", new Dashboard.PanelLoader() {
+                public javax.swing.JPanel loadPanel() throws Exception {
+                    return new StockPanel();
+                }
+            });
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error: Cannot access Dashboard!",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButton4ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;

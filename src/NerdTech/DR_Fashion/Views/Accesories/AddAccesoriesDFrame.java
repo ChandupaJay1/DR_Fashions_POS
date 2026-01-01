@@ -393,7 +393,7 @@ public class AddAccesoriesDFrame extends javax.swing.JDialog {
 
             // DB insert with name and type_id
             Connection con = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
-            String sql = "INSERT INTO accesories (order_no, name, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price, type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO accesories (order_no, name, colour_name, size, stock_qty, uom, received_date, issued_date, total_issued, available_qty, unit_price, type_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')";
             java.sql.PreparedStatement pst = con.prepareStatement(sql);
             pst.setString(1, orderNum);
             pst.setString(2, name);  // Add name here

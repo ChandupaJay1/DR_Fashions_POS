@@ -5,11 +5,11 @@
 # === Build Artifacts ===
 *.class
 build/
-/dist/
+dist/
 
 # === Maven / Gradle Outputs ===
-/target/
-/out/
+target/
+out/
 
 # =======================================
 #  Sensitive Configurations
@@ -22,14 +22,17 @@ config.properties
 *.key
 *.pem
 
-# Database connection files
-src/**/DatabaseConnection.java
-src/**/DatabaseConnection.class
+# Database connection & sync files (Sensitive)
+src/**/DatabaseConnection*.java
+src/**/DatabaseConnection*.class
+src/**/FullDatabaseSync*.java
+src/**/FullDatabaseSync*.class
 
 # Prevent any credential or config directories
 **/config/**
 **/credentials/**
 **/secrets/**
+**/private/**
 
 # =======================================
 #  IDE / Editor Files
@@ -39,7 +42,6 @@ src/**/DatabaseConnection.class
 nbproject/private/
 nbproject/private/private.properties
 nbproject/private/private.xml
-nbproject/private/
 **/nbproject/private/**
 
 # --- IntelliJ IDEA / VSCode ---
@@ -82,4 +84,3 @@ desktop.ini
 *.tar
 *.tar.gz
 *.7z
-build/

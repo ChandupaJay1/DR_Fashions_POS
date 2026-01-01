@@ -34,11 +34,11 @@
                   </Group>
                   <Group type="102" attributes="0">
                       <Component id="jSeparator1" min="-2" pref="401" max="-2" attributes="0"/>
-                      <EmptySpace pref="850" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="jButton2" min="-2" pref="198" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
+                      <EmptySpace pref="219" max="32767" attributes="0"/>
                       <Component id="jButton3" min="-2" pref="198" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="144" max="-2" attributes="0"/>
                       <Component id="jButton6" min="-2" pref="198" max="-2" attributes="0"/>

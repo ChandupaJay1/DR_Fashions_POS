@@ -26,22 +26,25 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
-                      <Component id="jScrollPane1" pref="1605" max="32767" attributes="0"/>
-                      <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
-                  </Group>
                   <Group type="102" attributes="0">
                       <Component id="jSeparator1" min="-2" pref="314" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="32767" attributes="0"/>
+                      <EmptySpace pref="1113" max="32767" attributes="0"/>
                       <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                       <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
                       <Component id="searchTextField" min="-2" pref="235" max="-2" attributes="0"/>
                       <EmptySpace min="-2" pref="79" max="-2" attributes="0"/>
                   </Group>
+              </Group>
+          </Group>
+          <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+              <Group type="102" alignment="0" attributes="0">
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Component id="jScrollPane1" pref="1791" max="32767" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
       </Group>
@@ -59,56 +62,19 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jSeparator1" min="-2" pref="10" max="-2" attributes="0"/>
-              <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Component id="jScrollPane1" pref="549" max="32767" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace pref="573" max="32767" attributes="0"/>
+          </Group>
+          <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+              <Group type="102" attributes="0">
+                  <EmptySpace min="-2" pref="64" max="-2" attributes="0"/>
+                  <Component id="jScrollPane1" pref="573" max="32767" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+              </Group>
           </Group>
       </Group>
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Container class="javax.swing.JScrollPane" name="jScrollPane1">
-      <AuxValues>
-        <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
-      </AuxValues>
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
-      <SubComponents>
-        <Component class="javax.swing.JTable" name="model">
-          <Properties>
-            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-              <Font name="Calibri" size="12" style="0"/>
-            </Property>
-            <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="19" rowCount="0">
-                <Column editable="false" title="epf_no" type="java.lang.Object"/>
-                <Column editable="false" title="Name with Initial" type="java.lang.Object"/>
-                <Column editable="false" title="Fname" type="java.lang.Object"/>
-                <Column editable="false" title="Lname" type="java.lang.Object"/>
-                <Column editable="false" title="DOB" type="java.lang.Object"/>
-                <Column editable="false" title="NIC" type="java.lang.Object"/>
-                <Column editable="false" title="Gender" type="java.lang.Object"/>
-                <Column editable="false" title="mobile" type="java.lang.Object"/>
-                <Column editable="false" title="Father" type="java.lang.Object"/>
-                <Column editable="false" title="Mother" type="java.lang.Object"/>
-                <Column editable="false" title="Permanate Address" type="java.lang.Object"/>
-                <Column editable="false" title="Current Address" type="java.lang.Object"/>
-                <Column editable="false" title="Nominee" type="java.lang.Object"/>
-                <Column editable="false" title="Married Status" type="java.lang.Object"/>
-                <Column editable="false" title="District" type="java.lang.Object"/>
-                <Column editable="false" title="Race" type="java.lang.Object"/>
-                <Column editable="false" title="Designation" type="java.lang.Object"/>
-                <Column editable="false" title="Title" type="java.lang.Object"/>
-                <Column editable="false" title="Section" type="java.lang.Object"/>
-              </Table>
-            </Property>
-            <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
-              <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
-            </Property>
-          </Properties>
-        </Component>
-      </SubComponents>
-    </Container>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
@@ -129,5 +95,61 @@
     </Component>
     <Component class="javax.swing.JTextField" name="searchTextField">
     </Component>
+    <Container class="javax.swing.JScrollPane" name="jScrollPane1">
+      <AuxValues>
+        <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
+      </AuxValues>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="javax.swing.JTable" name="model">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Calibri" size="12" style="0"/>
+            </Property>
+            <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
+              <Table columnCount="33" rowCount="0">
+                <Column editable="false" title="epf_no" type="java.lang.Object"/>
+                <Column editable="false" title="Name with Initial" type="java.lang.Object"/>
+                <Column editable="false" title="Fname" type="java.lang.Object"/>
+                <Column editable="false" title="Initials" type="java.lang.Object"/>
+                <Column editable="false" title="Surname" type="java.lang.Object"/>
+                <Column editable="false" title="DOB" type="java.lang.Object"/>
+                <Column editable="false" title="NIC" type="java.lang.Object"/>
+                <Column editable="false" title="Gender" type="java.lang.Object"/>
+                <Column editable="false" title="mobile" type="java.lang.Object"/>
+                <Column editable="false" title="Father" type="java.lang.Object"/>
+                <Column editable="false" title="Mother" type="java.lang.Object"/>
+                <Column editable="false" title="Religion" type="java.lang.Object"/>
+                <Column editable="true" title="Recruited Date" type="java.lang.Object"/>
+                <Column editable="false" title="As Today" type="java.lang.Object"/>
+                <Column editable="true" title="Confirmation Date" type="java.lang.Object"/>
+                <Column editable="true" title="Service End Date" type="java.lang.Object"/>
+                <Column editable="true" title="Date To Service_end" type="java.lang.Object"/>
+                <Column editable="false" title="Permanate Address" type="java.lang.Object"/>
+                <Column editable="false" title="Current Address" type="java.lang.Object"/>
+                <Column editable="false" title="elctroate" type="java.lang.Object"/>
+                <Column editable="false" title="Nominee" type="java.lang.Object"/>
+                <Column editable="false" title="Married Status" type="java.lang.Object"/>
+                <Column editable="false" title="District" type="java.lang.Object"/>
+                <Column editable="false" title="Race" type="java.lang.Object"/>
+                <Column editable="false" title="Designation" type="java.lang.Object"/>
+                <Column editable="false" title="Capacity" type="java.lang.Object"/>
+                <Column editable="false" title="Section" type="java.lang.Object"/>
+                <Column editable="false" title="Joined Date" type="java.lang.Object"/>
+                <Column editable="true" title="Employee" type="java.lang.Object"/>
+                <Column editable="true" title="Resign Type" type="java.lang.Object"/>
+                <Column editable="true" title="Resign Date" type="java.lang.Object"/>
+                <Column editable="true" title="Reason" type="java.lang.Object"/>
+                <Column editable="true" title="Service Duration" type="java.lang.Object"/>
+              </Table>
+            </Property>
+            <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
+              <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
+            </Property>
+          </Properties>
+        </Component>
+      </SubComponents>
+    </Container>
   </SubComponents>
 </Form>

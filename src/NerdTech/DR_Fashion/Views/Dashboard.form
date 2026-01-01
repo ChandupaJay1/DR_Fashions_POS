@@ -279,7 +279,7 @@
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="JetBrains Mono" size="15" style="1"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Shipments"/>
+                <Property name="text" type="java.lang.String" value="Bill"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton10ActionPerformed"/>
@@ -290,7 +290,7 @@
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="JetBrains Mono" size="15" style="1"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Accesories"/>
+                <Property name="text" type="java.lang.String" value="Shipment"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton8ActionPerformed"/>

@@ -17,40 +17,41 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
     private ViewBuyerStock parentPanel;
     private int stockId;
 
-    // Default constructor for testing / previewing the dialog
     public UpdateBuyerStockDFrame() {
         super((java.awt.Frame) null, true);
         initComponents();
         setLocationRelativeTo(null);
     }
 
-    // Custom constructor with all parameters
+    // ✅ FIXED: Added workOrderNo parameter
     public UpdateBuyerStockDFrame(ViewBuyerStock parent, int stockId, String buyerName, String colour,
-            int stockQty, String material, java.sql.Date receivedDate, java.sql.Date issuedDate,
-            int totalIssued, int availableQty, double unitPrice) {
+            int stockQty, String brandName, double size, String material, java.sql.Date receivedDate,
+            java.sql.Date issuedDate, int totalIssued, int availableQty, double unitPrice, String workOrderNo) {
 
         initComponents();
         this.parentPanel = parent;
         this.stockId = stockId;
         setLocationRelativeTo(null);
 
-        // ✅ CORRECTED FIELD ASSIGNMENTS
+        // ✅ Load all fields including work order no
         jTextField1.setText(buyerName);                         // Buyer Name
         jTextField2.setText(colour);                            // Colour
-        jTextField3.setText(String.valueOf(availableQty));      // ✅ Stock Qty - Load Available Qty from table
+        jTextField3.setText(String.valueOf(availableQty));      // Stock Qty (showing available)
         jTextField4.setText(material);                          // Material
+        jTextField8.setText(brandName);                         // Brand Name
+        jTextField10.setText(String.valueOf(size));             // Size
+        jTextField9.setText(workOrderNo != null ? workOrderNo : ""); // ⭐ Work Order No
         jDateChooser1.setDate(receivedDate);                    // Received Date
         jDateChooser2.setDate(issuedDate);                      // Issued Date
-        jTextField5.setText("0");                               // Total Issued - Start empty/0
-        jTextField6.setText("0");                               // Available Qty - Start empty/0
+        jTextField5.setText(String.valueOf(totalIssued));       // Total Issued
+        jTextField6.setText(String.valueOf(availableQty));      // Available Qty
         jTextField7.setText(String.format("%.2f", unitPrice));  // Unit Price
 
-        // Disable buyer name edit
-        jTextField1.setEditable(false);
-        jTextField3.setEditable(false);
-        jTextField6.setEditable(false); // Available Qty auto-calc
-        jDateChooser1.setEnabled(false);
-        
+        // Set read-only fields
+        jTextField1.setEditable(false);  // Buyer Name
+        jTextField3.setEditable(false);  // Stock Qty
+        jTextField6.setEditable(false);  // Available Qty (auto-calculated)
+        jDateChooser1.setEnabled(false); // Received Date
 
         // Add listener to update available qty dynamically
         javax.swing.event.DocumentListener listener = new javax.swing.event.DocumentListener() {
@@ -75,10 +76,7 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
         try {
             int stockQty = jTextField3.getText().isEmpty() ? 0 : Integer.parseInt(jTextField3.getText());
             int totalIssued = jTextField5.getText().isEmpty() ? 0 : Integer.parseInt(jTextField5.getText());
-            int availableQty = stockQty - totalIssued;
-            if (availableQty < 0) {
-                availableQty = 0;
-            }
+            int availableQty = Math.max(0, stockQty - totalIssued);
             jTextField6.setText(String.valueOf(availableQty));
         } catch (Exception e) {
             jTextField6.setText("0");
@@ -91,6 +89,8 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
 
         jLabel1 = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JSeparator();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
@@ -108,14 +108,34 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
         jTextField5 = new javax.swing.JTextField();
         jLabel10 = new javax.swing.JLabel();
         jTextField7 = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
         jTextField1 = new javax.swing.JTextField();
+        jLabel11 = new javax.swing.JLabel();
+        jTextField8 = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        jTextField10 = new javax.swing.JTextField();
+        jLabel12 = new javax.swing.JLabel();
+        jTextField9 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         jLabel1.setFont(new java.awt.Font("JetBrains Mono", 1, 36)); // NOI18N
         jLabel1.setText("Update Buyer Stock");
+
+        jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton1.setText("Cancel");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton2.setText("Update Buyer Stock");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jLabel2.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
         jLabel2.setText("Buyer Name");
@@ -156,23 +176,22 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
 
         jTextField7.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
-        jButton1.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton1.setText("Cancel");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
-
-        jButton2.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
-        jButton2.setText("Update Buyer Stock");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
-            }
-        });
-
         jTextField1.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel11.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel11.setText("Brand Name");
+
+        jTextField8.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel13.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel13.setText("Size");
+
+        jTextField10.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+
+        jLabel12.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
+        jLabel12.setText("Work Order No :");
+
+        jTextField9.setFont(new java.awt.Font("JetBrains Mono", 0, 18)); // NOI18N
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -181,83 +200,124 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel4)
-                            .addComponent(jLabel7)
-                            .addComponent(jLabel6)
-                            .addComponent(jLabel10))
-                        .addGap(169, 169, 169)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField5)
-                            .addComponent(jTextField3)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, 305, Short.MAX_VALUE)
-                            .addComponent(jTextField7)
-                            .addComponent(jTextField1))
-                        .addGap(102, 102, 102)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel5)
-                                    .addComponent(jLabel3)
-                                    .addComponent(jLabel8)
-                                    .addComponent(jLabel9))
-                                .addGap(121, 121, 121)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 325, Short.MAX_VALUE)
-                                    .addComponent(jDateChooser2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jTextField4)
-                                    .addComponent(jTextField6)))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel1)
+                                .addGap(458, 458, 458)
+                                .addComponent(jLabel12)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 258, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(843, 843, 843)
                                 .addComponent(jButton2)
                                 .addGap(69, 69, 69)
-                                .addComponent(jButton1)))))
-                .addContainerGap(20, Short.MAX_VALUE))
+                                .addComponent(jButton1)))
+                        .addGap(20, 20, 20))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel13)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel8)
+                            .addComponent(jLabel9))
+                        .addGap(53, 53, 53)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 325, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, 325, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jTextField10, javax.swing.GroupLayout.DEFAULT_SIZE, 325, Short.MAX_VALUE)
+                                .addComponent(jTextField6)))
+                        .addGap(97, 97, 97))))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(94, 94, 94)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jLabel11)
+                        .addGroup(layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabel2)
+                                .addComponent(jLabel4)
+                                .addComponent(jLabel7)
+                                .addComponent(jLabel6)
+                                .addComponent(jLabel10))
+                            .addGap(90, 90, 90)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jTextField8)
+                                .addComponent(jTextField1)
+                                .addComponent(jTextField3)
+                                .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                                .addComponent(jTextField4)
+                                .addComponent(jTextField7))
+                            .addGap(89, 89, 89)
+                            .addComponent(jLabel3)))
+                    .addGap(132, 132, 132)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 325, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(95, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel12)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(41, 41, 41)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel3)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel5)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel8)
-                    .addComponent(jLabel7)
-                    .addComponent(jDateChooser2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jDateChooser1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(63, 63, 63)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel13)
+                            .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(39, 39, 39))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel5)
+                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel6)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel9)
-                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jLabel8)
+                    .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel10)
-                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 154, Short.MAX_VALUE)
+                    .addComponent(jLabel9)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 86, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jButton2))
-                .addGap(87, 87, 87))
+                .addGap(17, 17, 17))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addGap(90, 90, 90)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel2)
+                        .addComponent(jLabel3)
+                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel11)
+                        .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel4)
+                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(18, 18, 18)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jLabel7)
+                        .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGap(18, 18, 18)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel6)
+                        .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(18, 18, 18)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel10)
+                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(91, 91, 91)))
         );
 
         pack();
@@ -271,37 +331,43 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
         try {
             int stockQty = Integer.parseInt(jTextField3.getText());
             int totalIssued = Integer.parseInt(jTextField5.getText());
-            // Calculate availableQty
-            int availableQty = stockQty - totalIssued;
-            if (availableQty < 0) {
-                availableQty = 0;
-            }
+            int availableQty = Math.max(0, stockQty - totalIssued);
 
             double unitPrice = Double.parseDouble(jTextField7.getText().replace("Rs.", "").trim());
-
             java.sql.Date receivedDate = new java.sql.Date(jDateChooser1.getDate().getTime());
             java.sql.Date issuedDate = (jDateChooser2.getDate() != null)
                     ? new java.sql.Date(jDateChooser2.getDate().getTime()) : null;
+
             String colour = jTextField2.getText();
             String material = jTextField4.getText();
+            String brandName = jTextField8.getText();
+            double size = Double.parseDouble(jTextField10.getText());
+            String workOrderNo = jTextField9.getText().trim(); // ⭐ Work Order No
 
             Connection conn = DatabaseConnection.getConnection();
-            String sql = "UPDATE bstock SET colour=?, stock_qty=?, material=?, received_date=?, issued_date=?, "
-                    + "total_issued=?, available_qty=?, unit_price=?, last_modified=NOW() WHERE id=?";
+
+            // ✅ Updated SQL to include work_order_no
+            String sql = "UPDATE bstock SET colour=?, stock_qty=?, brand_name=?, size=?, material=?, "
+                    + "received_date=?, issued_date=?, total_issued=?, available_qty=?, unit_price=?, "
+                    + "work_order_no=?, last_modified=NOW() WHERE id=?";
+
             PreparedStatement pst = conn.prepareStatement(sql);
             pst.setString(1, colour);
             pst.setInt(2, stockQty);
-            pst.setString(3, material);
-            pst.setDate(4, receivedDate);
+            pst.setString(3, brandName);
+            pst.setDouble(4, size);
+            pst.setString(5, material);
+            pst.setDate(6, receivedDate);
             if (issuedDate != null) {
-                pst.setDate(5, issuedDate);
+                pst.setDate(7, issuedDate);
             } else {
-                pst.setNull(5, java.sql.Types.DATE);
+                pst.setNull(7, java.sql.Types.DATE);
             }
-            pst.setInt(6, totalIssued);
-            pst.setInt(7, availableQty);
-            pst.setDouble(8, unitPrice);
-            pst.setInt(9, stockId);
+            pst.setInt(8, totalIssued);
+            pst.setInt(9, availableQty);
+            pst.setDouble(10, unitPrice);
+            pst.setString(11, workOrderNo.isEmpty() ? null : workOrderNo); // ⭐ NEW
+            pst.setInt(12, stockId);
 
             int updated = pst.executeUpdate();
             if (updated > 0) {
@@ -325,93 +391,83 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
 
-        // ✅ Validation BEFORE calling update
-        String buyerName = jTextField1.getText().trim();
-        String colour = jTextField2.getText().trim();
-        String stockQtyStr = jTextField3.getText().trim();
-        String material = jTextField4.getText().trim();
-        String totalIssuedStr = jTextField5.getText().trim();
-        String unitPriceStr = jTextField7.getText().trim();
-
-        if (buyerName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter buyer name.",
-                    "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (colour.isEmpty() || stockQtyStr.isEmpty() || material.isEmpty() || unitPriceStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all required fields.",
-                    "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (jDateChooser1.getDate() == null) {
-            JOptionPane.showMessageDialog(this, "Please select received date.",
-                    "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         try {
-            // ✅ Validate numbers
-            Integer.parseInt(stockQtyStr);
-            Integer.parseInt(totalIssuedStr.isEmpty() ? "0" : totalIssuedStr);
-            Double.parseDouble(unitPriceStr.replace("Rs.", "").replace(",", "").trim());
+            int stockQty = Integer.parseInt(jTextField3.getText());
+            int totalIssued = Integer.parseInt(jTextField5.getText());
+            int availableQty = Math.max(0, stockQty - totalIssued);
 
-            // ✅ Call UPDATE method only
-            updateBuyerStock();
+            double unitPrice = Double.parseDouble(jTextField7.getText().replace("Rs.", "").trim());
+            java.sql.Date receivedDate = new java.sql.Date(jDateChooser1.getDate().getTime());
+            java.sql.Date issuedDate = (jDateChooser2.getDate() != null)
+                    ? new java.sql.Date(jDateChooser2.getDate().getTime()) : null;
 
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Please enter valid numbers for quantity and price fields.",
-                    "Validation Error", JOptionPane.WARNING_MESSAGE);
+            String colour = jTextField2.getText();
+            String material = jTextField4.getText();
+            String brandName = jTextField8.getText();
+            double size = Double.parseDouble(jTextField10.getText());
+            String workOrderNo = jTextField9.getText().trim(); // ⭐ Work Order No
+
+            Connection conn = DatabaseConnection.getConnection();
+
+            // ✅ Updated SQL to include work_order_no
+            String sql = "UPDATE bstock SET colour=?, stock_qty=?, brand_name=?, size=?, material=?, "
+                    + "received_date=?, issued_date=?, total_issued=?, available_qty=?, unit_price=?, "
+                    + "work_order_no=?, last_modified=NOW() WHERE id=?";
+
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setString(1, colour);
+            pst.setInt(2, stockQty);
+            pst.setString(3, brandName);
+            pst.setDouble(4, size);
+            pst.setString(5, material);
+            pst.setDate(6, receivedDate);
+            if (issuedDate != null) {
+                pst.setDate(7, issuedDate);
+            } else {
+                pst.setNull(7, java.sql.Types.DATE);
+            }
+            pst.setInt(8, totalIssued);
+            pst.setInt(9, availableQty);
+            pst.setDouble(10, unitPrice);
+            pst.setString(11, workOrderNo.isEmpty() ? null : workOrderNo); // ⭐ NEW
+            pst.setInt(12, stockId);
+
+            int updated = pst.executeUpdate();
+            if (updated > 0) {
+                JOptionPane.showMessageDialog(this, "Buyer stock updated successfully!");
+                if (parentPanel != null) {
+                    parentPanel.refreshTable();
+                }
+                this.dispose();
+            }
+
+            pst.close();
+            conn.close();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error updating buyer stock: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
-        /* Set Look and Feel */
         try {
             com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
             javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.themes.FlatMacLightLaf());
         } catch (Exception ex) {
             System.err.println("⚠️ FlatLaf not found. Falling back to Nimbus Look and Feel.");
-            try {
-                for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                        break;
-                    }
+        }
+
+        java.awt.EventQueue.invokeLater(() -> {
+            UpdateBuyerStockDFrame dialog = new UpdateBuyerStockDFrame();
+            dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent e) {
+                    System.exit(0);
                 }
-            } catch (Exception e) {
-                System.err.println("⚠️ Unable to set Nimbus Look and Feel.");
-            }
-        }
-
-        /* Initialize DatabaseConnection */
-        try {
-            java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection();
-            if (conn != null) {
-                System.out.println("✅ Database connection established successfully!");
-            } else {
-                System.out.println("⚠️ Running without active database connection.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        /* Launch dialog */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                UpdateBuyerStockDFrame dialog = new UpdateBuyerStockDFrame();
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
+            });
+            dialog.setVisible(true);
         });
     }
 
@@ -423,6 +479,9 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
     public com.toedter.calendar.JDateChooser jDateChooser2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -433,11 +492,14 @@ public class UpdateBuyerStockDFrame extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JSeparator jSeparator1;
     public javax.swing.JTextField jTextField1;
+    public javax.swing.JTextField jTextField10;
     public javax.swing.JTextField jTextField2;
     public javax.swing.JTextField jTextField3;
     public javax.swing.JTextField jTextField4;
     public javax.swing.JTextField jTextField5;
     public javax.swing.JTextField jTextField6;
     public javax.swing.JTextField jTextField7;
+    public javax.swing.JTextField jTextField8;
+    private javax.swing.JTextField jTextField9;
     // End of variables declaration//GEN-END:variables
 }

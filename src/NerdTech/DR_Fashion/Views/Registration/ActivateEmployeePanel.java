@@ -1,13 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
- */
 package NerdTech.DR_Fashion.Views.Registration;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.Connection;
+import NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  *
@@ -15,99 +15,241 @@ import java.sql.Connection;
  */
 public class ActivateEmployeePanel extends javax.swing.JDialog {
 
-    private EmployeeRegistration employeeRegistrationPanel;
+    private DefaultTableModel tableModel;
+    private EmployeeRegistration parentPanel;
 
-    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal, EmployeeRegistration employeeRegistrationPanel) {
+    // Updated constructor with correct parameters
+    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal, EmployeeRegistration parentPanel) {
         super(parent, modal);
-        this.employeeRegistrationPanel = employeeRegistrationPanel;
+        this.parentPanel = parentPanel;
         initComponents();
-        loadInactiveEmployees();
-        setupSearchFilter();
+        initializeTable();
+        loadResignationData();
+        setupSearchFunctionality();
     }
 
-    private void setupSearchFilter() {
-        javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> rowSorter
-                = new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) model.getModel());
-        model.setRowSorter(rowSorter);
+    // Original constructor for backward compatibility
+    public ActivateEmployeePanel(java.awt.Frame parent, boolean modal) {
+        super(parent, modal);
+        initComponents();
+        initializeTable();
+        loadResignationData();
+        setupSearchFunctionality();
+    }
 
-        searchTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
+    private void initializeTable() {
+        tableModel = (DefaultTableModel) model.getModel();
+        // Clear existing columns and add only the ones we need
+        tableModel.setColumnCount(0);
+
+        // Add columns for resignation data
+        String[] columns = {
+            "ID", "EPF No", "Employee Name", "Designation",
+            "Resign Type", "Resign Date", "Reason",
+            "Service Duration", "Status"
+        };
+
+        for (String column : columns) {
+            tableModel.addColumn(column);
+        }
+
+        // Set the correct table model
+        model.setModel(tableModel);
+    }
+
+    private void loadResignationData() {
+        try {
+            tableModel.setRowCount(0); // Clear existing data
+
+            ResultSet rs = DatabaseConnection.getResignationData();
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getInt("epf_no"),
+                    rs.getString("name_with_initial"),
+                    rs.getString("designation_name"),
+                    rs.getString("resign_type"),
+                    rs.getDate("resign_date"),
+                    rs.getString("reason"),
+                    rs.getString("service_duration"),
+                    rs.getString("status")
+                };
+                tableModel.addRow(row);
             }
 
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
+            // Adjust column widths
+            model.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
+            model.getColumnModel().getColumn(1).setPreferredWidth(80);  // EPF No
+            model.getColumnModel().getColumn(2).setPreferredWidth(150); // Employee Name
+            model.getColumnModel().getColumn(3).setPreferredWidth(120); // Designation
+            model.getColumnModel().getColumn(4).setPreferredWidth(100); // Resign Type
+            model.getColumnModel().getColumn(5).setPreferredWidth(100); // Resign Date
+            model.getColumnModel().getColumn(6).setPreferredWidth(200); // Reason
+            model.getColumnModel().getColumn(7).setPreferredWidth(100); // Service Duration
+            model.getColumnModel().getColumn(8).setPreferredWidth(80);  // Status
 
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading resignation data: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
 
-            private void filter() {
-                String searchText = searchTextField.getText();
-                if (searchText.trim().length() == 0) {
-                    rowSorter.setRowFilter(null);
-                } else {
-                    rowSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + searchText));
-                }
+    private void setupSearchFunctionality() {
+        searchTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                searchEmployees();
             }
         });
     }
 
-    private void loadInactiveEmployees() {
-        javax.swing.table.DefaultTableModel tableModel
-                = (javax.swing.table.DefaultTableModel) model.getModel();
-        tableModel.setRowCount(0);
+    private void searchEmployees() {
+        String searchText = searchTextField.getText().trim();
 
-        String query = "SELECT e.epf_no, e.name_with_initial, e.fname, e.lname, e.dob, "
-                + "e.nic, e.mobile, e.father, e.mother, "
-                + "e.permanate_address, e.current_address, e.nominee, "
-                + "e.married_status, e.district, e.race, "
-                + "d.title AS designation, s.section_name "
-                + "FROM employee e "
-                + "LEFT JOIN designation d ON e.designation_id = d.id "
-                + "LEFT JOIN section s ON e.section_id = s.id "
-                + "WHERE e.status = 'inactive' "
-                + "ORDER BY e.epf_no";
+        if (searchText.isEmpty()) {
+            loadResignationData();
+            return;
+        }
 
-        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(query); ResultSet rs = stmt.executeQuery()) {
+        try {
+            tableModel.setRowCount(0); // Clear existing data
 
+            ResultSet rs = DatabaseConnection.getResignationDataByEmployeeName(searchText);
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getString("epf_no"), // 0
-                    rs.getString("name_with_initial"), // 1
-                    rs.getString("fname"), // 2
-                    rs.getString("lname"), // 3
-                    rs.getString("dob"), // 4
-                    rs.getString("nic"), // 5
-                    rs.getString("mobile"), // 6
-                    rs.getString("father"), // 7
-                    rs.getString("mother"), // 8
-                    rs.getString("permanate_address"), // 9
-                    rs.getString("current_address"), // 10
-                    rs.getString("nominee"), // 11
-                    rs.getString("married_status"), // 12
-                    rs.getString("district"), // 13
-                    rs.getString("race"), // 14
-                    rs.getString("designation"), // 15
-                    rs.getString("section_name") // 16
-                });
-            }
-
-            if (tableModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "No inactive employees found.",
-                        "Information",
-                        JOptionPane.INFORMATION_MESSAGE);
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getInt("epf_no"),
+                    rs.getString("name_with_initial"),
+                    rs.getString("designation_name"),
+                    rs.getString("resign_type"),
+                    rs.getDate("resign_date"),
+                    rs.getString("reason"),
+                    rs.getString("service_duration"),
+                    rs.getString("status")
+                };
+                tableModel.addRow(row);
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Failed to load inactive employees: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error searching resignation data: " + e.getMessage(),
+                    "Search Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void activateEmployee() {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an employee to activate.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            int resignationId = (int) tableModel.getValueAt(selectedRow, 0);
+            int epfNo = (int) tableModel.getValueAt(selectedRow, 1);
+            String employeeName = (String) tableModel.getValueAt(selectedRow, 2);
+            String currentStatus = (String) tableModel.getValueAt(selectedRow, 8);
+
+            // Check if already activated (since we're only loading pending/inactive, this should not happen)
+            if ("active".equals(currentStatus)) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee " + employeeName + " is already activated!",
+                        "Already Activated",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to activate employee " + employeeName + " (EPF: " + epfNo + ")?\n\n"
+                    + "This will:\n"
+                    + "• Update employee status to 'active'\n"
+                    + "• Update resignation status to 'active'",
+                    "Confirm Activation", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Update both employee and resignation status in a transaction
+                boolean success = DatabaseConnection.activateEmployeeAndResignation(epfNo, resignationId);
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Employee activated successfully!\n"
+                            + "• Employee status updated to 'active'\n"
+                            + "• Resignation status updated to 'active'",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh parent panel if available
+                    if (parentPanel != null) {
+                        parentPanel.refreshTable();
+                    }
+
+                    loadResignationData(); // This will reload and the activated record will disappear
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to activate employee.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error activating employee: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void deactivateEmployee() {
+        int selectedRow = model.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an employee to deactivate.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            int resignationId = (int) tableModel.getValueAt(selectedRow, 0);
+            int epfNo = (int) tableModel.getValueAt(selectedRow, 1);
+            String employeeName = (String) tableModel.getValueAt(selectedRow, 2);
+            String currentStatus = (String) tableModel.getValueAt(selectedRow, 8);
+
+            // Check if already deactivated
+            if ("inactive".equals(currentStatus)) {
+                JOptionPane.showMessageDialog(this,
+                        "Employee " + employeeName + " is already deactivated!",
+                        "Already Deactivated",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to deactivate employee " + employeeName + " (EPF: " + epfNo + ")?\n\n"
+                    + "This will:\n"
+                    + "• Update resignation status to 'inactive'\n"
+                    + "• Set employee status to 'inactive'",
+                    "Confirm Deactivation", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Update both resignation and employee status in a transaction
+                boolean success = DatabaseConnection.deactivateEmployeeAndResignation(resignationId, epfNo);
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Employee deactivated successfully!\n"
+                            + "• Resignation status updated to 'inactive'\n"
+                            + "• Employee status set to 'inactive'",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh parent panel if available
+                    if (parentPanel != null) {
+                        parentPanel.refreshTable();
+                    }
+
+                    loadResignationData(); // This will reload and show the record as inactive
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to deactivate employee.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error deactivating employee: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -124,6 +266,7 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
         jButton2 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         model = new javax.swing.JTable();
+        jButton3 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -151,43 +294,39 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
 
         model.setFont(new java.awt.Font("Calibri", 0, 12)); // NOI18N
         model.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
+            new Object [][] {},
             new String [] {
-                "epf_no", "Name with Initial", "Fname", "Lname", "DOB", "NIC", "mobile", "Father", "Mother", "Permanate Address", "Current Address", "Nominee", "Married Status", "District", "Race", "Designation", "Section"
+                "ID", "EPF No", "Employee Name", "Designation", 
+                "Resign Type", "Resign Date", "Reason", 
+                "Service Duration", "Status"
             }
         ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class, 
+                java.lang.String.class, java.lang.String.class, java.lang.Object.class, 
+                java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
             }
         });
         jScrollPane1.setViewportView(model);
-        if (model.getColumnModel().getColumnCount() > 0) {
-            model.getColumnModel().getColumn(0).setResizable(false);
-            model.getColumnModel().getColumn(1).setResizable(false);
-            model.getColumnModel().getColumn(2).setResizable(false);
-            model.getColumnModel().getColumn(3).setResizable(false);
-            model.getColumnModel().getColumn(4).setResizable(false);
-            model.getColumnModel().getColumn(5).setResizable(false);
-            model.getColumnModel().getColumn(6).setResizable(false);
-            model.getColumnModel().getColumn(7).setResizable(false);
-            model.getColumnModel().getColumn(7).setPreferredWidth(200);
-            model.getColumnModel().getColumn(8).setResizable(false);
-            model.getColumnModel().getColumn(8).setPreferredWidth(200);
-            model.getColumnModel().getColumn(9).setResizable(false);
-            model.getColumnModel().getColumn(10).setResizable(false);
-            model.getColumnModel().getColumn(11).setResizable(false);
-            model.getColumnModel().getColumn(12).setResizable(false);
-            model.getColumnModel().getColumn(13).setResizable(false);
-            model.getColumnModel().getColumn(14).setResizable(false);
-            model.getColumnModel().getColumn(15).setResizable(false);
-            model.getColumnModel().getColumn(16).setResizable(false);
-        }
+
+        jButton3.setFont(new java.awt.Font("JetBrains Mono", 1, 24)); // NOI18N
+        jButton3.setText("Inactive");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -198,24 +337,26 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 456, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(1081, Short.MAX_VALUE))
+                        .addContainerGap(1297, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 802, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 1018, Short.MAX_VALUE)
                         .addComponent(jLabel2)
                         .addGap(18, 18, 18)
                         .addComponent(searchTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(20, 20, 20))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(38, 38, 38)
+                        .addGap(18, 18, 18)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap())))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addContainerGap()
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1531, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1747, Short.MAX_VALUE)
                     .addContainerGap()))
         );
         layout.setVerticalGroup(
@@ -231,13 +372,14 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 537, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(27, 27, 27))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
-                    .addGap(63, 63, 63)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 518, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(100, Short.MAX_VALUE)))
+                    .addGap(83, 83, 83)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 514, Short.MAX_VALUE)
+                    .addGap(84, 84, 84)))
         );
 
         pack();
@@ -245,72 +387,21 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        int selectedRow = model.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select an employee to activate.",
-                    "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // NIC use කරන එක වඩා safe (column 5)
-        String nic = model.getValueAt(selectedRow, 5).toString();
-        String fname = model.getValueAt(selectedRow, 2).toString();
-        String lname = model.getValueAt(selectedRow, 3).toString();
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to activate " + fname + " " + lname + "?",
-                "Confirm Activation",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try (Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection()) {
-            // NIC use කරනවා - වඩා accurate
-            String sql = "UPDATE employee SET status = 'active' WHERE nic = ? AND status = 'inactive'";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, nic);
-
-            int updated = ps.executeUpdate();
-
-            if (updated > 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Employee activated successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                employeeRegistrationPanel.refreshTable();
-                loadInactiveEmployees();  // Refresh this table too
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Employee not found or already active.",
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Activation failed: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
+        activateEmployee();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         dispose();
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        deactivateEmployee();
+    }//GEN-LAST:event_jButton3ActionPerformed
+
     public static void main(String args[]) {
-        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                EmployeeRegistration empReg = new EmployeeRegistration(); // mock panel eka
-                ActivateEmployeePanel dialog = new ActivateEmployeePanel(new javax.swing.JFrame(), true, empReg);
+                ActivateEmployeePanel dialog = new ActivateEmployeePanel(new javax.swing.JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override
                     public void windowClosing(java.awt.event.WindowEvent e) {
@@ -320,12 +411,12 @@ public class ActivateEmployeePanel extends javax.swing.JDialog {
                 dialog.setVisible(true);
             }
         });
-
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;

@@ -140,15 +140,33 @@ public class BackupPanel extends javax.swing.JPanel {
     private void backupEmployeeData(String absolutePath) {
         try (
                 java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                "SELECT e.fname, e.lname, e.email, e.dob, e.nic, e.mobile, r.position "
-                + "FROM employee e JOIN role r ON e.role_id = r.id"
+                "SELECT e.id, e.epf_no, e.name_with_initial, e.fname, e.initials, e.surname, "
+                + "e.gender, e.dob, e.nic, e.mobile, e.status, e.father, e.mother, "
+                + "e.service_end_date, e.date_to_service_end, e.electroate, "
+                + "e.permanate_address, e.current_address, e.nominee, e.married_status, "
+                + "e.district, e.race, e.joined_date, e.recruited_date, e.religion, "
+                + "e.confirmation_date, e.as_today, "
+                + "d.title as designation, s.section_name, c.name as capacity "
+                + "FROM employee e "
+                + "LEFT JOIN designation d ON e.designation_id = d.id "
+                + "LEFT JOIN section s ON e.section_id = s.id "
+                + "LEFT JOIN capacity c ON e.capacity_id = c.id"
         )) {
+
             org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Employees");
 
             // Create Header Row
             org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
-            String[] columns = {"First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role"};
+            String[] columns = {
+                "ID", "EPF No", "Name with Initial", "First Name", "Initials", "Surname",
+                "Gender", "DOB", "NIC", "Mobile", "Status", "Father", "Mother",
+                "Service End Date", "Date to Service End", "Electroate",
+                "Permanent Address", "Current Address", "Nominee", "Married Status",
+                "District", "Race", "Joined Date", "Recruited Date", "Religion",
+                "Confirmation Date", "As Today", "Designation", "Section", "Capacity"
+            };
+
             for (int i = 0; i < columns.length; i++) {
                 header.createCell(i).setCellValue(columns[i]);
             }
@@ -157,13 +175,36 @@ public class BackupPanel extends javax.swing.JPanel {
             int rowIndex = 1;
             while (rs.next()) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
-                row.createCell(0).setCellValue(rs.getString("fname"));
-                row.createCell(1).setCellValue(rs.getString("lname"));
-                row.createCell(2).setCellValue(rs.getString("email"));
-                row.createCell(3).setCellValue(rs.getString("dob"));
-                row.createCell(4).setCellValue(rs.getString("nic"));
-                row.createCell(5).setCellValue(rs.getString("mobile"));
-                row.createCell(6).setCellValue(rs.getString("position"));
+                row.createCell(0).setCellValue(rs.getInt("id"));
+                row.createCell(1).setCellValue(rs.getInt("epf_no"));
+                row.createCell(2).setCellValue(rs.getString("name_with_initial"));
+                row.createCell(3).setCellValue(rs.getString("fname"));
+                row.createCell(4).setCellValue(rs.getString("initials"));
+                row.createCell(5).setCellValue(rs.getString("surname"));
+                row.createCell(6).setCellValue(rs.getString("gender"));
+                row.createCell(7).setCellValue(rs.getString("dob"));
+                row.createCell(8).setCellValue(rs.getString("nic"));
+                row.createCell(9).setCellValue(rs.getString("mobile"));
+                row.createCell(10).setCellValue(rs.getString("status"));
+                row.createCell(11).setCellValue(rs.getString("father"));
+                row.createCell(12).setCellValue(rs.getString("mother"));
+                row.createCell(13).setCellValue(rs.getString("service_end_date"));
+                row.createCell(14).setCellValue(rs.getString("date_to_service_end"));
+                row.createCell(15).setCellValue(rs.getString("electroate"));
+                row.createCell(16).setCellValue(rs.getString("permanate_address"));
+                row.createCell(17).setCellValue(rs.getString("current_address"));
+                row.createCell(18).setCellValue(rs.getString("nominee"));
+                row.createCell(19).setCellValue(rs.getString("married_status"));
+                row.createCell(20).setCellValue(rs.getString("district"));
+                row.createCell(21).setCellValue(rs.getString("race"));
+                row.createCell(22).setCellValue(rs.getString("joined_date"));
+                row.createCell(23).setCellValue(rs.getString("recruited_date"));
+                row.createCell(24).setCellValue(rs.getString("religion"));
+                row.createCell(25).setCellValue(rs.getString("confirmation_date"));
+                row.createCell(26).setCellValue(rs.getString("as_today"));
+                row.createCell(27).setCellValue(rs.getString("designation"));
+                row.createCell(28).setCellValue(rs.getString("section_name"));
+                row.createCell(29).setCellValue(rs.getString("capacity"));
             }
 
             // Autosize columns
@@ -178,10 +219,12 @@ public class BackupPanel extends javax.swing.JPanel {
 
             workbook.close();
 
-            javax.swing.JOptionPane.showMessageDialog(this, "Employee data exported successfully to:\n" + absolutePath);
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Employee data exported successfully to:\n" + absolutePath);
         } catch (Exception e) {
             e.printStackTrace();
-            javax.swing.JOptionPane.showMessageDialog(this, "Error exporting to Excel: " + e.getMessage(),
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error exporting to Excel: " + e.getMessage(),
                     "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -189,26 +232,22 @@ public class BackupPanel extends javax.swing.JPanel {
     private void backupAccesoriesData(String absolutePath) {
         try (
                 java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                "SELECT id, order_no, colour_name, size, stock_qty, uom, received_date, "
-                + "issued_date, total_issued, available_qty, unit_price FROM accesories"
+                "SELECT a.id, a.order_no, a.name, a.colour_name, a.size, a.stock_qty, "
+                + "a.uom, a.received_date, a.issued_date, a.total_issued, a.available_qty, "
+                + "a.status, a.unit_price, t.type_name "
+                + "FROM accesories a "
+                + "LEFT JOIN type t ON a.type_id = t.type_id"
         )) {
+
             org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Accessories");
 
             // Create Header Row
             org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
             String[] columns = {
-                "ID",
-                "Order No",
-                "Colour Name",
-                "Size",
-                "Stock Quantity",
-                "UOM",
-                "Received Date",
-                "Issued Date",
-                "Total Issued",
-                "Available Quantity",
-                "Unit Price"
+                "ID", "Order No", "Name", "Colour Name", "Size", "Stock Quantity",
+                "UOM", "Received Date", "Issued Date", "Total Issued",
+                "Available Quantity", "Status", "Unit Price", "Type"
             };
 
             for (int i = 0; i < columns.length; i++) {
@@ -221,15 +260,18 @@ public class BackupPanel extends javax.swing.JPanel {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
                 row.createCell(0).setCellValue(rs.getInt("id"));
                 row.createCell(1).setCellValue(rs.getString("order_no"));
-                row.createCell(2).setCellValue(rs.getString("colour_name"));
-                row.createCell(3).setCellValue(rs.getString("size"));
-                row.createCell(4).setCellValue(rs.getInt("stock_qty"));
-                row.createCell(5).setCellValue(rs.getString("uom"));
-                row.createCell(6).setCellValue(rs.getString("received_date"));
-                row.createCell(7).setCellValue(rs.getString("issued_date"));
-                row.createCell(8).setCellValue(rs.getInt("total_issued"));
-                row.createCell(9).setCellValue(rs.getInt("available_qty"));
-                row.createCell(10).setCellValue(rs.getDouble("unit_price"));
+                row.createCell(2).setCellValue(rs.getString("name"));
+                row.createCell(3).setCellValue(rs.getString("colour_name"));
+                row.createCell(4).setCellValue(rs.getString("size"));
+                row.createCell(5).setCellValue(rs.getString("stock_qty"));
+                row.createCell(6).setCellValue(rs.getString("uom"));
+                row.createCell(7).setCellValue(rs.getString("received_date"));
+                row.createCell(8).setCellValue(rs.getString("issued_date"));
+                row.createCell(9).setCellValue(rs.getString("total_issued"));
+                row.createCell(10).setCellValue(rs.getString("available_qty"));
+                row.createCell(11).setCellValue(rs.getString("status"));
+                row.createCell(12).setCellValue(rs.getString("unit_price"));
+                row.createCell(13).setCellValue(rs.getString("type_name"));
             }
 
             // Autosize columns
@@ -257,24 +299,20 @@ public class BackupPanel extends javax.swing.JPanel {
     private void backupStockData(String absolutePath) {
         try (
                 java.sql.Connection conn = NerdTech.DR_Fashion.DatabaseConnection.DatabaseConnection.getConnection(); java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                "SELECT id, name, stock_qty, material, received_date, issued_date, "
-                + "total_issued, available_qty, unit_price FROM stock"
+                "SELECT id, colour, status, stock_qty, material, received_date, "
+                + "issued_date, total_issued, available_qty, unit_price "
+                + "FROM stock"
         )) {
+
             org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Stock");
 
             // Create Header Row
             org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
             String[] columns = {
-                "ID",
-                "Name",
-                "Stock Quantity",
-                "Material",
-                "Received Date",
-                "Issued Date",
-                "Total Issued",
-                "Available Quantity",
-                "Unit Price"
+                "ID", "Colour", "Status", "Stock Quantity", "Material",
+                "Received Date", "Issued Date", "Total Issued",
+                "Available Quantity", "Unit Price"
             };
 
             for (int i = 0; i < columns.length; i++) {
@@ -286,14 +324,15 @@ public class BackupPanel extends javax.swing.JPanel {
             while (rs.next()) {
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
                 row.createCell(0).setCellValue(rs.getInt("id"));
-                row.createCell(1).setCellValue(rs.getString("name"));
-                row.createCell(2).setCellValue(rs.getInt("stock_qty"));
-                row.createCell(3).setCellValue(rs.getString("material"));
-                row.createCell(4).setCellValue(rs.getString("received_date"));
-                row.createCell(5).setCellValue(rs.getString("issued_date"));
-                row.createCell(6).setCellValue(rs.getInt("total_issued"));
-                row.createCell(7).setCellValue(rs.getInt("available_qty"));
-                row.createCell(8).setCellValue(rs.getDouble("unit_price"));
+                row.createCell(1).setCellValue(rs.getString("colour"));
+                row.createCell(2).setCellValue(rs.getString("status"));
+                row.createCell(3).setCellValue(rs.getString("stock_qty"));
+                row.createCell(4).setCellValue(rs.getString("material"));
+                row.createCell(5).setCellValue(rs.getString("received_date"));
+                row.createCell(6).setCellValue(rs.getString("issued_date"));
+                row.createCell(7).setCellValue(rs.getString("total_issued"));
+                row.createCell(8).setCellValue(rs.getString("available_qty"));
+                row.createCell(9).setCellValue(rs.getString("unit_price"));
             }
 
             // Autosize columns
@@ -324,12 +363,20 @@ public class BackupPanel extends javax.swing.JPanel {
 
             // ==================== SHEET 1: EMPLOYEES ====================
             try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                    "SELECT e.fname, e.lname, e.email, e.dob, e.nic, e.mobile, r.position "
-                    + "FROM employee e JOIN role r ON e.role_id = r.id")) {
+                    "SELECT e.id, e.epf_no, e.name_with_initial, e.fname, e.initials, e.surname, "
+                    + "e.gender, e.dob, e.nic, e.mobile, e.status, "
+                    + "d.title as designation, s.section_name, c.name as capacity "
+                    + "FROM employee e "
+                    + "LEFT JOIN designation d ON e.designation_id = d.id "
+                    + "LEFT JOIN section s ON e.section_id = s.id "
+                    + "LEFT JOIN capacity c ON e.capacity_id = c.id")) {
 
                 org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Employees");
                 org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
-                String[] columns = {"First Name", "Last Name", "Email", "DOB", "NIC", "Mobile", "Role"};
+                String[] columns = {
+                    "ID", "EPF No", "Name with Initial", "First Name", "Initials", "Surname",
+                    "Gender", "DOB", "NIC", "Mobile", "Status", "Designation", "Section", "Capacity"
+                };
 
                 for (int i = 0; i < columns.length; i++) {
                     header.createCell(i).setCellValue(columns[i]);
@@ -338,13 +385,20 @@ public class BackupPanel extends javax.swing.JPanel {
                 int rowIndex = 1;
                 while (rs.next()) {
                     org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
-                    row.createCell(0).setCellValue(rs.getString("fname"));
-                    row.createCell(1).setCellValue(rs.getString("lname"));
-                    row.createCell(2).setCellValue(rs.getString("email"));
-                    row.createCell(3).setCellValue(rs.getString("dob"));
-                    row.createCell(4).setCellValue(rs.getString("nic"));
-                    row.createCell(5).setCellValue(rs.getString("mobile"));
-                    row.createCell(6).setCellValue(rs.getString("position"));
+                    row.createCell(0).setCellValue(rs.getInt("id"));
+                    row.createCell(1).setCellValue(rs.getInt("epf_no"));
+                    row.createCell(2).setCellValue(rs.getString("name_with_initial"));
+                    row.createCell(3).setCellValue(rs.getString("fname"));
+                    row.createCell(4).setCellValue(rs.getString("initials"));
+                    row.createCell(5).setCellValue(rs.getString("surname"));
+                    row.createCell(6).setCellValue(rs.getString("gender"));
+                    row.createCell(7).setCellValue(rs.getString("dob"));
+                    row.createCell(8).setCellValue(rs.getString("nic"));
+                    row.createCell(9).setCellValue(rs.getString("mobile"));
+                    row.createCell(10).setCellValue(rs.getString("status"));
+                    row.createCell(11).setCellValue(rs.getString("designation"));
+                    row.createCell(12).setCellValue(rs.getString("section_name"));
+                    row.createCell(13).setCellValue(rs.getString("capacity"));
                 }
 
                 for (int i = 0; i < columns.length; i++) {
@@ -354,13 +408,13 @@ public class BackupPanel extends javax.swing.JPanel {
 
             // ==================== SHEET 2: STOCK ====================
             try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                    "SELECT id, name, stock_qty, material, received_date, issued_date, "
-                    + "total_issued, available_qty, unit_price FROM stock")) {
+                    "SELECT id, colour, status, stock_qty, material, received_date, "
+                    + "issued_date, total_issued, available_qty, unit_price FROM stock")) {
 
                 org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Stock");
                 org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
                 String[] columns = {
-                    "ID", "Name", "Stock Quantity", "Material",
+                    "ID", "Colour", "Status", "Stock Quantity", "Material",
                     "Received Date", "Issued Date", "Total Issued",
                     "Available Quantity", "Unit Price"
                 };
@@ -373,14 +427,15 @@ public class BackupPanel extends javax.swing.JPanel {
                 while (rs.next()) {
                     org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
                     row.createCell(0).setCellValue(rs.getInt("id"));
-                    row.createCell(1).setCellValue(rs.getString("name"));
-                    row.createCell(2).setCellValue(rs.getInt("stock_qty"));
-                    row.createCell(3).setCellValue(rs.getString("material"));
-                    row.createCell(4).setCellValue(rs.getString("received_date"));
-                    row.createCell(5).setCellValue(rs.getString("issued_date"));
-                    row.createCell(6).setCellValue(rs.getInt("total_issued"));
-                    row.createCell(7).setCellValue(rs.getInt("available_qty"));
-                    row.createCell(8).setCellValue(rs.getDouble("unit_price"));
+                    row.createCell(1).setCellValue(rs.getString("colour"));
+                    row.createCell(2).setCellValue(rs.getString("status"));
+                    row.createCell(3).setCellValue(rs.getString("stock_qty"));
+                    row.createCell(4).setCellValue(rs.getString("material"));
+                    row.createCell(5).setCellValue(rs.getString("received_date"));
+                    row.createCell(6).setCellValue(rs.getString("issued_date"));
+                    row.createCell(7).setCellValue(rs.getString("total_issued"));
+                    row.createCell(8).setCellValue(rs.getString("available_qty"));
+                    row.createCell(9).setCellValue(rs.getString("unit_price"));
                 }
 
                 for (int i = 0; i < columns.length; i++) {
@@ -390,15 +445,17 @@ public class BackupPanel extends javax.swing.JPanel {
 
             // ==================== SHEET 3: ACCESSORIES ====================
             try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery(
-                    "SELECT id, order_no, colour_name, size, stock_qty, uom, received_date, "
-                    + "issued_date, total_issued, available_qty, unit_price FROM accesories")) {
+                    "SELECT a.id, a.order_no, a.name, a.colour_name, a.size, a.stock_qty, "
+                    + "a.uom, a.received_date, a.issued_date, a.total_issued, a.available_qty, "
+                    + "a.status, a.unit_price, t.type_name "
+                    + "FROM accesories a LEFT JOIN type t ON a.type_id = t.type_id")) {
 
                 org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Accessories");
                 org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
                 String[] columns = {
-                    "ID", "Order No", "Colour Name", "Size",
-                    "Stock Quantity", "UOM", "Received Date", "Issued Date",
-                    "Total Issued", "Available Quantity", "Unit Price"
+                    "ID", "Order No", "Name", "Colour Name", "Size", "Stock Quantity",
+                    "UOM", "Received Date", "Issued Date", "Total Issued",
+                    "Available Quantity", "Status", "Unit Price", "Type"
                 };
 
                 for (int i = 0; i < columns.length; i++) {
@@ -410,15 +467,18 @@ public class BackupPanel extends javax.swing.JPanel {
                     org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
                     row.createCell(0).setCellValue(rs.getInt("id"));
                     row.createCell(1).setCellValue(rs.getString("order_no"));
-                    row.createCell(2).setCellValue(rs.getString("colour_name"));
-                    row.createCell(3).setCellValue(rs.getString("size"));
-                    row.createCell(4).setCellValue(rs.getInt("stock_qty"));
-                    row.createCell(5).setCellValue(rs.getString("uom"));
-                    row.createCell(6).setCellValue(rs.getString("received_date"));
-                    row.createCell(7).setCellValue(rs.getString("issued_date"));
-                    row.createCell(8).setCellValue(rs.getInt("total_issued"));
-                    row.createCell(9).setCellValue(rs.getInt("available_qty"));
-                    row.createCell(10).setCellValue(rs.getDouble("unit_price"));
+                    row.createCell(2).setCellValue(rs.getString("name"));
+                    row.createCell(3).setCellValue(rs.getString("colour_name"));
+                    row.createCell(4).setCellValue(rs.getString("size"));
+                    row.createCell(5).setCellValue(rs.getString("stock_qty"));
+                    row.createCell(6).setCellValue(rs.getString("uom"));
+                    row.createCell(7).setCellValue(rs.getString("received_date"));
+                    row.createCell(8).setCellValue(rs.getString("issued_date"));
+                    row.createCell(9).setCellValue(rs.getString("total_issued"));
+                    row.createCell(10).setCellValue(rs.getString("available_qty"));
+                    row.createCell(11).setCellValue(rs.getString("status"));
+                    row.createCell(12).setCellValue(rs.getString("unit_price"));
+                    row.createCell(13).setCellValue(rs.getString("type_name"));
                 }
 
                 for (int i = 0; i < columns.length; i++) {
@@ -460,57 +520,88 @@ public class BackupPanel extends javax.swing.JPanel {
             bw.write("-- =============================================\n\n");
             bw.write("SET FOREIGN_KEY_CHECKS = 0;\n\n");
 
-            // List of tables to backup
-            String[] tables = {"role", "employee", "stock", "accesories"};
+            // දැන් database schema එකේ තියෙන හරි tables ඔක්කොම
+            String[] tables = {
+                "capacity",
+                "designation",
+                "section",
+                "employee",
+                "type",
+                "stock",
+                "accesories",
+                "user",
+                "attendence",
+                "resignation",
+                "salary",
+                "salary_details",
+                "bank_details",
+                "registration_buyer",
+                "bstock",
+                "baccesories",
+                "breturn_qty_stock",
+                "breturn_qty_accessories",
+                "monthly_payment",
+                "per_day_salary"
+            };
 
             for (String tableName : tables) {
-                bw.write("\n-- =============================================\n");
-                bw.write("-- Table: " + tableName + "\n");
-                bw.write("-- =============================================\n\n");
+                try {
+                    bw.write("\n-- =============================================\n");
+                    bw.write("-- Table: " + tableName + "\n");
+                    bw.write("-- =============================================\n\n");
 
-                // DROP TABLE IF EXISTS
-                bw.write("DROP TABLE IF EXISTS `" + tableName + "`;\n\n");
+                    // DROP TABLE IF EXISTS
+                    bw.write("DROP TABLE IF EXISTS `" + tableName + "`;\n\n");
 
-                // CREATE TABLE statement
-                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE `" + tableName + "`")) {
-                    if (rs.next()) {
-                        bw.write(rs.getString(2) + ";\n\n");
-                    }
-                }
-
-                // INSERT statements
-                try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT * FROM `" + tableName + "`")) {
-
-                    java.sql.ResultSetMetaData rsMetaData = rs.getMetaData();
-                    int columnCount = rsMetaData.getColumnCount();
-
-                    while (rs.next()) {
-                        StringBuilder insertQuery = new StringBuilder();
-                        insertQuery.append("INSERT INTO `").append(tableName).append("` VALUES (");
-
-                        for (int i = 1; i <= columnCount; i++) {
-                            Object value = rs.getObject(i);
-
-                            if (value == null) {
-                                insertQuery.append("NULL");
-                            } else if (value instanceof String || value instanceof java.sql.Date || value instanceof java.sql.Timestamp) {
-                                String strValue = value.toString().replace("'", "''");
-                                insertQuery.append("'").append(strValue).append("'");
-                            } else {
-                                insertQuery.append(value);
-                            }
-
-                            if (i < columnCount) {
-                                insertQuery.append(", ");
-                            }
+                    // CREATE TABLE statement
+                    try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE `" + tableName + "`")) {
+                        if (rs.next()) {
+                            bw.write(rs.getString(2) + ";\n\n");
                         }
-
-                        insertQuery.append(");\n");
-                        bw.write(insertQuery.toString());
                     }
-                }
 
-                bw.write("\n");
+                    // INSERT statements
+                    try (java.sql.Statement stmt = conn.createStatement(); java.sql.ResultSet rs = stmt.executeQuery("SELECT * FROM `" + tableName + "`")) {
+
+                        java.sql.ResultSetMetaData rsMetaData = rs.getMetaData();
+                        int columnCount = rsMetaData.getColumnCount();
+
+                        while (rs.next()) {
+                            StringBuilder insertQuery = new StringBuilder();
+                            insertQuery.append("INSERT INTO `").append(tableName).append("` VALUES (");
+
+                            for (int i = 1; i <= columnCount; i++) {
+                                Object value = rs.getObject(i);
+
+                                if (value == null) {
+                                    insertQuery.append("NULL");
+                                } else if (value instanceof String
+                                        || value instanceof java.sql.Date
+                                        || value instanceof java.sql.Timestamp
+                                        || value instanceof java.sql.Time) {
+                                    String strValue = value.toString().replace("'", "''");
+                                    insertQuery.append("'").append(strValue).append("'");
+                                } else {
+                                    insertQuery.append(value);
+                                }
+
+                                if (i < columnCount) {
+                                    insertQuery.append(", ");
+                                }
+                            }
+
+                            insertQuery.append(");\n");
+                            bw.write(insertQuery.toString());
+                        }
+                    }
+
+                    bw.write("\n");
+
+                } catch (java.sql.SQLException e) {
+                    // Table එකක් නැත්නම් skip කරලා continue වෙනවා
+                    bw.write("-- Table '" + tableName + "' not found or error occurred\n\n");
+                    System.err.println("Warning: Could not backup table '" + tableName + "': " + e.getMessage());
+                }
             }
 
             bw.write("\nSET FOREIGN_KEY_CHECKS = 1;\n");

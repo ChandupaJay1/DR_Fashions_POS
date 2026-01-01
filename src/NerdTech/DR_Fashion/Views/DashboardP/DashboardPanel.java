@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
- */
 package NerdTech.DR_Fashion.Views.DashboardP;
 
 import NerdTech.DR_Fashion.Views.DashboardP.CardPanel;
@@ -365,20 +361,20 @@ public class DashboardPanel extends javax.swing.JPanel {
     }
 
     private void loadCapacityStats() {
-        capacityTableModel.setRowCount(0);
+        capacityTableModel.setRowCount(0);  // Clear existing data
 
         String query = "SELECT "
-                + "COALESCE(d.capacity, 'Unassigned') AS capacity, "
+                + "COALESCE(c.name, 'Unassigned') AS capacity, "
                 + "SUM(CASE WHEN e.gender = 'Male' THEN 1 ELSE 0 END) AS male_count, "
                 + "SUM(CASE WHEN e.gender = 'Female' THEN 1 ELSE 0 END) AS female_count, "
                 + "COUNT(*) AS total "
                 + "FROM employee e "
-                + "LEFT JOIN designation d ON e.designation_id = d.id "
+                + "LEFT JOIN capacity c ON e.capacity_id = c.id "
                 + "WHERE e.status = 'active' "
-                + "GROUP BY d.capacity "
+                + "GROUP BY c.name "
                 + "ORDER BY total DESC";
 
-        loadStatsToTable(query, capacityTableModel);
+        loadStatsToTable(query, capacityTableModel);  // ✅ හරි - TableModel pass කරනවා
     }
 
     private void loadDesignationStats() {
